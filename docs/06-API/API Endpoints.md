@@ -69,9 +69,9 @@ Perm: **P** public · **M** active member · **A** super admin
 ## Feedback (`apps/feedback`): member-facing, anonymised
 | Method | Path | Perm | Req | Phase | Status |
 |---|---|---|---|---|---|
-| GET | `/api/v1/feedback/received/` | M | FB-01, FB-04 | 3 | 📝 |
-| GET | `/api/v1/feedback/received/summary/` | M | FB-03, REP-02 | 3 | 📝 |
-| GET | `/api/v1/feedback/received/count/` | M | FB-03 | 3 | 📝 |
+| GET | `/api/v1/feedback/received/` (`cycle`, `date_from`, `date_to`) | M | FB-01, FB-04 | 3 | ✅ |
+| GET | `/api/v1/feedback/received/summary/` (`cycle`, `criterion`) | M | FB-03, REP-02 | 3 | ✅ |
+| GET | `/api/v1/feedback/received/count/` | M | FB-03 | 3 | ✅ |
 
 ## Reports (`apps/reports`)
 | Method | Path | Perm | Req | Phase | Status |

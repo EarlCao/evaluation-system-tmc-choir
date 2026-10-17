@@ -2,7 +2,7 @@
 tags: [module, privacy]
 module: feedback
 phase: 3
-status: planned
+status: backend implemented (3.2); UI in 3.3
 ---
 # Module: Feedback (anonymised read model)
 
@@ -61,3 +61,21 @@ comment/suggestion list with "Edited" chips and filters.
 - A member cannot query another member's feedback (there is no recipient parameter at all).
 
 Related: [[Evaluations]] · [[Privacy Model]] · [[Reports]]
+
+## Implementation notes (step 3.2)
+- **Data access:** only `evaluations.selectors.received_feedback_rows / received_comment_rows / received_rating_rows /
+  criterion_versions_info / cycles_info`, all with explicit `.values()` whitelists (`FEEDBACK_ROW_FIELDS = id, cycle_id,
+  submitted_at, is_edited`). There are no evaluator columns and no `Evaluation` instances.
+- **Visibility:** SUBMITTED only; evaluation-level HIDDEN excluded entirely; comment-level HIDDEN text omitted; DRAFT cycles never;
+  `AFTER_CLOSE` cycles hidden while OPEN.
+- **Items** (`list_received`): `feedback_id` = first 16 chars of base32(HMAC-SHA256(`FEEDBACK_ID_KEY`, "evaluation_pk:recipient_pk")),
+  cycle {public_id, name}, `date` (day in the system time zone), `is_edited`, comment, suggestion. Evaluations without visible text
+  aren't listed (but are counted). Order: newest cycle first, then `feedback_id`, so never by submission time.
+- **Summary:** per criterion *version* (one scale per entry): `n` (non-null values only), `suppressed` = n < threshold, `average`
+  (2 dp) and `distribution` only when not suppressed. Trend per cycle: `average_percent` of scale span, suppressed when the cycle has
+  fewer evaluations than the threshold. `evaluations_received` is always shown (FB-03).
+- **API:** `GET /feedback/received/` (`cycle`, `date_from`, `date_to`, `page`; DRF envelope), `/received/summary/`
+  (`cycle`, `criterion`), `/received/count/`. There is **no recipient parameter**: it is always the logged-in user.
+- The dashboard adds `feedback_received`.
+- **Tests:** `assert_no_evaluator_leak` with all evaluators on list, summary, count and dashboard; whitelist keys; opaque id ≠ public_id;
+  time-neutral order; moderation; AFTER_CLOSE; thresholds 2 vs 3 vs a raised setting; missing ≠ zero; criterion filter; ≤ 12 queries.

@@ -57,7 +57,7 @@ tags: [roadmap]
 ## Phase 3: Feedback Privacy & Revisions
 - [x] **3.1 Editing & revisions (backend)**: `edit_evaluation` within edit window,
   immutable revisions, `is_edited`, revisions API (author), events.
-- [ ] **3.2 Feedback module (backend)**: `apps/feedback` anonymised list, summary and
+- [x] **3.2 Feedback module (backend)**: `apps/feedback` anonymised list, summary and
   count; opaque IDs; thresholds; visibility rules; full privacy tests.
 - [ ] **3.3 Frontend: edit, history & feedback**: edit flow, revision timeline/diff,
   Feedback I Received page with anonymity banner, cards and Recharts trend.

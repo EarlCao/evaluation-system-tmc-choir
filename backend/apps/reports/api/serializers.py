@@ -13,3 +13,4 @@ class MemberDashboardSerializer(serializers.Serializer):
     active_members = serializers.IntegerField()
     voice_section = serializers.CharField(allow_null=True)
     open_cycle = OpenCycleProgressSerializer(allow_null=True)
+    feedback_received = serializers.IntegerField()

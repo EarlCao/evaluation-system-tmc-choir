@@ -2,18 +2,27 @@
 
 from uuid import UUID
 
-from django.db.models import Prefetch, QuerySet
+from django.db.models import Prefetch, Q, QuerySet
 
 from apps.core.exceptions import NotFound
 from apps.members import selectors as member_selectors
 
 from . import rules
-from .constants import CycleStatus, EvaluationScope, EvaluationStatus, FormStatus
+from .constants import (
+    CycleStatus,
+    EvaluationScope,
+    EvaluationStatus,
+    FeedbackVisibility,
+    FormStatus,
+    ModerationStatus,
+)
 from .models import (
     CriterionCategory,
     CriterionVersion,
     Evaluation,
+    EvaluationComment,
     EvaluationCycle,
+    EvaluationRating,
     EvaluationRevision,
     FormVersion,
     FormVersionItem,
@@ -159,3 +168,69 @@ def list_my_revisions(*, user, public_id: UUID | str) -> QuerySet[EvaluationRevi
     """MINE-04: revision history, for the author only (others get 404)."""
     evaluation = get_my_evaluation(user=user, public_id=public_id)
     return evaluation.revisions.select_related("editor").order_by("revision_number")
+
+
+# Recipient-facing rows (consumed ONLY by apps.feedback) -------------------------------
+# Privacy Model: every query below uses an explicit .values() whitelist. None of them
+# selects or joins the evaluator. Do not add evaluator columns here.
+FEEDBACK_ROW_FIELDS = ("id", "cycle_id", "submitted_at", "is_edited")
+
+
+def _visible_received(recipient) -> QuerySet[Evaluation]:
+    return (
+        Evaluation.objects.filter(recipient=recipient, status=EvaluationStatus.SUBMITTED)
+        .exclude(moderation_status=ModerationStatus.HIDDEN)
+        .exclude(cycle__status=CycleStatus.DRAFT)
+        # AFTER_CLOSE cycles release feedback only once closed (Q4, Privacy Model).
+        .exclude(
+            Q(cycle__feedback_visibility=FeedbackVisibility.AFTER_CLOSE)
+            & Q(cycle__status=CycleStatus.OPEN)
+        )
+    )
+
+
+def received_feedback_rows(*, recipient, cycle_public_id=None) -> list[dict]:
+    """Visible evaluations about ``recipient``: id, cycle_id, submitted_at, is_edited only."""
+    qs = _visible_received(recipient)
+    if cycle_public_id is not None:
+        qs = qs.filter(cycle__public_id=cycle_public_id)
+    return list(qs.values(*FEEDBACK_ROW_FIELDS))
+
+
+def received_comment_rows(*, evaluation_ids) -> list[dict]:
+    """Visible comment/suggestion texts: evaluation_id, kind, body."""
+    return list(
+        EvaluationComment.objects.filter(evaluation_id__in=evaluation_ids)
+        .exclude(moderation_status=ModerationStatus.HIDDEN)
+        .values("evaluation_id", "kind", "body")
+    )
+
+
+def received_rating_rows(*, evaluation_ids) -> list[dict]:
+    """Ratings: evaluation_id, criterion_version_id, value (NULL = not rated)."""
+    return list(
+        EvaluationRating.objects.filter(evaluation_id__in=evaluation_ids).values(
+            "evaluation_id", "criterion_version_id", "value"
+        )
+    )
+
+
+def criterion_versions_info(*, ids) -> dict[int, dict]:
+    rows = CriterionVersion.objects.filter(pk__in=ids).values(
+        "id",
+        "name",
+        "scale_type",
+        "min_value",
+        "max_value",
+        "step",
+        "criterion__public_id",
+        "criterion__sort_order",
+    )
+    return {row["id"]: row for row in rows}
+
+
+def cycles_info(*, ids) -> dict[int, dict]:
+    rows = EvaluationCycle.objects.filter(pk__in=ids).values(
+        "id", "public_id", "name", "starts_at", "status"
+    )
+    return {row["id"]: row for row in rows}

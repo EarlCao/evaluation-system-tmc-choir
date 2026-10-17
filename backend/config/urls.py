@@ -11,6 +11,7 @@ urlpatterns = [
     path("api/v1/", include("apps.reports.api.urls")),
     path("api/v1/", include("apps.evaluations.api.urls")),
     path("api/v1/system/", include("apps.system.api.urls")),
+    path("api/v1/feedback/", include("apps.feedback.api.urls")),
     # Super Admin endpoints (IsSuperAdmin on every view)
     path("api/v1/admin/", include("apps.evaluations.api.admin_urls")),
     # OpenAPI (dev: open; other environments: super admin only)

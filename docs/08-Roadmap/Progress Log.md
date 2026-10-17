@@ -12,6 +12,18 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-17 · Step 3.2: Feedback module (backend) ✅
+**What:** `apps/feedback` anonymised read model: whitelisted row selectors in evaluations, opaque HMAC feedback IDs, day-precision dates,
+time-neutral ordering, moderation and visibility rules, threshold-protected per-criterion aggregates and per-cycle trend, list, summary
+and count API, dashboard `feedback_received`.
+**Requirements:** FB-01..05, MINE-05, MINE-06, REP-02, REP-04, REP-06; BR-03, BR-06, BR-15, BR-16
+**Verification (MySQL):** `pytest` **336 passed** (+17 feedback / privacy tests listed in [[Feedback]]) · schema clean · ruff, check, makemigrations clean.
+A test-data bug (percent values on a 1–5 criterion) was caught by the server's validation and fixed in the test.
+**Docs updated:** [[Feedback]], [[API Endpoints]], [[Open Questions]], [[Roadmap]]
+**Commit:** `feat(feedback): step 3.2 anonymised feedback module`
+
+---
+
 ## 2026-10-17 · Step 3.1: Editing & revisions (backend) ✅
 **What:** `edit_evaluation` (author-only, edit window, validation against the original form version, row lock, no-op for identical
 content, revision n+1, audited event with IDs only), moderation carry-over on rewrite, PATCH + revisions API.
