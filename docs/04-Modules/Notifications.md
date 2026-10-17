@@ -2,7 +2,7 @@
 tags: [module, realtime]
 module: notifications
 phase: 5
-status: planned
+status: model + services + REST (5.1) implemented; handlers + consumers 5.2; UI 5.3
 ---
 # Module: Notifications
 
@@ -48,3 +48,15 @@ Bell icon with an unread badge in the layout, a notification center page, and th
 `lib/ws.ts` subscription with reconnect and polling fallback.
 
 Related: [[Realtime Architecture]] · [[Privacy Model]]
+
+## Implementation notes (step 5.1): foundation
+- Settings: `daphne` (first) and `channels` in `INSTALLED_APPS`; `CHANNEL_LAYERS` = `RedisChannelLayer` on `REDIS_URL`
+  (tests: `InMemoryChannelLayer`). `config/asgi.py`: `ProtocolTypeRouter` with `http` → Django and `websocket` →
+  `AllowedHostsOriginValidator(AuthMiddlewareStack(URLRouter(config.routing.websocket_urlpatterns)))`; this module's
+  `routing.websocket_urlpatterns` is empty until 5.2.
+- `Notification` (`PublicIdModel`): recipient, type (`NotificationType`), message ≤ 200, link ≤ 200 (relative SPA path; absolute
+  and `//host` links refused), is_read, read_at, created_at; index (recipient, is_read, -created_at).
+- `services.notify(recipient, type, message, link)`, `mark_read(user, public_id)` (another user's → 404), `mark_all_read(user)`;
+  `selectors.list_for(user, unread_only)`, `unread_count(user)`, `get_own(user, public_id)`.
+- REST (`IsActiveMember`; Super Admins included): list, unread-count, `{id}/read/`, `read-all/`. Registered in the privacy
+  sweep (list + count swept, read/read-all as write-only).

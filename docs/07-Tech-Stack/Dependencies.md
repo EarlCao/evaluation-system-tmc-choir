@@ -26,8 +26,8 @@ tags: [tech-stack]
 | pytest==9.1.1, pytest-django==4.14.0, factory-boy==3.3.3 | tests (dev) | 1.2 | ✅ |
 | ruff==0.17.1 | lint/format (dev) | 1.2 | ✅ |
 | pre-commit (4.7.0) | git hooks (dev); hooks: pre-commit-hooks v6.0.0, gitleaks v8.30.0, ruff-pre-commit v0.17.1 | 1.1 | ✅ |
-| channels, channels-redis, daphne | WebSockets | 5.1 | 📝 |
-| redis (py client) | cache / health check | 5.1 | 📝 |
+| channels==4.3.2, channels-redis==4.3.0, daphne==4.2.3 | WebSockets over ASGI; `daphne` first in INSTALLED_APPS so `runserver` serves ASGI | 5.1 | ✅ |
+| redis==6.4.0 | Redis client (channel layer; pinned to a known release line rather than 8.x) | 5.1 | ✅ |
 | openpyxl==3.1.5 | Excel export | 4.5 | ✅ |
 | reportlab==4.4.10 | PDF export (ADR-018) | 4.5 | ✅ |
 | pillow==12.3.0 | reportlab dependency (pinned); profile photos only if ever enabled (Q10) | 4.5 | ✅ |

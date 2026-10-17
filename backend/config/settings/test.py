@@ -18,3 +18,6 @@ EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 INSTALLED_APPS = [*INSTALLED_APPS, "apps.core.tests.testapp"]
 
 LOGGING["root"]["level"] = "WARNING"
+
+# No Redis needed for tests; consumers are tested with the in-memory layer.
+CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}

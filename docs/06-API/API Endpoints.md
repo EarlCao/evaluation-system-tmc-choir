@@ -103,10 +103,10 @@ Export query: `report` = `choir` | `member` (+ `member`) | `participation` (+ `c
 ## Notifications (`apps/notifications`)
 | Method | Path | Perm | Req | Phase | Status |
 |---|---|---|---|---|---|
-| GET | `/api/v1/notifications/` | M | RT-02 | 5 | 📝 |
-| GET | `/api/v1/notifications/unread-count/` | M | RT-05 | 5 | 📝 |
-| POST | `/api/v1/notifications/{id}/read/` | M | – | 5 | 📝 |
-| POST | `/api/v1/notifications/read-all/` | M | – | 5 | 📝 |
+| GET | `/api/v1/notifications/` (`?unread=true`; own only, newest first, paginated) | M | RT-02 | 5 | ✅ |
+| GET | `/api/v1/notifications/unread-count/` | M | RT-05 | 5 | ✅ |
+| POST | `/api/v1/notifications/{id}/read/` | M | – | 5 | ✅ |
+| POST | `/api/v1/notifications/read-all/` | M | – | 5 | ✅ |
 | WS | `/ws/notifications/` | M | RT-01 | 5 | 📝 |
 | WS | `/ws/admin/` | A | RT-01, RT-04 | 5 | 📝 |
 

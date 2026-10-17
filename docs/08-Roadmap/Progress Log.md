@@ -12,6 +12,20 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-18 · Step 5.1: Channels foundation ✅
+**What:** Channels + Daphne + Redis channel layer, ASGI routing (HTTP + origin-checked, session-authenticated WebSockets),
+`apps.notifications` with the `Notification` model, `notify` / `mark_read` / `mark_all_read` services and the REST API
+(list, unread count, mark one / all read).
+**Requirements:** RT-01, RT-05 (REST fallback), RT-06 (safe text, enforced by handlers in 5.2)
+**Dependencies added:** channels 4.3.2, channels-redis 4.3.0, daphne 4.2.3, redis 6.4.0 (pip also resolved Django 6.1 as
+"latest" when downloading; it was discarded, the pin stays on Django 5.2 LTS).
+**Verification:** backend `pytest` **455 passed** (+11: 5 notify validation cases incl. absolute and protocol-relative links,
+anonymous 401, suspended refused, own-only newest first with an explicit field set, unread count + read + read-all, another
+user's notification → 404 and unchanged, ASGI app routes http + websocket); privacy sweep covers the new member routes;
+`check`, `makemigrations --check`, `spectacular --validate --fail-on-warn` clean. No frontend changes.
+**Docs updated:** [[Notifications]], [[Dependencies]], [[API Endpoints]], [[Roadmap]]
+**Commit:** `feat(notifications): step 5.1 channels foundation and notifications API`
+
 ## 2026-10-17 · Step 4.6: Audit log viewer + System settings + Privacy page ✅ (Phase 4 complete → tag `phase-4`)
 **What:** read-only audit log API + `/admin/audit` (search, event/actor/date filters, expandable before/after/details,
 CSV/Excel export that is itself audited); system settings API + `/admin/settings` (general, registration, privacy floor,

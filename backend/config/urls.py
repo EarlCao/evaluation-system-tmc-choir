@@ -13,6 +13,7 @@ urlpatterns = [
     path("api/v1/system/", include("apps.system.api.urls")),
     path("api/v1/feedback/", include("apps.feedback.api.urls")),
     # Super Admin endpoints (IsSuperAdmin on every view)
+    path("api/v1/notifications/", include("apps.notifications.api.urls")),
     path("api/v1/admin/", include("apps.evaluations.api.admin_urls")),
     path("api/v1/admin/", include("apps.reports.api.admin_urls")),
     path("api/v1/admin/", include("apps.members.api.admin_urls")),

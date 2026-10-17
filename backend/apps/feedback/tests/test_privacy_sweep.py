@@ -41,6 +41,8 @@ WRITE_ONLY = {
     "accounts:verify-email",
     "members:register",
     "evaluations:submit",
+    "notifications:read",
+    "notifications:read-all",
 }
 
 # Routes whose job is to show other members (directory, a profile, eligibility for one member).
@@ -136,6 +138,8 @@ def _requests(world):
         "feedback:count": ({}, {}),
         "reports:dashboard": ({}, {}),
         "system:public": ({}, {}),
+        "notifications:list": ({}, {}),
+        "notifications:unread-count": ({}, {}),
     }
 
 

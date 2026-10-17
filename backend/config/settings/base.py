@@ -33,6 +33,8 @@ FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:5280")
 USE_X_FORWARDED_FOR = env.bool("USE_X_FORWARDED_FOR", default=False)
 
 INSTALLED_APPS = [
+    # daphne first: `runserver` then serves the ASGI app (HTTP + WebSockets).
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -43,6 +45,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_filters",
     "drf_spectacular",
+    "channels",
     # project modules (see AGENT.md §2)
     "apps.core",
     "apps.system",
@@ -52,6 +55,7 @@ INSTALLED_APPS = [
     "apps.evaluations",
     "apps.feedback",
     "apps.reports",
+    "apps.notifications",
 ]
 
 # ---------------------------------------------------------------------------
@@ -216,4 +220,15 @@ LOGGING = {
     "loggers": {
         "django": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
     },
+}
+
+
+# ---------------------------------------------------------------------------
+# Realtime (Realtime Architecture, step 5.1): Redis channel layer
+# ---------------------------------------------------------------------------
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [env("REDIS_URL", default="redis://127.0.0.1:6380/0")]},
+    }
 }

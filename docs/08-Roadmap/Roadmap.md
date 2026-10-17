@@ -73,7 +73,7 @@ tags: [roadmap]
 - [x] **4.6 Audit log viewer + System settings + Privacy page** (AUD-04, SET-01, SET-03)
 
 ## Phase 5: Real-Time
-- [ ] **5.1 Channels foundation**: channels, channels-redis, daphne, ASGI routing,
+- [x] **5.1 Channels foundation**: channels, channels-redis, daphne, ASGI routing,
   Notification model + REST API.
 - [ ] **5.2 Event handlers & consumers**: safe notifications, debounce, user/admin groups, WS auth.
 - [ ] **5.3 Frontend realtime**: notification bell and center, `ws.ts` reconnect +
