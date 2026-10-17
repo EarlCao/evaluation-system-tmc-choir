@@ -128,3 +128,16 @@ Related: [[Feedback]] · [[Data Model]] · [[Privacy Model]]
 - **Member API:** `GET /evaluation-cycles/current/` → `{cycle|null}`, `GET /evaluation-cycles/{id}/form/` (non-draft),
   `GET /evaluations/eligibility/?recipient=`, `POST /evaluations/` (throttle `evaluation_submit` 30/h/user),
   `GET /evaluations/mine/` (`?cycle=`), `GET /evaluations/mine/{id}/` (author only; the recipient gets 404).
+
+## Implementation notes (step 2.4): frontend
+- `features/evaluations`: `EvaluateMemberPage` (`/app/members/:publicId/evaluate`), `MyEvaluationsPage`
+  (`/app/my-evaluations`), `MyEvaluationDetailPage` (`/app/my-evaluations/:publicId`).
+- Evaluate flow: eligibility, current cycle and its form are loaded. Ineligible → reason message (+ link to the existing
+  evaluation). Eligible → a **dynamic form**: `schema.buildDraftSchema(form)` generates a Zod schema from the form
+  definition (required criteria, text limits). `RatingInput` renders buttons for NUMERIC ≤ 11 points and a slider otherwise,
+  optional criteria can be cleared, and the chosen label is announced. Comment/suggestion have counters. **Review step** = read-only
+  `EvaluationSummary` + `PrivacyNotice` (server text from `/system/public/`, built-in fallback), focus moves to its heading.
+  Submit → success screen. Server field errors (nested `ratings.{id}`) go back to the form with the draft kept (NFR-04); 409 shows on the review step.
+- `members` → `evaluations` dependency avoided: the profile page only links to `/evaluate`; eligibility is checked on that page (ADR-004 style).
+- `lib/errors.FieldErrors` supports nested errors; `lib/forms.applyServerErrors` maps dotted paths under known prefixes.
+- Nav: Dashboard · Members · My evaluations. The dashboard shows open-cycle progress (`evaluations_given`, `members_left`).

@@ -5,6 +5,7 @@ import { NotFoundPage } from "@/components/NotFoundPage";
 import { RouteErrorPage } from "@/components/RouteErrorPage";
 import { guestAuthRoutes, memberAuthRoutes, publicAuthRoutes } from "@/features/auth";
 import { dashboardRoutes } from "@/features/dashboard";
+import { evaluationRoutes } from "@/features/evaluations";
 import { memberRoutes } from "@/features/members";
 
 import { GuestOnly } from "./guards/GuestOnly";
@@ -29,7 +30,12 @@ export const routes: RouteObject[] = [
           {
             path: "app",
             element: <MemberLayout />,
-            children: [...dashboardRoutes, ...memberRoutes, ...memberAuthRoutes],
+            children: [
+              ...dashboardRoutes,
+              ...memberRoutes,
+              ...evaluationRoutes,
+              ...memberAuthRoutes,
+            ],
           },
           {
             element: <RequireSuperAdmin />,

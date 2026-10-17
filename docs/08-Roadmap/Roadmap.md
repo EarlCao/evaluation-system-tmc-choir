@@ -50,7 +50,7 @@ tags: [roadmap]
 - [x] **2.3 Evaluation submission (backend)**: eligibility endpoint, current cycle and
   form endpoints, `submit_evaluation` (all rules BR-01/12/13/14, revision 1), my
   evaluations list and detail, throttle, privacy notice in `system/public`.
-- [ ] **2.4 Evaluate & My Evaluations (frontend)**: dynamic form from form version,
+- [x] **2.4 Evaluate & My Evaluations (frontend)**: dynamic form from form version,
   RatingInput per scale, counters, review & confirm with PrivacyNotice, success page;
   My Submitted Evaluations list and detail.
 

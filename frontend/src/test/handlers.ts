@@ -48,9 +48,18 @@ export const voiceSections = [
 
 /** Default: API healthy, visitor anonymous. Override per test with server.use(...). */
 export const handlers = [
+  http.get(api("/system/public/"), () =>
+    HttpResponse.json({
+      system_name: "Choir Member Evaluation System",
+      choir_name: "Test Choir",
+      choir_description: "",
+      privacy_notice: "Your name is hidden from members. The Super Admin can see it.",
+      registration_mode: "APPROVAL",
+    }),
+  ),
   http.get(api("/members/voice-sections/"), () => HttpResponse.json(voiceSections)),
   http.get(api("/dashboard/"), () =>
-    HttpResponse.json({ active_members: 3, voice_section: "Tenor" }),
+    HttpResponse.json({ active_members: 3, voice_section: "Tenor", open_cycle: null }),
   ),
   http.get(api("/health/"), () => HttpResponse.json({ status: "ok", db: "ok" })),
   http.get(api("/auth/me/"), notAuthenticated),

@@ -5,6 +5,7 @@ import { NavLink } from "react-router";
 const LINKS = [
   { to: "/app", label: "Dashboard", end: true },
   { to: "/app/members", label: "Members", end: false },
+  { to: "/app/my-evaluations", label: "My evaluations", end: false },
 ];
 
 /** Primary navigation of the member area. NavLink sets aria-current="page". */

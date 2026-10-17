@@ -12,6 +12,26 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-17 · Step 2.4: Evaluate & My Evaluations (frontend) ✅ (Phase 2 complete → tag `phase-2`)
+**What:** evaluate page (eligibility, dynamic Zod schema from the form, accessible `RatingInput`, counters, review step with
+`PrivacyNotice` and focus management, success), my evaluations list and detail, profile "Evaluate" link, nav item, dashboard
+cycle-progress card, nested server field errors.
+**Requirements:** EVAL-01, EVAL-03/04 (UI), EVAL-05, EVAL-07 (confirmation), MINE-01 (UI), FB-06 / privacy rule (notice before
+submission), NFR-04 (draft kept on failure), NFR-05
+**Verification:** typecheck + lint clean · `vitest` **75 passed** on 3 consecutive runs (+11: criteria render with accessible groups,
+required validation, review + privacy notice + focus + exact payload, server field errors keep the draft, 409 on review, ineligible
+message + link, list / empty / detail as text (no HTML) / 404, dashboard progress, profile CTA) · `build` OK.
+**Live contract check** (disposable DB, seed_demo_data --members 3 --open-cycle): login → current cycle → 6-criteria form →
+eligibility → submit with the UI's payload **201** (labels snapshotted) → duplicate **409** → eligibility `ALREADY_EVALUATED` →
+mine 1 → dashboard progress → recipient's "mine" **0**; DB: 1 revision. The DB was dropped afterwards.
+**Fixes during the step:** duplicate accessible group name on ratings (inner group now "<criterion> rating"); `useWatch` instead of
+`watch` (React Compiler lint); focus-based review instead of `scrollTo`.
+**Docs updated:** [[Evaluations]], [[Pages and Routes]], [[Roadmap]]
+**Commit:** `feat(evaluations): step 2.4 evaluate and my evaluations UI` + tag `phase-2`
+**Follow-ups:** bundle 859 kB (code splitting, Phase 6).
+
+---
+
 ## 2026-10-17 · Step 2.3: Evaluation submission (backend) ✅
 **What:** evaluation, rating, comment and append-only revision models; shared eligibility rules; `submit_evaluation`
 (server-chosen open cycle, combined validation, text cleaning, revision 1, audited event); member API (current cycle,

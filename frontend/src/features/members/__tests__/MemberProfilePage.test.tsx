@@ -32,6 +32,10 @@ describe("MemberProfilePage", () => {
     expect(screen.getByText("Loves Bach.")).toBeVisible();
     expect(screen.getByText("Member since 2019")).toBeVisible();
     expect(screen.queryByRole("button", { name: /save bio/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Evaluate Lena" })).toHaveAttribute(
+      "href",
+      `/app/members/${other.public_id}/evaluate`,
+    );
   });
 
   it("lets members edit their own bio", async () => {
@@ -49,6 +53,7 @@ describe("MemberProfilePage", () => {
     await userEvent.type(await screen.findByLabelText(/about you/i), "Second alto.");
     await userEvent.click(screen.getByRole("button", { name: /save bio/i }));
     expect(await screen.findByText("Your bio was saved.")).toBeVisible();
+    expect(screen.queryByRole("link", { name: /^evaluate/i })).not.toBeInTheDocument();
     expect(body).toEqual({ bio: "Second alto." });
   });
 

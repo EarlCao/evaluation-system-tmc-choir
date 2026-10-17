@@ -16,12 +16,12 @@ Frontend routes (React Router). The **Guard** column is UX only. The API enforce
 | Member Dashboard | `/app` | member | `features/dashboard` | 2 ✅ |
 | Choir Member Directory | `/app/members` | member | `features/members` | 2 ✅ |
 | Member Profile | `/app/members/:publicId` | member | `features/members` | 2 ✅ |
-| Evaluate a Member | `/app/members/:publicId/evaluate` | member | `features/evaluations` | 2 |
-| My Submitted Evaluations | `/app/my-evaluations` | member | `features/evaluations` | 2 |
-| Evaluation Details & Revision History | `/app/my-evaluations/:publicId` | member (author only) | `features/evaluations` | 3 |
+| Evaluate a Member | `/app/members/:publicId/evaluate` | member | `features/evaluations` | 2 ✅ |
+| My Submitted Evaluations | `/app/my-evaluations` | member | `features/evaluations` | 2 ✅ |
+| Evaluation Details & Revision History | `/app/my-evaluations/:publicId` | member (author only) | `features/evaluations` | 2 (details ✅) / 3 (history) |
 | Feedback I Received | `/app/feedback` | member | `features/feedback` | 3 |
 | Notifications | `/app/notifications` | member | `features/notifications` | 5 |
-| Privacy Notice | `/privacy` | public | `features/auth` | 2 |
+| Privacy Notice | `/privacy` (shown on the evaluate review step ✅; standalone page in 4.6) | public | `features/auth` | 2 / 4 |
 | Super Admin Dashboard | `/admin` | super admin | `features/admin` | 4 |
 | Manage Members & Roles | `/admin/members` | super admin | `features/admin` | 4 |
 | Manage Evaluation Cycles | `/admin/cycles` | super admin | `features/admin` | 4 |

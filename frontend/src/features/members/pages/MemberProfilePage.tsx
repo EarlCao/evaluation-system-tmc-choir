@@ -94,6 +94,17 @@ export function MemberProfilePage() {
               Member since {new Date(data.joined_choir_on).getFullYear()}
             </Typography>
           ) : null}
+          {data.is_self ? null : (
+            <div>
+              <Button
+                component={RouterLink}
+                to={`/app/members/${data.public_id}/evaluate`}
+                variant="contained"
+              >
+                Evaluate {data.display_name || data.first_name}
+              </Button>
+            </div>
+          )}
           {data.is_self ? (
             <BioEditor member={data} />
           ) : (

@@ -1,6 +1,6 @@
 import type { FieldValues, Path, UseFormSetError } from "react-hook-form";
 
-import { isApiError } from "./errors";
+import { flattenFieldErrors, isApiError } from "./errors";
 
 const FALLBACK_MESSAGE = "Something went wrong. Please try again.";
 
@@ -19,15 +19,17 @@ export function applyServerErrors<T extends FieldValues>(
     return;
   }
   const unmatched: string[] = [];
-  for (const [field, messages] of Object.entries(error.fields)) {
-    const message = messages.join(" ");
-    if ((knownFields as readonly string[]).includes(field)) {
+  const flat = flattenFieldErrors(error.fields);
+  const known = knownFields as readonly string[];
+  for (const [field, message] of Object.entries(flat)) {
+    // Exact fields ("email") or nested fields under a known prefix ("ratings.12").
+    if (known.includes(field) || known.some((k) => field.startsWith(`${k}.`))) {
       setError(field as Path<T>, { type: "server", message });
     } else {
       unmatched.push(message);
     }
   }
-  if (unmatched.length > 0 || Object.keys(error.fields).length === 0) {
+  if (unmatched.length > 0 || Object.keys(flat).length === 0) {
     setError("root.server", { message: unmatched.join(" ") || error.message });
   }
 }
