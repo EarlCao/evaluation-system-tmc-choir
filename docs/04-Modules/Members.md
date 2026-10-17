@@ -83,3 +83,15 @@ Related: [[Accounts]] · [[Evaluations]]
   username or status**), `GET /members/{public_id}/` (+ bio, joined_choir_on, is_self), `GET/PATCH /members/me/` (bio).
 - Frontend `features/members`: `MemberDirectoryPage` (debounced search, section filter and pagination, all in the URL;
   skeleton, empty and error states; list labelled "Members"), `MemberProfilePage` (read-only for others, bio editor for self, 404 page).
+
+## Implementation notes (step 4.2): Super Admin member management
+- Admin API lives in **members** (`api/admin_urls.py`, namespace `members-admin`) because a "member" combines the account (accounts)
+  and the profile (members), and members may depend on accounts but not the reverse. The read model `admin_list_members` / `admin_get_member`
+  queries `User` + `member_profile` read-only. Every **write** goes through the owning service (`accounts.services.*` or `members.services.*`), so it's audited.
+- Endpoints: `GET /admin/members/` (`search` over name/username/email, `status`, `role`, `voice_section`; validated, paginated),
+  `GET/PATCH /admin/members/{id}/` (voice_section, is_evaluable, joined_choir_on → `members.profile.updated` with changes),
+  `POST …/approve/`, `…/status/` {status, reason}, `…/role/` {role}, `…/send-password-reset/` (ACTIVE only, AUTH-05 "reset access"),
+  `GET/POST /admin/voice-sections/`, `PATCH /admin/voice-sections/{id}/` (name, sort_order, is_active; `members.voice_section.changed`).
+- Frontend: `/admin/members` (table, search, status/role filters in the URL), `/admin/members/:id` (account actions behind `ConfirmDialog`,
+  status reason recorded in the audit log, role change explained, password-reset email, profile form), `/admin/voice-sections`
+  (rename, offer at registration on/off, add). The dashboard's "Waiting for approval" tile links to the pending filter.

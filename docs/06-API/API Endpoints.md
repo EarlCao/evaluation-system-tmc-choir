@@ -24,11 +24,12 @@ Perm: **P** public · **M** active member · **A** super admin
 | POST | `/api/v1/auth/password-reset/` | P | AUTH-02 | 1 | ✅ |
 | POST | `/api/v1/auth/password-reset/confirm/` | P | AUTH-02 | 1 | ✅ |
 | POST | `/api/v1/auth/verify-email/` | P | AUTH-03 | 1 | ✅ |
-| GET | `/api/v1/admin/users/` | A | ADM-04 | 4 | 📝 |
-| GET | `/api/v1/admin/users/{public_id}/` | A | ADM-04 | 4 | 📝 |
-| POST | `/api/v1/admin/users/{public_id}/status/` | A | AUTH-05 | 4 | 📝 |
-| POST | `/api/v1/admin/users/{public_id}/role/` | A | ADM-04 | 4 | 📝 |
-| POST | `/api/v1/admin/users/{public_id}/approve/` | A | AUTH-03 | 4 | 📝 |
+| GET | `/api/v1/admin/members/` (`search`, `status`, `role`, `voice_section`) — all accounts incl. Super Admins | A | ADM-04, MEM-05 | 4 | ✅ |
+| GET | `/api/v1/admin/members/{public_id}/` | A | ADM-04 | 4 | ✅ |
+| POST | `/api/v1/admin/members/{public_id}/approve/` | A | AUTH-03 | 4 | ✅ |
+| POST | `/api/v1/admin/members/{public_id}/status/` {status, reason} | A | AUTH-05 | 4 | ✅ |
+| POST | `/api/v1/admin/members/{public_id}/role/` {role} | A | ADM-04 | 4 | ✅ |
+| POST | `/api/v1/admin/members/{public_id}/send-password-reset/` | A | AUTH-05 | 4 | ✅ |
 
 ## Members (`apps/members`)
 | Method | Path | Perm | Req | Phase | Status |
@@ -38,8 +39,8 @@ Perm: **P** public · **M** active member · **A** super admin
 | GET | `/api/v1/members/` (`?search=&voice_section=&page=`) | M | MEM-01, MEM-02 | 2 | ✅ |
 | GET | `/api/v1/members/{public_id}/` | M | MEM-03 | 2 | ✅ |
 | GET/PATCH | `/api/v1/members/me/` (bio) | M | AUTH-04 | 2 | ✅ |
-| PATCH | `/api/v1/admin/members/{public_id}/` | A | MEM-05 | 4 | 📝 |
-| CRUD | `/api/v1/admin/voice-sections/` | A | MEM-05 | 4 | 📝 |
+| PATCH | `/api/v1/admin/members/{public_id}/` (voice_section, is_evaluable, joined_choir_on) | A | MEM-05 | 4 | ✅ |
+| GET/POST | `/api/v1/admin/voice-sections/` · PATCH `/{id}/` | A | MEM-05 | 4 | ✅ |
 
 ## Evaluations (`apps/evaluations`)
 | Method | Path | Perm | Req | Phase | Status |

@@ -284,3 +284,36 @@ def approve_user(*, actor: User, user: User) -> User:
     if user.status != UserStatus.PENDING:
         raise BusinessRuleViolation("Only pending accounts can be approved.")
     return set_user_status(actor=actor, user=user, status=UserStatus.ACTIVE, reason="approved")
+
+
+def set_user_role(*, actor: User, user: User, role: str) -> User:
+    """ADM-04: promote/demote. Django admin access (is_staff/is_superuser) follows the role."""
+    if role not in UserRole.values:
+        raise ValidationError(fields={"role": ["Unknown role."]})
+    if user.pk == actor.pk:
+        raise BusinessRuleViolation("You cannot change your own role.")
+    if user.role == role:
+        return user
+    if (
+        user.role == UserRole.SUPER_ADMIN
+        and user.status == UserStatus.ACTIVE
+        and _active_super_admin_count() <= 1
+    ):
+        raise BusinessRuleViolation("The last active Super Admin cannot be demoted.")
+    before = user.role
+    user.role = role
+    user.is_staff = user.is_superuser = role == UserRole.SUPER_ADMIN
+    user.save(update_fields=["role", "is_staff", "is_superuser", "updated_at"])
+    publish(
+        events.UserRoleChanged(
+            actor_id=actor.pk, target_id=user.pk, changes=(("role", before, role),)
+        )
+    )
+    return user
+
+
+def send_password_reset(*, actor: User, user: User) -> None:
+    """AUTH-05 "reset access": the Super Admin sends the normal reset email (ACTIVE users only)."""
+    if user.status != UserStatus.ACTIVE:
+        raise BusinessRuleViolation("Only active accounts can receive a password reset email.")
+    request_password_reset(email=user.email)

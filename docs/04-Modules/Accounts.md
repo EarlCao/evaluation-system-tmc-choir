@@ -98,3 +98,8 @@ Related: [[Security Model]] · [[Roles and Permissions]] · [[System Settings]]
 - `manage.py create_super_admin --email … --username … --first-name … --last-name …`
   reads the password from `SUPER_ADMIN_PASSWORD` or prompts for it.
 - Factories: `apps/accounts/tests/factories.py` → `UserFactory` (traits `pending`, `suspended`, `deactivated`), `SuperAdminFactory`.
+
+## Implementation notes (step 4.2)
+- `set_user_role(actor, user, role)`: you can't change your own role; the last active Super Admin can't be demoted; `is_staff`/`is_superuser` follow the role; publishes `accounts.user.role_changed` (before/after).
+- `send_password_reset(actor, user)`: ACTIVE only; reuses the normal reset email.
+- Q9: `evaluations.rules.eligibility` refuses Super Admins even if they have a choir profile (NOT_A_MEMBER); they also don't count as possible evaluators in participation.

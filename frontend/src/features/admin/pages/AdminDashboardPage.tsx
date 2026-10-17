@@ -102,7 +102,11 @@ export function AdminDashboardPage() {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <StatTile label="Waiting for approval" value={dashboard.data.members.pending} />
+              <StatTile
+                label="Waiting for approval"
+                value={dashboard.data.members.pending}
+                to="/admin/members?status=PENDING"
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <StatTile

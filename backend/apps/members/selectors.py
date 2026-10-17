@@ -3,7 +3,8 @@
 from collections.abc import Mapping
 from uuid import UUID
 
-from django.db.models import QuerySet
+from django.contrib.auth import get_user_model
+from django.db.models import Q, QuerySet
 
 from apps.accounts.constants import UserStatus
 from apps.core.exceptions import NotFound, ValidationError
@@ -45,3 +46,46 @@ def get_own_profile(*, user) -> MemberProfile | None:
 
 def count_active_members() -> int:
     return active_profiles().count()
+
+
+# Super Admin views (step 4.2) -------------------------------------------------------------
+ADMIN_FILTERS = {"status", "role", "voice_section"}
+
+
+def admin_list_members(
+    *, search: str = "", status: str = "", role: str = "", voice_section: str = ""
+):
+    """All accounts (members and Super Admins) with their choir profile, if any. Read-only
+    composite of accounts.User + MemberProfile; writes go through the owning services."""
+    qs = get_user_model().objects.select_related("member_profile__voice_section")
+    for term in search.split():
+        qs = qs.filter(
+            Q(first_name__icontains=term)
+            | Q(last_name__icontains=term)
+            | Q(display_name__icontains=term)
+            | Q(username__icontains=term)
+            | Q(email__icontains=term)
+        )
+    if status:
+        qs = qs.filter(status=status)
+    if role:
+        qs = qs.filter(role=role)
+    if voice_section:
+        qs = qs.filter(member_profile__voice_section_id=voice_section)
+    return qs.order_by("last_name", "first_name", "id")
+
+
+def admin_get_member(*, public_id: UUID | str):
+    user = (
+        get_user_model()
+        .objects.select_related("member_profile__voice_section", "approved_by")
+        .filter(public_id=public_id)
+        .first()
+    )
+    if user is None:
+        raise NotFound()
+    return user
+
+
+def admin_list_voice_sections() -> QuerySet[VoiceSection]:
+    return VoiceSection.objects.all()

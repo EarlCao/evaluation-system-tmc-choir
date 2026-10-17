@@ -12,6 +12,17 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-17 · Step 4.2: Member & role management ✅
+**What:** role changes (self/last-admin guards, Django-admin access follows role), admin password-reset email, Q9 enforced for promoted members,
+participation excludes Super Admins; admin member API in `members` (list/filter, detail, profile edit, approve, status + reason, role, reset,
+voice sections); admin pages (members table, member page with confirmed actions, voice sections); privacy sweep covers `members-admin`.
+**Requirements:** AUTH-03 (approval), AUTH-05, MEM-05, ADM-04, BR-08 (all audited)
+**Verification:** backend `pytest` **373 passed** (+20) on MySQL; schema clean. Frontend `vitest` **99 passed** ×3 (+7); typecheck, lint clean.
+**Docs updated:** [[Members]], [[Accounts]], [[API Endpoints]], [[Pages and Routes]], [[Open Questions]], [[Roadmap]]
+**Commit:** `feat(admin): step 4.2 member and role management`
+
+---
+
 ## 2026-10-17 · Step 4.1: Admin shell + dashboard stats ✅
 **What:** admin dashboard endpoint (member counts, evaluations, cycle counts, open-period participation with an honest denominator),
 admin dashboard page (KPI tiles, participation meter, period counts), admin navigation, shared `Meter` + viz tokens; the privacy sweep now

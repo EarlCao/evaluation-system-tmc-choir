@@ -54,7 +54,8 @@ def eligibility(
     if recipient_profile.user_id == evaluator.pk:
         return Eligibility(False, Ineligibility.SELF)
     evaluator_profile = member_selectors.get_own_profile(user=evaluator)
-    if evaluator_profile is None or not evaluator.is_active_member:
+    # Q9: Super Admins moderate and never evaluate, even if they also have a choir profile.
+    if evaluator_profile is None or not evaluator.is_active_member or evaluator.is_super_admin:
         return Eligibility(False, Ineligibility.NOT_A_MEMBER)
     if cycle is None:
         return Eligibility(False, Ineligibility.NO_OPEN_CYCLE)

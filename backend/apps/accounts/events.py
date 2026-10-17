@@ -83,3 +83,10 @@ class UserStatusChanged(DomainEvent):
     target_type = USER
     changes: tuple[tuple[str, Any, Any], ...]
     reason: str = ""
+
+
+@dataclass(frozen=True, kw_only=True)
+class UserRoleChanged(DomainEvent):
+    name = "accounts.user.role_changed"
+    target_type = USER
+    changes: tuple[tuple[str, Any, Any], ...]

@@ -3,7 +3,10 @@ import Stack from "@mui/material/Stack";
 import { NavLink } from "react-router";
 
 /** Super Admin navigation; entries are added as the admin pages are built (Phase 4). */
-const ADMIN_LINKS = [{ to: "/admin", label: "Dashboard", end: true }];
+const ADMIN_LINKS = [
+  { to: "/admin", label: "Dashboard", end: true },
+  { to: "/admin/members", label: "Members", end: false },
+];
 
 export function AdminNav() {
   return (

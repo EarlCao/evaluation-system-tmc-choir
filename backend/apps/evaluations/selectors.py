@@ -4,6 +4,7 @@ from uuid import UUID
 
 from django.db.models import Count, Prefetch, Q, QuerySet
 
+from apps.accounts.constants import UserRole
 from apps.core.exceptions import NotFound
 from apps.members import selectors as member_selectors
 
@@ -252,16 +253,22 @@ def cycle_participation(*, cycle: EvaluationCycle) -> dict:
     """Distinct submitted pairs vs pairs possible under the cycle's scope (self excluded).
     Members who are inactive now are not counted on either side."""
     profiles = list(
-        member_selectors.active_profiles().values("user_id", "voice_section_id", "is_evaluable")
+        member_selectors.active_profiles().values(
+            "user_id", "voice_section_id", "is_evaluable", "user__role"
+        )
     )
     by_section: dict[int, list[dict]] = {}
     for p in profiles:
         by_section.setdefault(p["voice_section_id"], []).append(p)
 
     def pairs(group: list[dict]) -> int:
-        evaluators = len(group)
         recipients = sum(1 for p in group if p["is_evaluable"])
-        return evaluators * recipients - recipients  # minus evaluating yourself
+        # Super Admins never evaluate (Q9); nobody evaluates themselves.
+        return sum(
+            recipients - (1 if p["is_evaluable"] else 0)
+            for p in group
+            if p["user__role"] != UserRole.SUPER_ADMIN
+        )
 
     possible = (
         sum(pairs(g) for g in by_section.values())
