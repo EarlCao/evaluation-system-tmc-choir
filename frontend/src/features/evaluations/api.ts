@@ -1,7 +1,15 @@
 import { apiClient } from "@/lib/apiClient";
 import type { Paginated } from "@/lib/pagination";
 
-import type { CycleForm, CycleSummary, Eligibility, MyEvaluation, SubmitPayload } from "./types";
+import type {
+  CycleForm,
+  CycleSummary,
+  EditPayload,
+  Eligibility,
+  MyEvaluation,
+  Revision,
+  SubmitPayload,
+} from "./types";
 
 export async function fetchCurrentCycle(): Promise<CycleSummary | null> {
   const { data } = await apiClient.get<{ cycle: CycleSummary | null }>(
@@ -39,6 +47,24 @@ export async function fetchMyEvaluations(page: number): Promise<Paginated<MyEval
 export async function fetchMyEvaluation(publicId: string): Promise<MyEvaluation> {
   const { data } = await apiClient.get<MyEvaluation>(
     `/evaluations/mine/${encodeURIComponent(publicId)}/`,
+  );
+  return data;
+}
+
+export async function editEvaluation(
+  publicId: string,
+  payload: EditPayload,
+): Promise<MyEvaluation> {
+  const { data } = await apiClient.patch<MyEvaluation>(
+    `/evaluations/mine/${encodeURIComponent(publicId)}/`,
+    payload,
+  );
+  return data;
+}
+
+export async function fetchRevisions(publicId: string): Promise<Revision[]> {
+  const { data } = await apiClient.get<Revision[]>(
+    `/evaluations/mine/${encodeURIComponent(publicId)}/revisions/`,
   );
   return data;
 }

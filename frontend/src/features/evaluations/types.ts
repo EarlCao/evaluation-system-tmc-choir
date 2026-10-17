@@ -116,3 +116,31 @@ export function scalePoints(c: Pick<FormCriterion, "min_value" | "max_value" | "
   for (let i = 0; i < count; i += 1) points.push(Number((c.min_value + c.step * i).toFixed(2)));
   return points;
 }
+
+/** One immutable revision (MINE-04), visible to the author only. */
+export interface RevisionSnapshot {
+  form_version_id: number;
+  ratings: {
+    criterion_version_id: number;
+    criterion: string;
+    value: string | null;
+    label: string;
+  }[];
+  comment: string;
+  suggestion: string;
+}
+
+export interface Revision {
+  revision_number: number;
+  created_at: string;
+  editor: { public_id: string; first_name: string; last_name: string };
+  change_summary: string;
+  snapshot: RevisionSnapshot;
+}
+
+export interface EditPayload {
+  ratings: { criterion_version: number; value: number | null }[];
+  comment: string;
+  suggestion: string;
+  change_summary: string;
+}

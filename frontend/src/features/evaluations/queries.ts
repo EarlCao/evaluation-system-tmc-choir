@@ -1,6 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import * as api from "./api";
+import type { EditPayload } from "./types";
 
 export const evaluationKeys = {
   all: ["evaluations"] as const,
@@ -9,6 +10,7 @@ export const evaluationKeys = {
   eligibility: (recipient: string) => [...evaluationKeys.all, "eligibility", recipient] as const,
   mine: (page: number) => [...evaluationKeys.all, "mine", page] as const,
   mineDetail: (publicId: string) => [...evaluationKeys.all, "mine-detail", publicId] as const,
+  revisions: (publicId: string) => [...evaluationKeys.all, "revisions", publicId] as const,
 };
 
 export function useCurrentCycle() {
@@ -55,5 +57,24 @@ export function useMyEvaluation(publicId: string) {
   return useQuery({
     queryKey: evaluationKeys.mineDetail(publicId),
     queryFn: () => api.fetchMyEvaluation(publicId),
+  });
+}
+
+export function useEditEvaluation(publicId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: EditPayload) => api.editEvaluation(publicId, payload),
+    onSuccess: (evaluation) => {
+      queryClient.setQueryData(evaluationKeys.mineDetail(publicId), evaluation);
+      void queryClient.invalidateQueries({ queryKey: evaluationKeys.revisions(publicId) });
+      void queryClient.invalidateQueries({ queryKey: [...evaluationKeys.all, "mine"] });
+    },
+  });
+}
+
+export function useRevisions(publicId: string) {
+  return useQuery({
+    queryKey: evaluationKeys.revisions(publicId),
+    queryFn: () => api.fetchRevisions(publicId),
   });
 }

@@ -12,6 +12,18 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-17 · Step 3.3 (part 1 of 2): edit flow + revision history 🚧
+**What:** shared `EvaluationForm` (create/edit modes, optional change summary on review), edit panel on My Evaluation detail
+(only when `can_edit`; uses the cycle's frozen form), `RevisionHistory` (author-only timeline, per-revision changes, full snapshot in
+`<details>`), PATCH and revisions hooks. Added recharts 3.10.1 + react-is 19.3.1 (for part 2). Chart colors validated with the dataviz
+validator: #2a78d6 on #ffffff and #3987e5 on #121212 both PASS.
+**Verification:** typecheck + lint clean; `vitest` 75 passed (the existing evaluate tests still pass after the refactor).
+**Pending (part 2):** the Feedback I Received page (anonymity banner, stat tiles + meters, trend line + table twin, comment list with
+filters), nav and dashboard links, new tests (edit flow, history, feedback page), docs.
+**Commit:** `feat(evaluations): step 3.3 part 1 edit flow and revision history`
+
+---
+
 ## 2026-10-17 · Step 3.2: Feedback module (backend) ✅
 **What:** `apps/feedback` anonymised read model: whitelisted row selectors in evaluations, opaque HMAC feedback IDs, day-precision dates,
 time-neutral ordering, moderation and visibility rules, threshold-protected per-criterion aggregates and per-cycle trend, list, summary

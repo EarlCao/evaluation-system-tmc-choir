@@ -28,7 +28,7 @@ export function EvaluationSummary({ ratings, comment, suggestion }: EvaluationSu
             <Typography component="dd" sx={{ m: 0, fontWeight: 600, textAlign: "right" }}>
               {r.value === null
                 ? "Not rated"
-                : `${pointKey(r.value)} / ${pointKey(r.max)}${r.label ? ` · ${r.label}` : ""}`}
+                : `${pointKey(r.value)}${Number.isFinite(r.max) ? ` / ${pointKey(r.max)}` : ""}${r.label ? ` · ${r.label}` : ""}`}
             </Typography>
           </Stack>
         ))}
