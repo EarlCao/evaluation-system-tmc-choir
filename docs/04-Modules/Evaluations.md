@@ -2,7 +2,7 @@
 tags: [module]
 module: evaluations
 phase: 2-3
-status: configuration (2.2), submissions (2.3), editing + revisions (3.1) implemented; moderation 4.4
+status: configuration (2.2), submissions (2.3), editing + revisions (3.1), admin browser + moderation (4.4) implemented
 ---
 # Module: Evaluations
 
@@ -48,7 +48,7 @@ and the **admin** identity-bearing views. Recipient-facing reads belong to [[Fee
   `create_cycle`, `update_cycle`, `open_cycle`, `close_cycle`, `archive_cycle`
 - Submission: `check_eligibility(evaluator, recipient, cycle)`, `submit_evaluation(...)`,
   `edit_evaluation(*, editor, evaluation, ratings, comment, suggestion, change_summary)`
-- Moderation: `moderate(*, actor, evaluation, action, reason, comment=None)`
+- Moderation: `moderate(*, actor, evaluation, action, target, reason)`; `record_identity_access(*, actor, view, evaluation=None, **details)`
 
 `submit_evaluation` and `edit_evaluation` always write an `EvaluationRevision`
 (`revision_number` 1 on create, +1 on each edit), set `is_edited=True` on edits, and
@@ -60,8 +60,8 @@ publish events.
   (the reason uses the viewer's own data only)
 - `list_my_evaluations(user, filters)`, `get_my_evaluation(user, public_id)`,
   `list_my_revisions(user, public_id)`
-- Admin: `admin_list_evaluations(filters)`, `admin_get_evaluation(public_id)`,
-  `admin_list_revisions(public_id)`, `list_moderation_queue()`
+- Admin: `admin_list_evaluations(**filters)`, `admin_get_evaluation(public_id)`,
+  `admin_list_revisions(evaluation)`, `moderation_queue()`, `count_needing_moderation()`
 - For [[Feedback]] and [[Reports]]: `received_feedback_rows(recipient, filters)` returns
   whitelisted `.values()` rows **without evaluator columns**.
 
@@ -172,3 +172,23 @@ Related: [[Feedback]] · [[Data Model]] · [[Privacy Model]]
 - **Bug found by the tests:** label inputs named `labels.1`, `labels.2` made React Hook Form treat labels as an array, so Zod rejected it on an
   invisible field and the dialog silently refused to submit. Fix: labels are held as an array by point position and mapped to point keys on submit;
   any `labels` error is now shown.
+
+## Implementation notes (step 4.4): all-evaluations browser & moderation
+- **The only identity-bearing reads.** `selectors.admin_*` / `moderation_queue` join evaluator and recipient. Every API
+  request that serves them calls `services.record_identity_access` → `audit.services.record(event_type="admin.sensitive_access")`
+  **synchronously** (the documented direct-call exception), so a read that can't be audited fails. Metadata: `view`
+  (`evaluations.list` / `.moderation_queue` / `.detail` / `.revisions`), plus `filters`, `page`, `results` for lists or the
+  evaluation `target_id` for detail/revisions. Invalid filters → 400 and **no** entry (nothing was revealed).
+- Filters (`GET /admin/evaluations/`): `recipient`, `evaluator`, `cycle`, `criterion` (public ids), `rating_min`/`rating_max`
+  (applied to `criterion` when given, else to any rating), `submitted_from`/`submitted_to` (dates, UTC), `moderation`
+  (`VISIBLE`/`FLAGGED`/`HIDDEN`/`attention`), `edited`. Newest first, paginated.
+- `moderate(actor, evaluation, action, target, reason)`: target = `EVALUATION`, `COMMENT` or `SUGGESTION`; FLAG → FLAGGED,
+  HIDE → HIDDEN, RESTORE → VISIBLE. Reason required for FLAG/HIDE (≤ 300). Same status → 409; missing text → 409.
+  Runs under `select_for_update`, appends a `ModerationAction`, publishes `evaluations.evaluation.moderated` (audited with
+  before/after). **Nothing is deleted (BR-17).** HIDDEN disappears from the recipient's feedback at once; FLAGGED stays visible.
+- Moderation queue = the evaluation **or** one of its texts is FLAGGED (oldest first). The admin dashboard shows `needs_moderation`.
+- The admin revision view includes the `editor` (members' revision view never does, step 3.4).
+- UI (`features/admin`): `/admin/evaluations` (filters in the URL; recipient/evaluator chips; links from a member's admin page:
+  "Evaluations about them / they wrote"), `/admin/evaluations/:id` (identities, ratings, texts with Flag/Hide/Restore or
+  Clear flag, moderation history, revisions with editor and changes), `/admin/moderation`. Every page states that access is logged.
+  Texts render as plain text (`pre-wrap`), never HTML.

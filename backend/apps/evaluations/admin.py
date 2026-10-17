@@ -5,6 +5,7 @@ from .models import (
     CriterionVersion,
     EvaluationCycle,
     FormVersion,
+    ModerationAction,
     RatingCriterion,
 )
 
@@ -45,3 +46,8 @@ class FormVersionAdmin(ReadOnlyAdmin):
 @admin.register(EvaluationCycle)
 class EvaluationCycleAdmin(ReadOnlyAdmin):
     list_display = ("name", "status", "starts_at", "ends_at", "form_version")
+
+
+@admin.register(ModerationAction)
+class ModerationActionAdmin(ReadOnlyAdmin):
+    list_display = ("evaluation", "target", "action", "actor", "created_at")

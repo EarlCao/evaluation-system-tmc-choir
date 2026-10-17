@@ -21,6 +21,7 @@ export interface AdminDashboard {
     deactivated: number;
   };
   evaluations_submitted: number;
+  needs_moderation: number;
   cycles: { DRAFT: number; OPEN: number; CLOSED: number; ARCHIVED: number };
   open_cycle: AdminOpenCycle | null;
 }

@@ -25,8 +25,10 @@ from .constants import (
     FeedbackVisibility,
     FormStatus,
     ModerationStatus,
+    ModerationTarget,
     ScaleType,
 )
+from .constants import ModerationAction as ModerationActionKind
 
 
 class CriterionCategory(TimeStampedModel):
@@ -299,3 +301,23 @@ class EvaluationRevision(AppendOnlyModel):
 
     def __str__(self) -> str:
         return f"{self.evaluation_id} r{self.revision_number}"
+
+
+class ModerationAction(AppendOnlyModel):
+    """One moderation decision (ADM-05, BR-17). Append-only: the original content is never
+    deleted; status changes live on the evaluation/comment, the history lives here."""
+
+    evaluation = models.ForeignKey(
+        Evaluation, on_delete=models.PROTECT, related_name="moderation_actions"
+    )
+    target = models.CharField(max_length=16, choices=ModerationTarget.choices)
+    action = models.CharField(max_length=16, choices=ModerationActionKind.choices)
+    reason = models.CharField(max_length=300, blank=True)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at", "id"]
+
+    def __str__(self) -> str:
+        return f"{self.action} {self.target} on {self.evaluation_id}"

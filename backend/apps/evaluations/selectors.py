@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from django.db.models import Count, Prefetch, Q, QuerySet
+from django.db.models import Count, Exists, OuterRef, Prefetch, Q, QuerySet
 
 from apps.accounts.constants import UserRole
 from apps.core.exceptions import NotFound
@@ -27,6 +27,7 @@ from .models import (
     EvaluationRevision,
     FormVersion,
     FormVersionItem,
+    ModerationAction,
     RatingCriterion,
 )
 
@@ -291,3 +292,96 @@ def cycle_participation(*, cycle: EvaluationCycle) -> dict:
             round(len(submitted_pairs) / possible * 100, 1) if possible else None
         ),
     }
+
+
+# Super Admin browser (ADM-02/03/05) -----------------------------------------------------
+# These are the ONLY reads that join evaluator identities. Callers must log the access
+# (services.record_identity_access); the API layer does so on every request.
+def _admin_evaluations() -> QuerySet[Evaluation]:
+    flagged_text = EvaluationComment.objects.filter(
+        evaluation=OuterRef("pk"), moderation_status=ModerationStatus.FLAGGED
+    )
+    return (
+        Evaluation.objects.filter(status=EvaluationStatus.SUBMITTED)
+        .select_related(
+            "cycle",
+            "evaluator__member_profile__voice_section",
+            "recipient__member_profile__voice_section",
+        )
+        .prefetch_related("ratings__criterion_version__criterion", "comments")
+        .annotate(has_flagged_text=Exists(flagged_text))
+    )
+
+
+def admin_list_evaluations(
+    *,
+    recipient: str = "",
+    evaluator: str = "",
+    cycle: str = "",
+    criterion: str = "",
+    rating_min=None,
+    rating_max=None,
+    submitted_from=None,
+    submitted_to=None,
+    moderation: str = "",
+    edited: bool | None = None,
+) -> QuerySet[Evaluation]:
+    """All submitted evaluations, newest first. ``recipient``/``evaluator``/``cycle``/
+    ``criterion`` are public ids. Rating bounds apply to ``criterion`` when given, otherwise
+    to any rating. ``moderation``: VISIBLE / FLAGGED / HIDDEN, or ``attention`` for anything
+    flagged (the evaluation or one of its texts)."""
+    qs = _admin_evaluations()
+    if recipient:
+        qs = qs.filter(recipient__public_id=recipient)
+    if evaluator:
+        qs = qs.filter(evaluator__public_id=evaluator)
+    if cycle:
+        qs = qs.filter(cycle__public_id=cycle)
+    if submitted_from:
+        qs = qs.filter(submitted_at__date__gte=submitted_from)
+    if submitted_to:
+        qs = qs.filter(submitted_at__date__lte=submitted_to)
+    if edited is not None:
+        qs = qs.filter(is_edited=edited)
+    if moderation == "attention":
+        qs = qs.filter(Q(moderation_status=ModerationStatus.FLAGGED) | Q(has_flagged_text=True))
+    elif moderation:
+        qs = qs.filter(moderation_status=moderation)
+    if criterion or rating_min is not None or rating_max is not None:
+        ratings = EvaluationRating.objects.filter(evaluation=OuterRef("pk"))
+        if criterion:
+            ratings = ratings.filter(criterion_version__criterion__public_id=criterion)
+        if rating_min is not None:
+            ratings = ratings.filter(value__gte=rating_min)
+        if rating_max is not None:
+            ratings = ratings.filter(value__lte=rating_max)
+        qs = qs.filter(Exists(ratings))
+    return qs.order_by("-submitted_at", "-id")
+
+
+def admin_get_evaluation(*, public_id: UUID | str) -> Evaluation:
+    return _get(
+        _admin_evaluations().prefetch_related(
+            Prefetch(
+                "moderation_actions",
+                queryset=ModerationAction.objects.select_related("actor").order_by(
+                    "-created_at", "-id"
+                ),
+            )
+        ),
+        public_id=public_id,
+    )
+
+
+def admin_list_revisions(*, evaluation: Evaluation) -> QuerySet[EvaluationRevision]:
+    """Revision history including the editor (members never see the editor)."""
+    return evaluation.revisions.select_related("editor").order_by("revision_number")
+
+
+def moderation_queue() -> QuerySet[Evaluation]:
+    """Evaluations that need a moderator: the evaluation or one of its texts is flagged."""
+    return admin_list_evaluations(moderation="attention").order_by("submitted_at", "id")
+
+
+def count_needing_moderation() -> int:
+    return moderation_queue().count()

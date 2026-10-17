@@ -11,6 +11,7 @@ import type { AdminDashboard } from "../types";
 const base: AdminDashboard = {
   members: { registered: 24, active: 20, pending: 2, suspended: 1, deactivated: 1 },
   evaluations_submitted: 57,
+  needs_moderation: 3,
   cycles: { DRAFT: 1, OPEN: 1, CLOSED: 3, ARCHIVED: 0 },
   open_cycle: {
     public_id: "c1",
@@ -44,6 +45,10 @@ describe("AdminDashboardPage (ADM-01)", () => {
     expect(screen.getByText("24 registered")).toBeVisible();
     expect(screen.getByText("Waiting for approval").nextElementSibling).toHaveTextContent("2");
     expect(screen.getByText("Suspended or deactivated").nextElementSibling).toHaveTextContent("2");
+    expect(screen.getByRole("link", { name: /needs moderation/i })).toHaveAttribute(
+      "href",
+      "/admin/moderation",
+    );
     expect(screen.getByRole("meter", { name: "Participation" })).toHaveAttribute(
       "aria-valuenow",
       "10.5",

@@ -12,6 +12,22 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-17 · Step 4.4: All evaluations browser + moderation ✅
+**What:** Super Admin browser of every evaluation **with its author** (filters: member about/by, period, criterion, rating range,
+dates, moderation state, edited), detail with revisions incl. editor, moderation (flag / hide / restore the whole evaluation, its
+comment or its suggestion, reason required) with an append-only `ModerationAction` history and a moderation queue. Every
+identity-revealing read is written to the audit log as `admin.sensitive_access`. Dashboard tile "Needs moderation"; nav gains
+Evaluations · Moderation.
+**Requirements:** ADM-02, ADM-03, ADM-05 · BR-17
+**Verification:** backend `pytest` **397 passed** (+24: permissions on all 5 endpoints, identities + audit metadata, 7 filter cases,
+filter validation leaves no audit row, detail/revisions audited with editor, hide comment → gone from the recipient's feedback → restore,
+hide whole evaluation, flag → queue while still visible, 4 rule violations, missing text, append-only history, dashboard count);
+`check`, `makemigrations --check`, `spectacular --validate --fail-on-warn` clean; privacy sweep still green (new routes are in
+`evaluations-admin`, so the members-get-403 sweep covers them automatically). Frontend typecheck + lint clean, `vitest` **117 passed**
+(+5), build OK.
+**Docs updated:** [[Evaluations]], [[Data Model]], [[Module Boundaries]], [[API Endpoints]], [[Pages and Routes]], [[Roadmap]]
+**Commit:** `feat(admin): step 4.4 evaluations browser and moderation`
+
 ## 2026-10-17 · Step 4.3: Cycles, criteria & form management UI ✅
 **What:** admin pages for evaluation periods (status-aware settings, confirmed transitions), criteria (order, active, archive, create/edit
 with scale validation, labels, version history, categories) and forms (draft editor, publish with freeze warning, read-only published view,

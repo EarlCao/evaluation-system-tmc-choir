@@ -53,6 +53,7 @@ def admin_dashboard() -> dict:
             "deactivated": members["DEACTIVATED"],
         },
         "evaluations_submitted": evaluation_selectors.count_submitted_evaluations(),
+        "needs_moderation": evaluation_selectors.count_needing_moderation(),
         "cycles": evaluation_selectors.count_cycles_by_status(),
         "open_cycle": open_cycle,
     }

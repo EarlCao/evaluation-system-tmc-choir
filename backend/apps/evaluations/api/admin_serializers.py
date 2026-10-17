@@ -1,5 +1,6 @@
 """Super Admin serializers for evaluation configuration (explicit fields only)."""
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from ..constants import (
@@ -7,16 +8,23 @@ from ..constants import (
     CRITERION_NAME_MAX,
     LABEL_MAX,
     TEXT_LIMIT_MAX,
+    CommentKind,
     EvaluationScope,
     FeedbackVisibility,
+    ModerationStatus,
+    ModerationTarget,
     ScaleType,
 )
+from ..constants import ModerationAction as ModerationActionKind
 from ..models import (
     CriterionCategory,
     CriterionVersion,
+    Evaluation,
     EvaluationCycle,
+    EvaluationRevision,
     FormVersion,
     FormVersionItem,
+    ModerationAction,
     RatingCriterion,
 )
 
@@ -240,3 +248,138 @@ class CycleUpdateSerializer(serializers.Serializer):
     feedback_visibility = serializers.ChoiceField(
         choices=FeedbackVisibility.choices, required=False
     )
+
+
+# Evaluations browser & moderation (ADM-02/03/05) ------------------------------------------
+class PersonSerializer(serializers.Serializer):
+    """An evaluator or recipient as the Super Admin sees them."""
+
+    public_id = serializers.UUIDField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    display_name = serializers.CharField()
+    voice_section = serializers.CharField(
+        source="member_profile.voice_section.name", allow_null=True, default=None
+    )
+
+
+class AdminCycleRefSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EvaluationCycle
+        fields = ["public_id", "name", "status"]
+
+
+class AdminRatingSerializer(serializers.Serializer):
+    criterion_public_id = serializers.UUIDField(source="criterion_version.criterion.public_id")
+    criterion_name = serializers.CharField(source="criterion_version.name")
+    criterion_version = serializers.IntegerField(source="criterion_version.version")
+    scale_type = serializers.CharField(source="criterion_version.scale_type")
+    max_value = _decimal(source="criterion_version.max_value")
+    value = _decimal(allow_null=True)
+    label = serializers.CharField()
+
+
+class AdminTextSerializer(serializers.Serializer):
+    body = serializers.CharField()
+    moderation_status = serializers.ChoiceField(choices=ModerationStatus.choices)
+
+
+def _text(obj: Evaluation, kind: str):
+    comment = next((c for c in obj.comments.all() if c.kind == kind), None)
+    return AdminTextSerializer(comment).data if comment else None
+
+
+class AdminEvaluationSerializer(serializers.ModelSerializer):
+    """List row: identities, ratings, texts and moderation state."""
+
+    cycle = AdminCycleRefSerializer()
+    evaluator = PersonSerializer()
+    recipient = PersonSerializer()
+    ratings = AdminRatingSerializer(many=True)
+    comment = serializers.SerializerMethodField()
+    suggestion = serializers.SerializerMethodField()
+    needs_attention = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Evaluation
+        fields = [
+            "public_id",
+            "cycle",
+            "evaluator",
+            "recipient",
+            "submitted_at",
+            "last_edited_at",
+            "is_edited",
+            "current_revision_number",
+            "moderation_status",
+            "needs_attention",
+            "ratings",
+            "comment",
+            "suggestion",
+        ]
+
+    @extend_schema_field(AdminTextSerializer(allow_null=True))
+    def get_comment(self, obj):
+        return _text(obj, CommentKind.COMMENT)
+
+    @extend_schema_field(AdminTextSerializer(allow_null=True))
+    def get_suggestion(self, obj):
+        return _text(obj, CommentKind.SUGGESTION)
+
+    def get_needs_attention(self, obj) -> bool:
+        return obj.moderation_status == ModerationStatus.FLAGGED or bool(
+            getattr(obj, "has_flagged_text", False)
+        )
+
+
+class ModerationActionSerializer(serializers.ModelSerializer):
+    actor = serializers.CharField(source="actor.get_full_name")
+
+    class Meta:
+        model = ModerationAction
+        fields = ["target", "action", "reason", "actor", "created_at"]
+
+
+class AdminEvaluationDetailSerializer(AdminEvaluationSerializer):
+    moderation_history = ModerationActionSerializer(source="moderation_actions", many=True)
+
+    class Meta(AdminEvaluationSerializer.Meta):
+        fields = [*AdminEvaluationSerializer.Meta.fields, "moderation_history"]
+
+
+class AdminRevisionSerializer(serializers.ModelSerializer):
+    editor = PersonSerializer()
+
+    class Meta:
+        model = EvaluationRevision
+        fields = ["revision_number", "created_at", "change_summary", "editor", "snapshot"]
+
+
+class AdminEvaluationFilterSerializer(serializers.Serializer):
+    recipient = serializers.UUIDField(required=False)
+    evaluator = serializers.UUIDField(required=False)
+    cycle = serializers.UUIDField(required=False)
+    criterion = serializers.UUIDField(required=False)
+    rating_min = _decimal(required=False)
+    rating_max = _decimal(required=False)
+    submitted_from = serializers.DateField(required=False)
+    submitted_to = serializers.DateField(required=False)
+    moderation = serializers.ChoiceField(
+        choices=[*ModerationStatus.values, "attention"], required=False, default=""
+    )
+    edited = serializers.BooleanField(required=False, allow_null=True, default=None)
+
+    def validate(self, attrs):
+        lo, hi = attrs.get("rating_min"), attrs.get("rating_max")
+        if lo is not None and hi is not None and lo > hi:
+            raise serializers.ValidationError({"rating_max": ["Must be at least the minimum."]})
+        start, end = attrs.get("submitted_from"), attrs.get("submitted_to")
+        if start and end and start > end:
+            raise serializers.ValidationError({"submitted_to": ["Must be on or after the start."]})
+        return attrs
+
+
+class ModerateSerializer(serializers.Serializer):
+    action = serializers.ChoiceField(choices=ModerationActionKind.choices)
+    target = serializers.ChoiceField(choices=ModerationTarget.choices)
+    reason = serializers.CharField(allow_blank=True, required=False, default="", max_length=300)

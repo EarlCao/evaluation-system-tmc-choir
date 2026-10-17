@@ -68,3 +68,15 @@ class Ineligibility(models.TextChoices):
     NOT_EVALUABLE = "NOT_EVALUABLE", "This member is not part of evaluations."
     OUT_OF_SCOPE = "OUT_OF_SCOPE", "In this period you evaluate members of your own voice section."
     ALREADY_EVALUATED = "ALREADY_EVALUATED", "You already evaluated this member in this period."
+
+
+class ModerationAction(models.TextChoices):
+    FLAG = "FLAG", "Flag for review"
+    HIDE = "HIDE", "Hide from the recipient"
+    RESTORE = "RESTORE", "Restore"
+
+
+class ModerationTarget(models.TextChoices):
+    EVALUATION = "EVALUATION", "Whole evaluation"
+    COMMENT = "COMMENT", "Comment"
+    SUGGESTION = "SUGGESTION", "Suggestion"

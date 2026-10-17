@@ -61,11 +61,11 @@ Perm: **P** public · **M** active member · **A** super admin
 | POST | `/api/v1/admin/form-versions/{public_id}/publish/` | A | CFG-06, BR-18 | 2 | ✅ |
 | GET/POST | `/api/v1/admin/evaluation-cycles/` (paginated) · GET/PATCH `/{public_id}/` | A | CFG-05, EVAL-06 | 2 | ✅ |
 | POST | `/api/v1/admin/evaluation-cycles/{public_id}/open/` · `/close/` · `/archive/` | A | EVAL-06 | 2 | ✅ |
-| GET | `/api/v1/admin/evaluations/` | A | ADM-02, ADM-03 | 4 | 📝 |
-| GET | `/api/v1/admin/evaluations/{public_id}/` | A | ADM-02 | 4 | 📝 |
-| GET | `/api/v1/admin/evaluations/{public_id}/revisions/` | A | ADM-02 | 4 | 📝 |
-| POST | `/api/v1/admin/evaluations/{public_id}/moderate/` | A | ADM-05 | 4 | 📝 |
-| GET | `/api/v1/admin/moderation-queue/` | A | ADM-05 | 4 | 📝 |
+| GET | `/api/v1/admin/evaluations/` | A | ADM-02, ADM-03 | 4 | ✅ |
+| GET | `/api/v1/admin/evaluations/{public_id}/` | A | ADM-02 | 4 | ✅ |
+| GET | `/api/v1/admin/evaluations/{public_id}/revisions/` | A | ADM-02 | 4 | ✅ |
+| POST | `/api/v1/admin/evaluations/{public_id}/moderate/` | A | ADM-05 | 4 | ✅ |
+| GET | `/api/v1/admin/moderation-queue/` | A | ADM-05 | 4 | ✅ |
 
 ## Feedback (`apps/feedback`): member-facing, anonymised
 | Method | Path | Perm | Req | Phase | Status |

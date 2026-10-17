@@ -79,3 +79,13 @@ class EvaluationEdited(DomainEvent):
     name = "evaluations.evaluation.edited"
     target_type = "evaluations.Evaluation"
     revision_number: int
+
+
+@dataclass(frozen=True, kw_only=True)
+class EvaluationModerated(DomainEvent):
+    name = "evaluations.evaluation.moderated"
+    target_type = "evaluations.Evaluation"
+    action: str
+    moderation_target: str
+    changes: Changes = ()
+    reason: str = ""

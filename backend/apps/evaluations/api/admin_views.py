@@ -1,6 +1,6 @@
 """Super Admin configuration endpoints (/api/v1/admin/...). Thin: validate → service → serialize."""
 
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
@@ -239,3 +239,100 @@ def _transition(name: str):
 CycleOpenView = _transition("open")
 CycleCloseView = _transition("close")
 CycleArchiveView = _transition("archive")
+
+
+# Evaluations browser & moderation (ADM-02/03/05) ------------------------------------------
+_FILTER_PARAMS = [
+    OpenApiParameter("recipient", str),
+    OpenApiParameter("evaluator", str),
+    OpenApiParameter("cycle", str),
+    OpenApiParameter("criterion", str),
+    OpenApiParameter("rating_min", float),
+    OpenApiParameter("rating_max", float),
+    OpenApiParameter("submitted_from", str),
+    OpenApiParameter("submitted_to", str),
+    OpenApiParameter("moderation", str, description="VISIBLE, FLAGGED, HIDDEN or attention"),
+    OpenApiParameter("edited", bool),
+]
+
+
+def _jsonable(filters: dict) -> dict:
+    return {k: str(v) for k, v in filters.items() if v not in (None, "")}
+
+
+class _AuditedListView(AdminView, ListAPIView):
+    """Lists that reveal evaluator identities: each page served is logged (ADM-03)."""
+
+    serializer_class = s.AdminEvaluationSerializer
+    audit_view = ""
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        services.record_identity_access(
+            actor=request.user,
+            view=self.audit_view,
+            filters=self.audit_filters,
+            page=request.query_params.get("page", "1"),
+            results=len(response.data.get("results", [])),
+        )
+        return response
+
+
+class AdminEvaluationListView(_AuditedListView):
+    audit_view = "evaluations.list"
+
+    @extend_schema(parameters=_FILTER_PARAMS)
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        filters = s.AdminEvaluationFilterSerializer(data=self.request.query_params)
+        filters.is_valid(raise_exception=True)
+        values = dict(filters.validated_data)
+        self.audit_filters = _jsonable(values)
+        for key in ("recipient", "evaluator", "cycle", "criterion"):
+            values[key] = str(values.get(key) or "")
+        return selectors.admin_list_evaluations(**values)
+
+
+class ModerationQueueView(_AuditedListView):
+    audit_view = "evaluations.moderation_queue"
+    audit_filters: dict = {}
+
+    def get_queryset(self):
+        return selectors.moderation_queue()
+
+
+class AdminEvaluationDetailView(AdminView):
+    @extend_schema(responses=s.AdminEvaluationDetailSerializer)
+    def get(self, request, public_id):
+        evaluation = selectors.admin_get_evaluation(public_id=public_id)
+        services.record_identity_access(
+            actor=request.user, view="evaluations.detail", evaluation=evaluation
+        )
+        return Response(s.AdminEvaluationDetailSerializer(evaluation).data)
+
+
+class AdminEvaluationRevisionsView(AdminView):
+    @extend_schema(responses=s.AdminRevisionSerializer(many=True))
+    def get(self, request, public_id):
+        evaluation = selectors.admin_get_evaluation(public_id=public_id)
+        services.record_identity_access(
+            actor=request.user, view="evaluations.revisions", evaluation=evaluation
+        )
+        revisions = selectors.admin_list_revisions(evaluation=evaluation)
+        return Response(s.AdminRevisionSerializer(revisions, many=True).data)
+
+
+class AdminEvaluationModerateView(AdminView):
+    @extend_schema(request=s.ModerateSerializer, responses=s.AdminEvaluationDetailSerializer)
+    def post(self, request, public_id):
+        data = s.ModerateSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        services.moderate(
+            actor=request.user,
+            evaluation=selectors.admin_get_evaluation(public_id=public_id),
+            **data.validated_data,
+        )
+        evaluation = selectors.admin_get_evaluation(public_id=public_id)
+        return Response(s.AdminEvaluationDetailSerializer(evaluation).data)

@@ -77,8 +77,9 @@ erDiagram
 **EvaluationRevision** *(append-only)*: `id`, `evaluation_id`, `revision_number`
 (U with evaluation), `snapshot` (JSON: ratings by criterion_version, comment, suggestion),
 `editor_id`, `change_summary`, `created_at`
-**ModerationAction** *(append-only)*: `id`, `evaluation_id`, `comment_id` (nullable),
-`action` (FLAG|HIDE|RESTORE), `reason`, `actor_id`, `created_at`
+**ModerationAction** *(append-only, step 4.4)*: `id`, `evaluation_id`, `target` (EVALUATION|COMMENT|SUGGESTION),
+`action` (FLAG|HIDE|RESTORE), `reason` (≤ 300; required for FLAG/HIDE), `actor_id`, `created_at`.
+The current state lives on `Evaluation.moderation_status` / `EvaluationComment.moderation_status`; this table is the history.
 
 ### audit
 **AuditLog** *(append-only)*: `id`, `occurred_at` (idx), `actor_id`, `actor_role`,

@@ -36,4 +36,17 @@ urlpatterns = [
         v.CycleArchiveView.as_view(),
         name="cycle-archive",
     ),
+    path("evaluations/", v.AdminEvaluationListView.as_view(), name="evaluations"),
+    path("evaluations/<uuid:public_id>/", v.AdminEvaluationDetailView.as_view(), name="evaluation"),
+    path(
+        "evaluations/<uuid:public_id>/revisions/",
+        v.AdminEvaluationRevisionsView.as_view(),
+        name="evaluation-revisions",
+    ),
+    path(
+        "evaluations/<uuid:public_id>/moderate/",
+        v.AdminEvaluationModerateView.as_view(),
+        name="evaluation-moderate",
+    ),
+    path("moderation-queue/", v.ModerationQueueView.as_view(), name="moderation-queue"),
 ]

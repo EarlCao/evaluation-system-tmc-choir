@@ -94,31 +94,39 @@ export function AdminDashboardPage() {
       ) : (
         <>
           <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: "grow" }}>
               <StatTile
                 label="Active members"
                 value={dashboard.data.members.active}
                 hint={`${String(dashboard.data.members.registered)} registered`}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: "grow" }}>
               <StatTile
                 label="Waiting for approval"
                 value={dashboard.data.members.pending}
                 to="/admin/members?status=PENDING"
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: "grow" }}>
               <StatTile
                 label="Suspended or deactivated"
                 value={dashboard.data.members.suspended + dashboard.data.members.deactivated}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: "grow" }}>
               <StatTile
                 label="Evaluations submitted"
                 value={dashboard.data.evaluations_submitted}
                 hint="All periods"
+                to="/admin/evaluations"
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: "grow" }}>
+              <StatTile
+                label="Needs moderation"
+                value={dashboard.data.needs_moderation}
+                to="/admin/moderation"
               />
             </Grid>
           </Grid>

@@ -47,5 +47,6 @@ class AdminOpenCycleSerializer(serializers.Serializer):
 class AdminDashboardSerializer(serializers.Serializer):
     members = MemberCountsSerializer()
     evaluations_submitted = serializers.IntegerField()
+    needs_moderation = serializers.IntegerField()
     cycles = CycleCountsSerializer()
     open_cycle = AdminOpenCycleSerializer(allow_null=True)

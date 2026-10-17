@@ -314,6 +314,23 @@ export function AdminMemberPage() {
         <ProfileForm key={m.public_id} member={m} />
       </Paper>
 
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+        <Button
+          component={RouterLink}
+          to={`/admin/evaluations?recipient=${m.public_id}`}
+          variant="outlined"
+        >
+          Evaluations about them
+        </Button>
+        <Button
+          component={RouterLink}
+          to={`/admin/evaluations?evaluator=${m.public_id}`}
+          variant="outlined"
+        >
+          Evaluations they wrote
+        </Button>
+      </Stack>
+
       <ConfirmDialog
         open={pending !== null}
         pending={busy}

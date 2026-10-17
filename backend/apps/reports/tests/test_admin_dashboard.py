@@ -46,6 +46,7 @@ def test_no_open_cycle(super_admin):
     data = selectors.admin_dashboard()
     assert data["open_cycle"] is None
     assert data["cycles"] == {"DRAFT": 0, "OPEN": 0, "CLOSED": 0, "ARCHIVED": 0}
+    assert data["needs_moderation"] == 0
 
 
 def test_participation_all_scope(super_admin, form):
@@ -62,6 +63,18 @@ def test_participation_all_scope(super_admin, form):
     assert cycle["participating_members"] == 2
     assert cycle["participation_percent"] == pytest.approx(33.3)
     assert cycle["evaluations_submitted"] == 3
+
+    from apps.evaluations import services
+    from apps.evaluations.models import Evaluation
+
+    services.moderate(
+        actor=super_admin,
+        evaluation=Evaluation.objects.first(),
+        action="FLAG",
+        target="EVALUATION",
+        reason="Check",
+    )
+    assert selectors.admin_dashboard()["needs_moderation"] == 1
 
 
 def test_participation_same_section(super_admin, form):
