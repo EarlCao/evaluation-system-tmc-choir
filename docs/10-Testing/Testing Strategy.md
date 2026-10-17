@@ -42,6 +42,9 @@ Use names that are unlikely to collide (factories generate unique tokens) so the
 stays strict without false positives. Integer PKs are additionally checked by key
 (`evaluator`, `evaluator_id`, `author`, `editor`) because small numbers collide easily.
 
+## Privacy sweep
+`apps/feedback/tests/test_privacy_sweep.py`: register every new member endpoint in `_requests()` (or `WRITE_ONLY`), otherwise the completeness test fails. See [[Privacy Review 2026-10-17]].
+
 ## Must-have test list (minimum)
 - [ ] BR-01 … BR-18 each have at least one service test
 - [ ] Every `/admin/` endpoint returns 403 for members and 401 for anonymous users

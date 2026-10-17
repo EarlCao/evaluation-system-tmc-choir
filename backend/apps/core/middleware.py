@@ -68,3 +68,17 @@ class RequestContextMiddleware:
             response = self.get_response(request)
         response["X-Request-ID"] = context.request_id
         return response
+
+
+class PrivateApiCacheMiddleware:
+    """Privacy hardening (step 3.4): API responses hold personal data (feedback, profiles), so
+    browsers and shared proxies must not store them. Views may still set their own policy."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        if request.path.startswith("/api/") and not response.has_header("Cache-Control"):
+            response["Cache-Control"] = "no-store"
+        return response

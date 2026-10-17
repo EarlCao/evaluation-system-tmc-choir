@@ -51,7 +51,7 @@ Perm: **P** public · **M** active member · **A** super admin
 | GET | `/api/v1/evaluations/mine/` (`?cycle=`) | M | MINE-01 | 2 | ✅ |
 | GET | `/api/v1/evaluations/mine/{public_id}/` (author only) | M | MINE-01 | 2 | ✅ |
 | PATCH | `/api/v1/evaluations/mine/{public_id}/` (within edit window) | M | MINE-02 | 3 | ✅ |
-| GET | `/api/v1/evaluations/mine/{public_id}/revisions/` (author only) | M | MINE-04 | 3 | ✅ |
+| GET | `/api/v1/evaluations/mine/{public_id}/revisions/` (author only; no editor field) | M | MINE-04 | 3 | ✅ |
 | GET/POST | `/api/v1/admin/criterion-categories/` · PATCH `/{id}/` | A | CFG-01 | 2 | ✅ |
 | GET/POST | `/api/v1/admin/criteria/` (`?include_archived=true`) | A | EVAL-02, CFG-01..03 | 2 | ✅ |
 | GET/PATCH | `/api/v1/admin/criteria/{public_id}/` (wording/scale change → new version) | A | EVAL-02, BR-07 | 2 | ✅ |

@@ -64,6 +64,10 @@ See [[Open Questions]].
     endpoint. It scans the JSON for the evaluator's id, public_id, username, email
     and names. See [[Testing Strategy]].
 
+13. **No caching:** every `/api/` response is `Cache-Control: no-store` (shared computers, proxies).
+14. **Automated sweep:** `apps/feedback/tests/test_privacy_sweep.py` checks every member endpoint and fails if a new one isn't covered.
+    Results: [[Privacy Review 2026-10-17]].
+
 ## User-facing disclosure (FB-06, SET-03)
 The evaluate form's confirmation step shows:
 
@@ -74,6 +78,7 @@ The evaluate form's confirmation step shows:
 The full privacy notice is editable in [[System Settings]] and shown at `/privacy`.
 
 ## Residual risks (accepted, documented)
+- **Self-identification:** an evaluator may sign or describe themselves in a comment. Follow-up: warn authors when a comment contains their own name.
 - **Small choirs and writing style:** comment wording can reveal an author. The UI
   advises constructive, neutral wording. The threshold protects numeric aggregates only.
 - **Count timing:** a recipient who watches their count increase right after talking to

@@ -61,7 +61,7 @@ tags: [roadmap]
   count; opaque IDs; thresholds; visibility rules; full privacy tests.
 - [x] **3.3 Frontend: edit, history & feedback**: edit flow, revision timeline/diff,
   Feedback I Received page with anonymity banner, cards and Recharts trend.
-- [ ] **3.4 Privacy hardening sweep**: run `assert_no_evaluator_leak` across **every**
+- [x] **3.4 Privacy hardening sweep**: run `assert_no_evaluator_leak` across **every**
   member endpoint, review logs and error messages, and document results.
 
 ## Phase 4: Super Admin (God Mode)

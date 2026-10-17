@@ -184,17 +184,11 @@ class EditEvaluationSerializer(serializers.Serializer):
     )
 
 
-class RevisionEditorSerializer(serializers.Serializer):
-    public_id = serializers.UUIDField()
-    first_name = serializers.CharField()
-    last_name = serializers.CharField()
-
-
 class MyRevisionSerializer(serializers.ModelSerializer):
-    """MINE-04: original/edited content, time and editor, for the author only."""
-
-    editor = RevisionEditorSerializer()
+    """MINE-04: original/edited content and time, for the author only. The editor is always
+    the author here, so no identity field is sent (privacy sweep, step 3.4); the Super Admin's
+    revision view includes the editor (step 4.4)."""
 
     class Meta:
         model = EvaluationRevision
-        fields = ["revision_number", "created_at", "editor", "change_summary", "snapshot"]
+        fields = ["revision_number", "created_at", "change_summary", "snapshot"]

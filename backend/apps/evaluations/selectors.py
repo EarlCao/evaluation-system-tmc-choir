@@ -167,7 +167,7 @@ def count_members_left_to_evaluate(*, user, cycle: EvaluationCycle) -> int:
 def list_my_revisions(*, user, public_id: UUID | str) -> QuerySet[EvaluationRevision]:
     """MINE-04: revision history, for the author only (others get 404)."""
     evaluation = get_my_evaluation(user=user, public_id=public_id)
-    return evaluation.revisions.select_related("editor").order_by("revision_number")
+    return evaluation.revisions.order_by("revision_number")
 
 
 # Recipient-facing rows (consumed ONLY by apps.feedback) -------------------------------

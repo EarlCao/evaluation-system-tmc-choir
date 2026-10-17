@@ -40,6 +40,9 @@ Codes: `validation_error` (400), `invalid_credentials` (400, login only, one gen
 Django `Http404` / `PermissionDenied` are converted with **generic** messages, so model names never leak.
 Messages never reveal other members' activity or identities.
 
+## Caching
+All `/api/` responses are sent with `Cache-Control: no-store` unless a view sets its own policy.
+
 ## Numbers
 Decimals (scale bounds, steps, ratings) are JSON **numbers** (`COERCE_DECIMAL_TO_STRING = False`).
 

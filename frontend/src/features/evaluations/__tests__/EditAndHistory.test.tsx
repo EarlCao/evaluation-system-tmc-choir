@@ -78,7 +78,6 @@ const snapshot = (value: string, comment: string) => ({
   comment,
   suggestion: "",
 });
-const editor = { public_id: memberUser.public_id, first_name: "Mira", last_name: "Quell" };
 
 let patched: unknown;
 let revisions: Revision[];
@@ -89,7 +88,6 @@ beforeEach(() => {
     {
       revision_number: 1,
       created_at: "2026-10-17T10:00:00Z",
-      editor,
       change_summary: "Submitted",
       snapshot: snapshot("3", "First thoughts"),
     },
@@ -106,7 +104,6 @@ beforeEach(() => {
         {
           revision_number: 2,
           created_at: "2026-10-17T11:00:00Z",
-          editor,
           change_summary: "Fixed typo",
           snapshot: snapshot("5", "Second thoughts"),
         },

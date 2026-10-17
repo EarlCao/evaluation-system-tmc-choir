@@ -185,7 +185,7 @@ def test_revisions_api_is_author_only(member_client, member, recipient, evaluati
     revisions = member_client.get(url).json()
     assert [r["revision_number"] for r in revisions] == [1, 2]
     assert revisions[0]["snapshot"]["comment"] == "First thoughts"
-    assert revisions[1]["editor"]["public_id"] == str(member.public_id)
+    assert "editor" not in revisions[1]  # always the author; no identity field (step 3.4)
 
     other = APIClient()
     other.force_login(recipient)

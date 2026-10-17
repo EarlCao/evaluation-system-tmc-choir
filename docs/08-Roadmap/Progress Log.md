@@ -12,6 +12,18 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-17 · Step 3.4: Privacy hardening sweep ✅ (Phase 3 complete → tag `phase-3`)
+**What:** a resolver-driven privacy sweep over all 18 member GET endpoints plus completeness, admin-closure, Django-admin/docs,
+error-message, cache-header and log checks; frontend audit. Fixes: no `editor` field on member revisions; `Cache-Control: no-store` on the API.
+Report: [[Privacy Review 2026-10-17]].
+**Requirements:** NFR-02, FB-05, BR-03, BR-04, Privacy Model §1–§14
+**Verification:** backend `pytest` **346 passed** (+10 sweep tests) on MySQL; frontend `vitest` **89 passed**; schema, ruff, typecheck, lint clean.
+**Docs updated:** [[Privacy Model]], [[Privacy Review 2026-10-17]], [[Testing Strategy]], [[API Endpoints]], [[API Conventions]], [[Roadmap]]
+**Commit:** `feat(privacy): step 3.4 privacy hardening sweep` + tag `phase-3`
+**Follow-ups:** a UI warning when an author's comment contains their own name.
+
+---
+
 ## 2026-10-17 · Step 3.3 (part 2 of 2): Feedback I Received page ✅ (step 3.3 complete)
 **What:** `features/feedback` page with anonymity banner, period filter row, stat tiles + meters, threshold messages, trend line + table
 twin, comment list with date filters, nav item and dashboard tile; lazy-loaded route. Tests for the edit flow and history (part 1) were added too.

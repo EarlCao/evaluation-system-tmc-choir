@@ -133,7 +133,6 @@ export interface RevisionSnapshot {
 export interface Revision {
   revision_number: number;
   created_at: string;
-  editor: { public_id: string; first_name: string; last_name: string };
   change_summary: string;
   snapshot: RevisionSnapshot;
 }
