@@ -329,6 +329,13 @@ export function AdminMemberPage() {
         >
           Evaluations they wrote
         </Button>
+        <Button
+          component={RouterLink}
+          to={`/admin/reports/members/${m.public_id}`}
+          variant="outlined"
+        >
+          Report
+        </Button>
       </Stack>
 
       <ConfirmDialog

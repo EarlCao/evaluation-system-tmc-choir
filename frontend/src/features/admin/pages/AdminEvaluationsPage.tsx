@@ -9,6 +9,7 @@ import Typography from "@mui/material/Typography";
 import { Link as RouterLink, useSearchParams } from "react-router";
 
 import { ErrorState } from "@/components/ErrorState";
+import { ExportButtons } from "@/components/ExportButtons";
 import { isApiError } from "@/lib/errors";
 import { pageCount } from "@/lib/pagination";
 
@@ -212,6 +213,13 @@ export function AdminEvaluationsPage() {
           </Button>
         ) : null}
       </Stack>
+
+      <ExportButtons
+        report="evaluations"
+        filters={Object.fromEntries(TEXT_FILTERS.map((k) => [k, params.get(k) ?? ""]))}
+        types={["csv", "xlsx"]}
+        identities
+      />
 
       {list.isError ? (
         fieldErrors ? (

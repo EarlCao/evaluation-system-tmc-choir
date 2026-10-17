@@ -12,6 +12,22 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-17 · Step 4.5: Reports & exports ✅
+**What:** admin reports: choir summary (filters: period, voice section, criterion, dates), member summary, participation per
+member; exports as CSV / Excel / PDF (evaluator-detail export CSV/Excel from the evaluations browser). Every export is audited
+synchronously; formula injection neutralised; filenames without names; 60/hour throttle. ADR-018 (openpyxl + reportlab).
+**Requirements:** REP-01..06, ADM-07, BR-15
+**Verification:** backend `pytest` **422 passed** (+25: permissions, choir aggregates with hidden evaluations excluded, not-rated
+≠ zero, criterion/section/period suppression, filters + date validation, member summary, participation numbers, CSV content +
+audit metadata + filename, XLSX identities + no formula cells, PDF participation/member, 5 export validation cases with no audit
+row, `safe_text` cases, empty choir); `check`, `makemigrations --check`, `spectacular --validate --fail-on-warn` clean. A sample PDF
+was rendered to PNG and inspected (escaped markup, accents, landscape table). Frontend typecheck + lint clean, `vitest`
+**121 passed** (+4), build OK. The lazy reports chunk also brought the main bundle from 941 kB to 534 kB.
+**Runner image:** wheels for openpyxl 3.1.5, reportlab 4.4.10, pillow 12.3.0 added to the throwaway test image (PyPI release
+dates could not be checked from here, so known release lines were pinned: reportlab 4.4.x instead of the new 5.0).
+**Docs updated:** [[Reports]], [[Decisions Log]] (ADR-018), [[Dependencies]], [[Module Boundaries]], [[API Endpoints]], [[Pages and Routes]], [[Roadmap]]
+**Commit:** `feat(reports): step 4.5 reports and audited exports`
+
 ## 2026-10-17 · Step 4.4: All evaluations browser + moderation ✅
 **What:** Super Admin browser of every evaluation **with its author** (filters: member about/by, period, criterion, rating range,
 dates, moderation state, edited), detail with revisions incl. editor, moderation (flag / hide / restore the whole evaluation, its

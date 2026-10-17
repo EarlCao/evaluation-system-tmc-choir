@@ -24,6 +24,7 @@ Format: [[ADR Template]]. Status: Proposed · Accepted · Superseded.
 | ADR-015 | Frontend toolchain versions: TypeScript 6.0 (not 7), React Router 8 | Accepted | 2026-10-17 |
 | ADR-016 | Project dev ports: Django 8010, Vite 5280 | Accepted | 2026-10-17 |
 | ADR-017 | One open cycle enforced by a nullable-unique `is_current` column | Accepted | 2026-10-17 |
+| ADR-018 | Exports: stdlib csv, openpyxl, reportlab; formula-injection guard; synchronous audit | Accepted | 2026-10-17 |
 
 ---
 
@@ -94,3 +95,15 @@ Format: [[ADR Template]]. Status: Proposed · Accepted · Superseded.
 **Context:** at most one cycle may be OPEN, so a member's evaluation always has an unambiguous cycle. MySQL has no partial unique indexes, and a check in code alone can race.
 **Decision:** `EvaluationCycle.is_current` is `True` while OPEN and `NULL` otherwise, with a **unique** index (MySQL allows many NULLs). `open_cycle` sets it in a transaction and maps an `IntegrityError` to a 409.
 **Consequences:** concurrent opens cannot both succeed. Closing sets the column back to NULL.
+
+### ADR-018: Export formats and libraries
+**Context:** ADM-07 asks for CSV, Excel and PDF exports. Exports leave the system, may carry identities (REP-05) and contain
+free text written by members.
+**Decision:** CSV with the stdlib `csv` module (UTF-8 with BOM for Excel), Excel with **openpyxl**, PDF with **reportlab**
+(pure-Python wheels; weasyprint was rejected because it needs Pango/Cairo system libraries in every image). Reports build one
+neutral `Document` (titled tables) that each renderer draws. Cells that a spreadsheet would treat as formulas (`= + - @`, tab,
+CR) are prefixed with `'` in CSV/XLSX and stored as text; PDF text is XML-escaped and shown as written. Every export is
+written to the audit log **synchronously** before the response (no file without an audit row). Filenames carry no names
+(`member-summary-<8 hex of public_id>-<date>.pdf`). Exports are plain GET links (session cookie), throttled 60/hour.
+**Consequences:** no system packages; files are built in memory (fine at choir scale; stream if a choir ever has tens of
+thousands of evaluations). The evaluator-detail export is CSV/Excel only (too wide for a page).

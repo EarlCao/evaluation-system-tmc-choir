@@ -8,6 +8,7 @@ const ADMIN_LINKS = [
   { to: "/admin/members", label: "Members", end: false },
   { to: "/admin/evaluations", label: "Evaluations", end: false },
   { to: "/admin/moderation", label: "Moderation", end: false },
+  { to: "/admin/reports", label: "Reports", end: false },
   { to: "/admin/cycles", label: "Periods", end: false },
   { to: "/admin/criteria", label: "Criteria", end: false },
   { to: "/admin/forms", label: "Forms", end: false },

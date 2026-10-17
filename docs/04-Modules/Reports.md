@@ -2,7 +2,7 @@
 tags: [module]
 module: reports
 phase: 4
-status: member dashboard endpoint started (2.1); admin reports in 4.1 / 4.5
+status: member dashboard (2.1–3.2), admin dashboard (4.1), admin reports + exports (4.5) implemented
 ---
 # Module: Reports & Analytics
 
@@ -26,8 +26,7 @@ summary (which reuses [[Feedback]] for anything about received feedback).
 (eligible evaluator × recipient pairs in scope). The formula is shown in the UI (REP-04).
 
 ## Exports (ADM-07)
-- CSV (stdlib `csv`), Excel (`openpyxl`), PDF summary (`reportlab` or
-  `weasyprint`, decided in Phase 4 via ADR).
+- CSV (stdlib `csv`), Excel (`openpyxl`), PDF summary (`reportlab`), see ADR-018.
 - Every export calls `audit.services.record("reports.export.generated", filters, actor)`.
 - Streaming responses for large CSVs. Filenames contain no personal names.
 
@@ -59,3 +58,21 @@ Step 2.3: the dashboard adds `open_cycle {public_id, name, ends_at, evaluations_
 - Grouped counts use `.order_by()` to clear `Meta.ordering` (which would otherwise join the GROUP BY).
 - Frontend `features/admin`: `AdminDashboardPage` (`/admin`) with a KPI row of `StatTile`s, open-period card with a participation `Meter`, period counts.
   `AdminNav` in the admin header (entries added as pages land). Shared `components/Meter` and `lib/vizTokens` (moved from the feedback feature).
+
+## Implementation notes (step 4.5): reports & exports
+- Data comes from `evaluations.selectors.report_evaluation_rows(...)` (ids only, **hidden evaluations left out**),
+  `received_rating_rows`, `criterion_versions_info` (now includes `version`), `cycles_info` and
+  `participation_by_member(cycle)` (one formula shared with `cycle_participation`, so the dashboard and the report agree).
+- `selectors.choir_summary(cycle, submitted_from, submitted_to, voice_section, criterion)`: totals, criteria per **criterion
+  version** (rated, not rated, average, average % of the scale), voice sections (by the section of the member evaluated) and a
+  per-period trend. Criteria are hidden when rated n < threshold; sections and periods when distinct evaluators < threshold
+  (REP-06, `min_aggregate_group_size`).
+- `selectors.member_summary(public_id, …)`: Super Admin variant, **not** suppressed (n shown): received/given counts, criteria,
+  trend. `selectors.participation_report(cycle)`: per active member given / possible / received / %.
+- `exports.py`: `Document`/`Table` → `to_csv` / `to_xlsx` / `to_pdf` (A4, landscape when > 6 columns). `services.generate_export`
+  builds the document, renders it, then `audit.record("reports.export.generated", metadata={report, file_type, filters, rows,
+  identities})`. Validation errors (400) write no audit row.
+- UI (`features/reports`, lazy): `/admin/reports` tabs Choir summary (filters in the URL) and Participation (defaults to the open
+  period), `/admin/reports/members/:id`; tables with a `Meter` + the same value as text; "How these numbers work" panel (REP-04);
+  `components/ExportButtons` + `lib/exports.exportUrl` (shared, also used by the evaluations browser for CSV/Excel with its filters).
+  Links: member admin page → Report; participation row → member report → evaluations about them.

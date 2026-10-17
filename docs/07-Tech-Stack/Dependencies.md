@@ -28,9 +28,9 @@ tags: [tech-stack]
 | pre-commit (4.7.0) | git hooks (dev); hooks: pre-commit-hooks v6.0.0, gitleaks v8.30.0, ruff-pre-commit v0.17.1 | 1.1 | ✅ |
 | channels, channels-redis, daphne | WebSockets | 5.1 | 📝 |
 | redis (py client) | cache / health check | 5.1 | 📝 |
-| openpyxl | Excel export | 4.5 | 📝 |
-| reportlab or weasyprint | PDF export (ADR in 4.5) | 4.5 | 📝 |
-| Pillow | profile photos (only if enabled) | optional | 📝 |
+| openpyxl==3.1.5 | Excel export | 4.5 | ✅ |
+| reportlab==4.4.10 | PDF export (ADR-018) | 4.5 | ✅ |
+| pillow==12.3.0 | reportlab dependency (pinned); profile photos only if ever enabled (Q10) | 4.5 | ✅ |
 | django-cors-headers | **not used** unless an ADR requires cross-origin | – | ⛔ |
 
 ## Frontend

@@ -28,7 +28,7 @@ Frontend routes (React Router). The **Guard** column is UX only. The API enforce
 | Manage Rating Criteria & Form Settings | `/admin/criteria`, `/admin/forms`, `/admin/forms/new`, `/admin/forms/:publicId` | super admin | `features/admin` | 4 ✅ |
 | All Evaluations | `/admin/evaluations`, `/admin/evaluations/:publicId` | super admin | `features/admin` | 4 ✅ |
 | Moderation Queue | `/admin/moderation` | super admin | `features/admin` | 4 ✅ |
-| Reports & Analytics | `/admin/reports` | super admin | `features/reports` | 4 |
+| Reports & Analytics | `/admin/reports` (`?view=participation`), `/admin/reports/members/:publicId` | super admin | `features/reports` (lazy) | 4 ✅ |
 | Audit Logs | `/admin/audit` | super admin | `features/admin` | 4 |
 | System Settings & Privacy Policy | `/admin/settings` | super admin | `features/admin` | 4 |
 

@@ -8,6 +8,7 @@ import { dashboardRoutes } from "@/features/dashboard";
 import { evaluationRoutes } from "@/features/evaluations";
 import { feedbackRoutes } from "@/features/feedback";
 import { memberRoutes } from "@/features/members";
+import { adminReportRoutes } from "@/features/reports";
 
 import { GuestOnly } from "./guards/GuestOnly";
 import { RequireAuth } from "./guards/RequireAuth";
@@ -45,7 +46,7 @@ export const routes: RouteObject[] = [
               {
                 path: "admin",
                 element: <AdminLayout />,
-                children: adminRoutes,
+                children: [...adminRoutes, ...adminReportRoutes],
               },
             ],
           },

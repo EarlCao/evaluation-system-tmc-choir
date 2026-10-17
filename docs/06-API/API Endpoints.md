@@ -79,10 +79,12 @@ Perm: **P** public · **M** active member · **A** super admin
 |---|---|---|---|---|---|
 | GET | `/api/v1/dashboard/` | M | – | 2 | ✅ (grows in 2.3 / 3.2) |
 | GET | `/api/v1/admin/reports/dashboard/` (members, evaluations, cycles, participation) | A | ADM-01 | 4 | ✅ |
-| GET | `/api/v1/admin/reports/members/{public_id}/` | A | REP-01 | 4 | 📝 |
-| GET | `/api/v1/admin/reports/choir/` | A | REP-01 | 4 | 📝 |
-| GET | `/api/v1/admin/reports/participation/` | A | REP-01 | 4 | 📝 |
-| GET | `/api/v1/admin/reports/export/` | A | ADM-07 | 4 | 📝 |
+| GET | `/api/v1/admin/reports/members/{public_id}/` | A | REP-01 | 4 | ✅ |
+| GET | `/api/v1/admin/reports/choir/` | A | REP-01 | 4 | ✅ |
+| GET | `/api/v1/admin/reports/participation/` | A | REP-01 | 4 | ✅ |
+| GET | `/api/v1/admin/reports/export/` | A | ADM-07 | 4 | ✅ |
+
+Export query: `report` = `choir` | `member` (+ `member`) | `participation` (+ `cycle`) | `evaluations` (browser filters); `file_type` = `csv` | `xlsx` | `pdf` (no PDF for `evaluations`). Not `format`: DRF reserves it for content negotiation. Throttled 60/hour per Super Admin; each export audited as `reports.export.generated`.
 
 ## Audit (`apps/audit`)
 | Method | Path | Perm | Req | Phase | Status |

@@ -171,6 +171,7 @@ REST_FRAMEWORK = {
         "register": "3/hour",
         "password_reset": "3/hour",
         "evaluation_submit": "30/hour",
+        "report_export": "60/hour",
     },
     # Client IP for throttling: REMOTE_ADDR, or the last X-Forwarded-For hop when behind
     # our proxy. Never trust client-supplied X-Forwarded-For (throttle bypass).

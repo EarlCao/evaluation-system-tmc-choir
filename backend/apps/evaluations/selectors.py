@@ -225,6 +225,7 @@ def criterion_versions_info(*, ids) -> dict[int, dict]:
         "min_value",
         "max_value",
         "step",
+        "version",
         "criterion__public_id",
         "criterion__sort_order",
     )
@@ -250,48 +251,94 @@ def count_submitted_evaluations(*, cycle: EvaluationCycle | None = None) -> int:
     return qs.filter(cycle=cycle).count() if cycle else qs.count()
 
 
-def cycle_participation(*, cycle: EvaluationCycle) -> dict:
-    """Distinct submitted pairs vs pairs possible under the cycle's scope (self excluded).
-    Members who are inactive now are not counted on either side."""
+def participation_by_member(*, cycle: EvaluationCycle) -> dict[int, dict]:
+    """Per currently active member (by user id): ``possible`` = members they may evaluate under
+    the cycle's scope (self excluded; Super Admins never evaluate, Q9), ``given`` = distinct
+    members they evaluated, ``received`` = distinct members who evaluated them. Members who are
+    inactive now are not counted on either side; resubmissions count once (REP-04)."""
     profiles = list(
         member_selectors.active_profiles().values(
             "user_id", "voice_section_id", "is_evaluable", "user__role"
         )
     )
-    by_section: dict[int, list[dict]] = {}
+    groups: dict[int | None, list[dict]] = {}
     for p in profiles:
-        by_section.setdefault(p["voice_section_id"], []).append(p)
-
-    def pairs(group: list[dict]) -> int:
-        recipients = sum(1 for p in group if p["is_evaluable"])
-        # Super Admins never evaluate (Q9); nobody evaluates themselves.
-        return sum(
-            recipients - (1 if p["is_evaluable"] else 0)
-            for p in group
-            if p["user__role"] != UserRole.SUPER_ADMIN
+        key = (
+            p["voice_section_id"]
+            if cycle.evaluation_scope == EvaluationScope.SAME_SECTION
+            else None
         )
-
-    possible = (
-        sum(pairs(g) for g in by_section.values())
-        if cycle.evaluation_scope == EvaluationScope.SAME_SECTION
-        else pairs(profiles)
-    )
-    active_ids = {p["user_id"] for p in profiles}
-    submitted_pairs = {
+        groups.setdefault(key, []).append(p)
+    result = {p["user_id"]: {"possible": 0, "given": 0, "received": 0} for p in profiles}
+    for group in groups.values():
+        recipients = sum(1 for p in group if p["is_evaluable"])
+        for p in group:
+            if p["user__role"] != UserRole.SUPER_ADMIN:
+                result[p["user_id"]]["possible"] = recipients - (1 if p["is_evaluable"] else 0)
+    pairs = {
         (e, r)
         for e, r in Evaluation.objects.filter(
             cycle=cycle, status=EvaluationStatus.SUBMITTED
         ).values_list("evaluator_id", "recipient_id")
-        if e in active_ids and r in active_ids
+        if e in result and r in result
     }
+    for e, r in pairs:
+        result[e]["given"] += 1
+        result[r]["received"] += 1
+    return result
+
+
+def cycle_participation(*, cycle: EvaluationCycle) -> dict:
+    """Distinct submitted pairs vs pairs possible under the cycle's scope (self excluded)."""
+    per_member = participation_by_member(cycle=cycle).values()
+    possible = sum(m["possible"] for m in per_member)
+    submitted = sum(m["given"] for m in per_member)
     return {
         "possible_pairs": possible,
-        "submitted_pairs": min(len(submitted_pairs), possible),
-        "participating_members": len({e for e, _ in submitted_pairs}),
-        "participation_percent": (
-            round(len(submitted_pairs) / possible * 100, 1) if possible else None
-        ),
+        "submitted_pairs": min(submitted, possible),
+        "participating_members": sum(1 for m in per_member if m["given"]),
+        "participation_percent": round(submitted / possible * 100, 1) if possible else None,
     }
+
+
+# Report rows (consumed by apps.reports, Super Admin only) ---------------------------------
+REPORT_ROW_FIELDS = (
+    "id",
+    "evaluator_id",
+    "recipient_id",
+    "cycle_id",
+    "submitted_at",
+    "recipient__member_profile__voice_section_id",
+)
+
+
+def report_evaluation_rows(
+    *,
+    cycle: str = "",
+    submitted_from=None,
+    submitted_to=None,
+    recipient=None,
+    evaluator=None,
+    voice_section: int | None = None,
+) -> list[dict]:
+    """Submitted, not-hidden evaluations for aggregate reports. Hidden evaluations are left
+    out so that reports agree with what members see (ADM-05). Ids only, no content."""
+    qs = Evaluation.objects.filter(status=EvaluationStatus.SUBMITTED).exclude(
+        moderation_status=ModerationStatus.HIDDEN
+    )
+    if cycle:
+        qs = qs.filter(cycle__public_id=cycle)
+    if submitted_from:
+        qs = qs.filter(submitted_at__date__gte=submitted_from)
+    if submitted_to:
+        qs = qs.filter(submitted_at__date__lte=submitted_to)
+    if recipient is not None:
+        qs = qs.filter(recipient=recipient)
+    if evaluator is not None:
+        qs = qs.filter(evaluator=evaluator)
+    if voice_section:
+        qs = qs.filter(recipient__member_profile__voice_section_id=voice_section)
+    return list(qs.order_by().values(*REPORT_ROW_FIELDS))
 
 
 # Super Admin browser (ADM-02/03/05) -----------------------------------------------------

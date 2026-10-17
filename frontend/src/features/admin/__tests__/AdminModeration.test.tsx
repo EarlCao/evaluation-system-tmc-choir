@@ -125,9 +125,16 @@ describe("All evaluations browser (ADM-02/03)", () => {
     const table = await screen.findByRole("table", { name: "Evaluations" });
     expect(within(table).getByText("Ernesto Cruz")).toBeVisible();
     expect(within(table).getByText("Attendance: 4/5")).toBeVisible();
-    expect(screen.getByText(/recorded in the audit log/i)).toBeVisible();
+    expect(
+      screen.getByText(/every page you open here is recorded in the audit log/i),
+    ).toBeVisible();
     expect(screen.getByText("About Rosa Reyes")).toBeVisible();
     expect(requests[0]?.search).toContain("recipient=r1");
+    expect(screen.getByRole("link", { name: "Export as Excel" })).toHaveAttribute(
+      "href",
+      "/api/v1/admin/reports/export/?report=evaluations&file_type=xlsx&recipient=r1",
+    );
+    expect(screen.queryByRole("link", { name: "Export as PDF" })).not.toBeInTheDocument();
 
     await userEvent.type(screen.getByLabelText("Rating to"), "2");
     await waitFor(() => {
