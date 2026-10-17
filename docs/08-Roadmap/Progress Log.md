@@ -12,6 +12,21 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-17 · Step 3.3 (part 2 of 2): Feedback I Received page ✅ (step 3.3 complete)
+**What:** `features/feedback` page with anonymity banner, period filter row, stat tiles + meters, threshold messages, trend line + table
+twin, comment list with date filters, nav item and dashboard tile; lazy-loaded route. Tests for the edit flow and history (part 1) were added too.
+**Requirements:** FB-01..06 (UI), MINE-02/04/06 (UI), REP-02, REP-04, REP-06 (UI), NFR-05
+**Verification:** typecheck + lint clean · `vitest` **89 passed** on 3 consecutive runs (+14: banner, tiles/meters, suppression, trend table,
+plain-text comments, period + date filters, empty state, nav; edit → review → PATCH payload with change summary → revision 2 in history,
+cancel, closed window, private history note, `describeChanges`), no warnings · `build` OK: main 865 kB + FeedbackPage chunk 366 kB.
+**Dataviz:** palette validated (PASS light/dark on the real surfaces); the chart was rendered to PNG in both modes and inspected (gap for a suppressed
+period, ringed markers, endpoint label, hairline grid); x-axis padding added after the visual check.
+**Dependencies added:** recharts 3.10.1, react-is 19.3.1.
+**Docs updated:** [[Feedback]], [[Evaluations]], [[Pages and Routes]], [[Dependencies]], [[Roadmap]]
+**Commit:** `feat(feedback): step 3.3 feedback page, edit and history tests`
+
+---
+
 ## 2026-10-17 · Step 3.3 (part 1 of 2): edit flow + revision history 🚧
 **What:** shared `EvaluationForm` (create/edit modes, optional change summary on review), edit panel on My Evaluation detail
 (only when `can_edit`; uses the cycle's frozen form), `RevisionHistory` (author-only timeline, per-revision changes, full snapshot in

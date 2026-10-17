@@ -152,3 +152,10 @@ Related: [[Feedback]] · [[Data Model]] · [[Privacy Model]]
 - Comment `moderation_status` is carried over per kind on rewrite, so an edit can't un-hide moderated text.
 - API: `PATCH /evaluations/mine/{id}/` (throttled for PATCH only), `GET /evaluations/mine/{id}/revisions/` →
   `[{revision_number, created_at, editor{public_id, first/last name}, change_summary, snapshot}]`, author only.
+
+## Implementation notes (step 3.3): edit & history UI
+- `components/EvaluationForm` is shared by evaluate (create) and edit; edit mode adds an optional "What did you change?" (≤ 200) on the review step.
+- My evaluation detail: "Edit evaluation" only while `can_edit` (otherwise "The edit window … has closed"). Uses the cycle's frozen form.
+  "Saved as revision N" confirmation.
+- `RevisionHistory`: author-only timeline (newest first), the changes in words (`revisions.describeChanges`: "Attendance: 3 → 5",
+  "Comment changed"), and the full snapshot in `<details>`. It states that only the author and the Super Admin can see it.

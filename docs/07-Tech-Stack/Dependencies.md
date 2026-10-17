@@ -46,7 +46,7 @@ tags: [tech-stack]
 | eslint 10.13.0, @eslint/js 10.0.1, typescript-eslint 8.71.2, eslint-plugin-react-hooks 7.1.1, eslint-plugin-react-refresh 0.5.7, globals 17.13.0, prettier 3.9.10, eslint-config-prettier 10.1.8 | quality | 1.5 | ✅ |
 | react-hook-form 7.90.0, zod 4.6.7, @hookform/resolvers 5.9.2 | forms | 1.6 | ✅ |
 | @mui/icons-material | icons | when first needed | 📝 |
-| recharts | charts | 3.3 | 📝 |
+| recharts 3.10.1 + react-is 19.3.1 (peer) | trend chart (lazy-loaded) | 3.3 | ✅ |
 | @playwright/test | e2e | 6.1 | 📝 |
 
 All frontend versions are pinned exactly (`--save-exact`) and locked in `frontend/package-lock.json`.

@@ -5,6 +5,16 @@ import { afterAll, afterEach, beforeAll } from "vitest";
 
 import { server } from "./server";
 
+// jsdom has no ResizeObserver (Recharts' ResponsiveContainer needs one).
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+if (!("ResizeObserver" in globalThis)) {
+  Object.assign(globalThis, { ResizeObserver: ResizeObserverStub });
+}
+
 // jsdom + MUI renders can be slow when test files run in parallel.
 configure({ asyncUtilTimeout: 3000 });
 

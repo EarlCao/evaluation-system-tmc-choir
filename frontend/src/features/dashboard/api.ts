@@ -13,6 +13,7 @@ export interface MemberDashboard {
   active_members: number;
   voice_section: string | null;
   open_cycle: OpenCycleProgress | null;
+  feedback_received: number;
 }
 
 export async function fetchDashboard(): Promise<MemberDashboard> {

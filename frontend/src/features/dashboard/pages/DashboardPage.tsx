@@ -97,12 +97,22 @@ export function DashboardPage() {
               <StatCard label="Your voice section" value={dashboard.data.voice_section ?? "—"} />
             )}
           </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            {dashboard.isPending ? (
+              <Skeleton variant="rounded" height={104} />
+            ) : (
+              <StatCard label="Evaluations you received" value={dashboard.data.feedback_received} />
+            )}
+          </Grid>
         </Grid>
       )}
 
       {dashboard.isSuccess ? <CycleCard cycle={dashboard.data.open_cycle} /> : null}
 
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+        <Button component={RouterLink} to="/app/feedback" variant="outlined">
+          Feedback I received
+        </Button>
         <Button component={RouterLink} to="/app/my-evaluations" variant="outlined">
           My evaluations
         </Button>

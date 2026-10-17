@@ -59,7 +59,12 @@ export const handlers = [
   ),
   http.get(api("/members/voice-sections/"), () => HttpResponse.json(voiceSections)),
   http.get(api("/dashboard/"), () =>
-    HttpResponse.json({ active_members: 3, voice_section: "Tenor", open_cycle: null }),
+    HttpResponse.json({
+      active_members: 3,
+      voice_section: "Tenor",
+      open_cycle: null,
+      feedback_received: 0,
+    }),
   ),
   http.get(api("/health/"), () => HttpResponse.json({ status: "ok", db: "ok" })),
   http.get(api("/auth/me/"), notAuthenticated),

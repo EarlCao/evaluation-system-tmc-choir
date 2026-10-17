@@ -59,7 +59,7 @@ tags: [roadmap]
   immutable revisions, `is_edited`, revisions API (author), events.
 - [x] **3.2 Feedback module (backend)**: `apps/feedback` anonymised list, summary and
   count; opaque IDs; thresholds; visibility rules; full privacy tests.
-- [ ] 🚧 **3.3 Frontend: edit, history & feedback** (part 1 done: edit flow + revision history; part 2 pending: Feedback I Received page): edit flow, revision timeline/diff,
+- [x] **3.3 Frontend: edit, history & feedback**: edit flow, revision timeline/diff,
   Feedback I Received page with anonymity banner, cards and Recharts trend.
 - [ ] **3.4 Privacy hardening sweep**: run `assert_no_evaluator_leak` across **every**
   member endpoint, review logs and error messages, and document results.

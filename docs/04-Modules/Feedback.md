@@ -2,7 +2,7 @@
 tags: [module, privacy]
 module: feedback
 phase: 3
-status: backend implemented (3.2); UI in 3.3
+status: backend (3.2) + UI (3.3) implemented
 ---
 # Module: Feedback (anonymised read model)
 
@@ -79,3 +79,16 @@ Related: [[Evaluations]] · [[Privacy Model]] · [[Reports]]
 - The dashboard adds `feedback_received`.
 - **Tests:** `assert_no_evaluator_leak` with all evaluators on list, summary, count and dashboard; whitelist keys; opaque id ≠ public_id;
   time-neutral order; moderation; AFTER_CLOSE; thresholds 2 vs 3 vs a raised setting; missing ≠ zero; criterion filter; ≤ 12 queries.
+
+## Implementation notes (step 3.3): "Feedback I received" page (`/app/feedback`)
+- **Anonymity banner** (FB-06): anonymous to you and other members; the Super Admin can see who submitted.
+- **Filter row** above everything: the evaluation period (options = periods in the unfiltered summary) scopes the tiles, chart and list.
+  The date range ("Comments from / until") applies to the comment list only and is labelled that way. The criterion filter exists in the API but isn't exposed (every criterion already has a tile).
+- **Form choice (dataviz):** "Evaluations received" = stat tile. Each criterion = stat tile + **meter** (`role="meter"`,
+  value always written as text, fill/track from one blue ramp); suppressed criteria say "Not enough evaluations yet (shown from N)".
+  **Trend** = single-series line (2px, ringed 8px markers, solid hairline grid, one 0–100% axis, crosshair tooltip with the value first,
+  endpoint direct label, no legend) + a **table twin** in `<details>`. Suppressed periods are **gaps, never zeros**. Shown only for "All periods" with ≥ 2 periods.
+- **Colors:** slot-1 blue `#2a78d6` light / `#3987e5` dark via CSS variables (`vizTokens.ts`, MUI `applyStyles("dark")`); validated with
+  the dataviz validator against the real surfaces (#ffffff, #121212): all checks PASS. Rendered to PNG in both modes and inspected; x-axis padded after review.
+- The comment list is plain text with an "Edited" chip; dates use day precision; it's paginated.
+- **Lazy route:** the page (and Recharts) loads in its own chunk (366 kB); the main bundle stays at 865 kB.
