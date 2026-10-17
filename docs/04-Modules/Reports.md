@@ -48,3 +48,14 @@ Related: [[Feedback]] · [[Audit]] · [[Evaluations]]
 Frontend `features/dashboard`: `DashboardPage` (greeting, stat cards, shortcuts).
 
 Step 2.3: the dashboard adds `open_cycle {public_id, name, ends_at, evaluations_given, members_left}` (or null).
+
+## Implementation notes (step 4.1): admin dashboard
+- `GET /api/v1/admin/reports/dashboard/` (IsSuperAdmin, `reports/api/admin_urls.py`, namespace `reports-admin`):
+  `members {registered, active, pending, suspended, deactivated}` (role MEMBER only), `evaluations_submitted` (all periods),
+  `cycles {DRAFT, OPEN, CLOSED, ARCHIVED}`, `open_cycle` (or null) with `evaluations_submitted`, `possible_pairs`, `submitted_pairs`,
+  `participating_members`, `participation_percent`.
+- **Participation** (REP-04 "clear explanations") = distinct submitted (evaluator, recipient) pairs ÷ pairs possible under the scope
+  (ALL: E×R−R; SAME_SECTION: per section), counting only currently active members; resubmissions count once; `null` (not 0) when nothing is possible.
+- Grouped counts use `.order_by()` to clear `Meta.ordering` (which would otherwise join the GROUP BY).
+- Frontend `features/admin`: `AdminDashboardPage` (`/admin`) with a KPI row of `StatTile`s, open-period card with a participation `Meter`, period counts.
+  `AdminNav` in the admin header (entries added as pages land). Shared `components/Meter` and `lib/vizTokens` (moved from the feedback feature).

@@ -4,7 +4,7 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 
 import type { CriterionSummary } from "../types";
-import { vizVars } from "../vizTokens";
+import { Meter } from "@/components/Meter";
 
 function fmt(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
@@ -23,8 +23,6 @@ export function CriterionTile({
   threshold: number;
 }) {
   const { scale } = summary;
-  const percent =
-    summary.average === null ? 0 : ((summary.average - scale.min) / (scale.max - scale.min)) * 100;
 
   return (
     <Card variant="outlined" sx={{ height: "100%" }}>
@@ -45,29 +43,13 @@ export function CriterionTile({
                 / {fmt(scale.max)}
               </Typography>
             </Typography>
-            <Box
-              role="meter"
-              aria-label={`${summary.criterion} average`}
-              aria-valuemin={scale.min}
-              aria-valuemax={scale.max}
-              aria-valuenow={summary.average}
-              aria-valuetext={`${fmt(summary.average)} out of ${fmt(scale.max)}`}
-              sx={(theme) => ({
-                ...vizVars(theme),
-                mt: 1,
-                height: 8,
-                borderRadius: "4px",
-                bgcolor: "var(--viz-track)",
-                overflow: "hidden",
-              })}
-            >
-              <Box
-                sx={{
-                  width: `${String(Math.max(0, Math.min(100, percent)))}%`,
-                  height: "100%",
-                  bgcolor: "var(--viz-series)",
-                  borderRadius: "4px",
-                }}
+            <Box sx={{ mt: 1 }}>
+              <Meter
+                label={`${summary.criterion} average`}
+                value={summary.average}
+                min={scale.min}
+                max={scale.max}
+                valueText={`${fmt(summary.average)} out of ${fmt(scale.max)}`}
               />
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>

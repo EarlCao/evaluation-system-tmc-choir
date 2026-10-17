@@ -19,7 +19,7 @@ import {
 } from "recharts";
 
 import type { TrendPoint } from "../types";
-import { vizVars } from "../vizTokens";
+import { vizVars } from "@/lib/vizTokens";
 
 interface Row {
   name: string;

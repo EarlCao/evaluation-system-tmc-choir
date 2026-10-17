@@ -77,7 +77,7 @@ Perm: **P** public · **M** active member · **A** super admin
 | Method | Path | Perm | Req | Phase | Status |
 |---|---|---|---|---|---|
 | GET | `/api/v1/dashboard/` | M | – | 2 | ✅ (grows in 2.3 / 3.2) |
-| GET | `/api/v1/admin/reports/dashboard/` | A | ADM-01 | 4 | 📝 |
+| GET | `/api/v1/admin/reports/dashboard/` (members, evaluations, cycles, participation) | A | ADM-01 | 4 | ✅ |
 | GET | `/api/v1/admin/reports/members/{public_id}/` | A | REP-01 | 4 | 📝 |
 | GET | `/api/v1/admin/reports/choir/` | A | REP-01 | 4 | 📝 |
 | GET | `/api/v1/admin/reports/participation/` | A | REP-01 | 4 | 📝 |

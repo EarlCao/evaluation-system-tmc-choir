@@ -1,8 +1,8 @@
 import type { RouteObject } from "react-router";
 
-import { ComingSoon } from "@/components/ComingSoon";
 import { NotFoundPage } from "@/components/NotFoundPage";
 import { RouteErrorPage } from "@/components/RouteErrorPage";
+import { adminRoutes } from "@/features/admin";
 import { guestAuthRoutes, memberAuthRoutes, publicAuthRoutes } from "@/features/auth";
 import { dashboardRoutes } from "@/features/dashboard";
 import { evaluationRoutes } from "@/features/evaluations";
@@ -45,9 +45,7 @@ export const routes: RouteObject[] = [
               {
                 path: "admin",
                 element: <AdminLayout />,
-                children: [
-                  { index: true, element: <ComingSoon title="Super Admin dashboard" step="4.1" /> },
-                ],
+                children: adminRoutes,
               },
             ],
           },

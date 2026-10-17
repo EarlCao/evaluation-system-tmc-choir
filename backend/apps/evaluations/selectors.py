@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from django.db.models import Prefetch, Q, QuerySet
+from django.db.models import Count, Prefetch, Q, QuerySet
 
 from apps.core.exceptions import NotFound
 from apps.members import selectors as member_selectors
@@ -234,3 +234,53 @@ def cycles_info(*, ids) -> dict[int, dict]:
         "id", "public_id", "name", "starts_at", "status"
     )
     return {row["id"]: row for row in rows}
+
+
+# Admin statistics (ADM-01) ----------------------------------------------------------------
+def count_cycles_by_status() -> dict[str, int]:
+    # .order_by() clears Meta.ordering, which would otherwise join the GROUP BY.
+    counts = dict(EvaluationCycle.objects.order_by().values_list("status").annotate(n=Count("id")))
+    return {status: counts.get(status, 0) for status in CycleStatus.values}
+
+
+def count_submitted_evaluations(*, cycle: EvaluationCycle | None = None) -> int:
+    qs = Evaluation.objects.filter(status=EvaluationStatus.SUBMITTED)
+    return qs.filter(cycle=cycle).count() if cycle else qs.count()
+
+
+def cycle_participation(*, cycle: EvaluationCycle) -> dict:
+    """Distinct submitted pairs vs pairs possible under the cycle's scope (self excluded).
+    Members who are inactive now are not counted on either side."""
+    profiles = list(
+        member_selectors.active_profiles().values("user_id", "voice_section_id", "is_evaluable")
+    )
+    by_section: dict[int, list[dict]] = {}
+    for p in profiles:
+        by_section.setdefault(p["voice_section_id"], []).append(p)
+
+    def pairs(group: list[dict]) -> int:
+        evaluators = len(group)
+        recipients = sum(1 for p in group if p["is_evaluable"])
+        return evaluators * recipients - recipients  # minus evaluating yourself
+
+    possible = (
+        sum(pairs(g) for g in by_section.values())
+        if cycle.evaluation_scope == EvaluationScope.SAME_SECTION
+        else pairs(profiles)
+    )
+    active_ids = {p["user_id"] for p in profiles}
+    submitted_pairs = {
+        (e, r)
+        for e, r in Evaluation.objects.filter(
+            cycle=cycle, status=EvaluationStatus.SUBMITTED
+        ).values_list("evaluator_id", "recipient_id")
+        if e in active_ids and r in active_ids
+    }
+    return {
+        "possible_pairs": possible,
+        "submitted_pairs": min(len(submitted_pairs), possible),
+        "participating_members": len({e for e, _ in submitted_pairs}),
+        "participation_percent": (
+            round(len(submitted_pairs) / possible * 100, 1) if possible else None
+        ),
+    }

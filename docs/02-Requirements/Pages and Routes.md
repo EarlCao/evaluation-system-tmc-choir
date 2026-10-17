@@ -22,7 +22,7 @@ Frontend routes (React Router). The **Guard** column is UX only. The API enforce
 | Feedback I Received | `/app/feedback` (lazy chunk) | member | `features/feedback` | 3 ✅ |
 | Notifications | `/app/notifications` | member | `features/notifications` | 5 |
 | Privacy Notice | `/privacy` (shown on the evaluate review step ✅; standalone page in 4.6) | public | `features/auth` | 2 / 4 |
-| Super Admin Dashboard | `/admin` | super admin | `features/admin` | 4 |
+| Super Admin Dashboard | `/admin` | super admin | `features/admin` | 4 ✅ |
 | Manage Members & Roles | `/admin/members` | super admin | `features/admin` | 4 |
 | Manage Evaluation Cycles | `/admin/cycles` | super admin | `features/admin` | 4 |
 | Manage Rating Criteria & Form Settings | `/admin/criteria`, `/admin/forms` | super admin | `features/admin` | 4 |

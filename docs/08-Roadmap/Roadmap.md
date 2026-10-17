@@ -65,7 +65,7 @@ tags: [roadmap]
   member endpoint, review logs and error messages, and document results.
 
 ## Phase 4: Super Admin (God Mode)
-- [ ] **4.1 Admin shell + dashboard stats** (ADM-01)
+- [x] **4.1 Admin shell + dashboard stats** (ADM-01)
 - [ ] **4.2 Member & role management**: approvals, status, roles, voice sections (AUTH-05, MEM-05)
 - [ ] **4.3 Cycles, criteria & form management UI** (EVAL-02, CFG-*)
 - [ ] **4.4 All evaluations browser + moderation** with identity-access auditing (ADM-02/03/05)

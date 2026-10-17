@@ -12,6 +12,20 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-17 · Step 4.1: Admin shell + dashboard stats ✅
+**What:** admin dashboard endpoint (member counts, evaluations, cycle counts, open-period participation with an honest denominator),
+admin dashboard page (KPI tiles, participation meter, period counts), admin navigation, shared `Meter` + viz tokens; the privacy sweep now
+treats `reports-admin` as an admin namespace (members get 403).
+**Requirements:** ADM-01, REP-04 (participation explained)
+**Verification:** backend `pytest` **353 passed** (+7: counts by status excluding super admins, no open cycle, participation for ALL and
+SAME_SECTION scopes, non-evaluable members, resubmissions counted once, API + 401/403, null percent when nothing is possible); schema clean.
+Frontend `vitest` **92 passed** ×3; typecheck, lint, build OK.
+**Fix during the step:** grouped status counts needed `.order_by()` (default model ordering would have joined the GROUP BY).
+**Docs updated:** [[Reports]], [[API Endpoints]], [[Pages and Routes]], [[Roadmap]]
+**Commit:** `feat(admin): step 4.1 admin dashboard`
+
+---
+
 ## 2026-10-17 · Step 3.4: Privacy hardening sweep ✅ (Phase 3 complete → tag `phase-3`)
 **What:** a resolver-driven privacy sweep over all 18 member GET endpoints plus completeness, admin-closure, Django-admin/docs,
 error-message, cache-header and log checks; frontend audit. Fixes: no `editor` field on member revisions; `Cache-Control: no-store` on the API.
