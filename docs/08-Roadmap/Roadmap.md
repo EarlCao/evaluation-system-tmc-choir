@@ -45,7 +45,7 @@ tags: [roadmap]
 - [x] **2.1 Member directory**: `members` selectors and API (search, filter, paginate,
   django-filter), member profile; frontend directory and profile pages; member dashboard
   placeholder plus `GET /dashboard/`.
-- [ ] **2.2 Evaluation configuration (backend)**: categories, criteria + versions, form
+- [x] **2.2 Evaluation configuration (backend)**: categories, criteria + versions, form
   versions + publish, cycles + open/close, admin APIs, validation, `seed_demo_data` command.
 - [ ] **2.3 Evaluation submission (backend)**: eligibility endpoint, current cycle and
   form endpoints, `submit_evaluation` (all rules BR-01/12/13/14, revision 1), my

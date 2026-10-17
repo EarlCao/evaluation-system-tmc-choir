@@ -48,7 +48,8 @@ Each `apps/<module>/` follows the layout fixed in `AGENT.md` §2.2:
 | `api/serializers.py` | Member-facing serializers (explicit field whitelists) | private |
 | `api/admin_serializers.py` | Super-admin serializers (may include identities) | private |
 | `api/views.py`, `api/admin_views.py` | Thin DRF views | private |
-| `api/urls.py` | Routes, mounted in `config/urls.py` | private |
+| `api/urls.py` | Member-facing routes, mounted in `config/urls.py` | private |
+| `api/admin_urls.py` | Super Admin routes, mounted under `/api/v1/admin/` | private |
 | `tests/` | factories + tests per layer | – |
 
 ## Example: the shape of a service

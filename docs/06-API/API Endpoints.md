@@ -52,10 +52,14 @@ Perm: **P** public · **M** active member · **A** super admin
 | GET | `/api/v1/evaluations/mine/{public_id}/` | M | MINE-01 | 2 | 📝 |
 | PATCH | `/api/v1/evaluations/mine/{public_id}/` | M | MINE-02 | 3 | 📝 |
 | GET | `/api/v1/evaluations/mine/{public_id}/revisions/` | M | MINE-04 | 3 | 📝 |
-| CRUD | `/api/v1/admin/criterion-categories/` | A | CFG-01 | 2 | 📝 |
-| CRUD | `/api/v1/admin/criteria/` (+ `/reorder/`, `/{id}/archive/`) | A | EVAL-02, CFG-01..03 | 2 | 📝 |
-| CRUD | `/api/v1/admin/form-versions/` (+ `/{id}/publish/`) | A | CFG-04, CFG-06 | 2 | 📝 |
-| CRUD | `/api/v1/admin/evaluation-cycles/` (+ `/open/`, `/close/`, `/archive/`) | A | CFG-05, EVAL-06 | 2 | 📝 |
+| GET/POST | `/api/v1/admin/criterion-categories/` · PATCH `/{id}/` | A | CFG-01 | 2 | ✅ |
+| GET/POST | `/api/v1/admin/criteria/` (`?include_archived=true`) | A | EVAL-02, CFG-01..03 | 2 | ✅ |
+| GET/PATCH | `/api/v1/admin/criteria/{public_id}/` (wording/scale change → new version) | A | EVAL-02, BR-07 | 2 | ✅ |
+| POST | `/api/v1/admin/criteria/{public_id}/archive/` · GET `/versions/` · POST `/api/v1/admin/criteria/reorder/` | A | EVAL-02 | 2 | ✅ |
+| GET/POST | `/api/v1/admin/form-versions/` (paginated) · GET/PATCH `/{public_id}/` (draft only) | A | CFG-04, CFG-06 | 2 | ✅ |
+| POST | `/api/v1/admin/form-versions/{public_id}/publish/` | A | CFG-06, BR-18 | 2 | ✅ |
+| GET/POST | `/api/v1/admin/evaluation-cycles/` (paginated) · GET/PATCH `/{public_id}/` | A | CFG-05, EVAL-06 | 2 | ✅ |
+| POST | `/api/v1/admin/evaluation-cycles/{public_id}/open/` · `/close/` · `/archive/` | A | EVAL-06 | 2 | ✅ |
 | GET | `/api/v1/admin/evaluations/` | A | ADM-02, ADM-03 | 4 | 📝 |
 | GET | `/api/v1/admin/evaluations/{public_id}/` | A | ADM-02 | 4 | 📝 |
 | GET | `/api/v1/admin/evaluations/{public_id}/revisions/` | A | ADM-02 | 4 | 📝 |

@@ -143,7 +143,8 @@ apps/<module>/
 │   ├── admin_serializers.py  # super-admin serializers (may include identities)
 │   ├── views.py         # member-facing views
 │   ├── admin_views.py   # super-admin views
-│   └── urls.py
+│   ├── urls.py          # member-facing routes
+│   └── admin_urls.py    # super-admin routes (mounted under /api/v1/admin/)
 ├── migrations/
 └── tests/
     ├── factories.py

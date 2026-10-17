@@ -41,9 +41,12 @@ Consumers re-query what they need. One exception: configuration events may carry
 | `accounts.user.status_changed` | accounts | audit | user_id, before, after, actor_id |
 | `accounts.user.role_changed` | accounts | audit | user_id, before, after, actor_id |
 | `accounts.password.reset_requested` | accounts | audit | user_id |
-| `evaluations.cycle.opened` / `.closed` | evaluations | audit, notifications (members) | cycle_id, actor_id |
-| `evaluations.criterion.changed` | evaluations | audit | criterion_id, version, actor_id |
-| `evaluations.form.published` | evaluations | audit | form_version_id, actor_id |
+| `evaluations.cycle.opened` / `.closed` ✅ | evaluations | audit, notifications (members) | actor_id, target_id (cycle public_id) |
+| `evaluations.cycle.changed` ✅ | evaluations | audit | action, changes |
+| `evaluations.category.changed` ✅ | evaluations | audit | action, changes |
+| `evaluations.form.changed` ✅ | evaluations | audit | action, changes |
+| `evaluations.criterion.changed` ✅ | evaluations | audit | action, version, changes |
+| `evaluations.form.published` ✅ | evaluations | audit | version, criterion_version_ids |
 | `evaluations.evaluation.submitted` | evaluations | audit, notifications (recipient, debounced) | evaluation_id, recipient_id, cycle_id |
 | `evaluations.evaluation.edited` | evaluations | audit, notifications (author) | evaluation_id, revision_number |
 | `evaluations.evaluation.moderated` | evaluations | audit | evaluation_id, action, actor_id |

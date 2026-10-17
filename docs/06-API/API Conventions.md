@@ -40,6 +40,9 @@ Codes: `validation_error` (400), `invalid_credentials` (400, login only, one gen
 Django `Http404` / `PermissionDenied` are converted with **generic** messages, so model names never leak.
 Messages never reveal other members' activity or identities.
 
+## Numbers
+Decimals (scale bounds, steps, ratings) are JSON **numbers** (`COERCE_DECIMAL_TO_STRING = False`).
+
 ## Dates & times
 Stored in UTC and returned as ISO 8601 with `Z`. **Exception:** member-facing feedback
 returns `date` (`YYYY-MM-DD`) only. See [[Privacy Model]].

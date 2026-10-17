@@ -51,7 +51,7 @@ erDiagram
 `is_active`, `is_archived`, `current_version_id`, timestamps
 **CriterionVersion** *(immutable)*: `id`, `criterion_id`, `version` (U with criterion),
 `name`, `description`, `scale_type` (NUMERIC|PERCENT), `min_value`, `max_value`, `step`
-(DECIMAL(6,2)), `labels` (JSON), `is_required`, `created_by_id`, `created_at`
+(DECIMAL(6,2)), `labels` (JSON, keys = normalised scale points), `is_required`, `created_by_id` (PROTECT), `created_at`. Append-only; checks `max > min`, `step > 0`
 **FormVersion**: `id`, `public_id`, `version` (U), `title`, `comment_required`,
 `suggestion_required`, `comment_max_length` (default 2000), `suggestion_max_length`
 (default 2000), `status` (DRAFT|PUBLISHED), `published_at`, `created_by_id`, timestamps
@@ -60,7 +60,8 @@ erDiagram
 **EvaluationCycle**: `id`, `public_id`, `name`, `description`, `starts_at`, `ends_at`,
 `edit_deadline`, `status` (DRAFT|OPEN|CLOSED|ARCHIVED, idx), `form_version_id`,
 `allow_resubmission`, `evaluation_scope` (ALL|SAME_SECTION), `feedback_visibility`
-(IMMEDIATE|AFTER_CLOSE), `created_by_id`, timestamps
+(IMMEDIATE|AFTER_CLOSE), `is_current` (True while OPEN, else NULL; **unique** → one open cycle, ADR-017),
+`opened_at`, `closed_at`, `created_by_id`, timestamps. Checks: `ends_at > starts_at`, `edit_deadline ≥ starts_at`
 **Evaluation**: `id`, `public_id`, `cycle_id`, `evaluator_id`, `recipient_id`,
 `form_version_id`, `submission_number` (default 1), `status` (SUBMITTED|WITHDRAWN),
 `current_revision_number`, `is_edited`, `moderation_status` (VISIBLE|FLAGGED|HIDDEN),

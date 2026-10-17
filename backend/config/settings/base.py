@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "apps.audit",
     "apps.accounts",
     "apps.members",
+    "apps.evaluations",
     "apps.reports",
 ]
 
@@ -172,6 +173,8 @@ REST_FRAMEWORK = {
     # our proxy. Never trust client-supplied X-Forwarded-For (throttle bypass).
     "NUM_PROXIES": 1 if USE_X_FORWARDED_FOR else 0,
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
+    # Scale values and ratings are small decimals; send them as JSON numbers.
+    "COERCE_DECIMAL_TO_STRING": False,
 }
 
 SPECTACULAR_SETTINGS = {

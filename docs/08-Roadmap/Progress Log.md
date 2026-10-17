@@ -12,6 +12,22 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-17 · Step 2.2: Evaluation configuration (backend) ✅
+**What:** `apps/evaluations` configuration: categories, criteria with immutable versions, form versions (draft →
+published, frozen), cycles (DRAFT → OPEN → CLOSED → ARCHIVED, one open cycle at DB level), scale validation, Super Admin
+API under `/api/v1/admin/`, read-only Django admin, `seed_demo_data` command (the dev DB was seeded: 6 criteria, form v1, draft "Demo cycle").
+**Requirements:** EVAL-02, EVAL-03, EVAL-04, EVAL-06, CFG-01..06; BR-07, BR-13 (cycle window prerequisites), BR-18
+**Verification (MySQL):** `pytest` **274 passed** (+60: scale rules, versioning and immutability, publish freezing current
+versions, published-form locks, sequential form numbers, cycle lifecycle and per-status locks, single open cycle at service **and DB**
+level, date and form validation, admin API 401/403/201/409/404, decimals as JSON numbers, seed idempotency) · ruff clean ·
+`check` / `makemigrations --check` clean · dev DB migrated and seeded twice (idempotent).
+**Decisions:** ADR-017.
+**Docs updated:** [[Evaluations]], [[Data Model]], [[API Endpoints]], [[API Conventions]], [[Module Boundaries]], [[Backend Structure]], [[Decisions Log]], [[Roadmap]]
+**Commit:** `feat(evaluations): step 2.2 evaluation configuration`
+**Follow-ups:** cycle auto-close job (later); configuration UI is step 4.3.
+
+---
+
 ## 2026-10-17 · Step 2.1: Member directory ✅
 **What:** backend directory (django-filter search + voice section, ACTIVE only, ordered, paginated, no N+1),
 member detail (404 for inactive), own profile bio, `apps/reports` with `GET /dashboard/`. Frontend: directory page

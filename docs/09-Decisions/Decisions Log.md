@@ -23,6 +23,7 @@ Format: [[ADR Template]]. Status: Proposed · Accepted · Superseded.
 | ADR-014 | Audit records every domain event generically (event envelope) | Accepted | 2026-10-17 |
 | ADR-015 | Frontend toolchain versions: TypeScript 6.0 (not 7), React Router 8 | Accepted | 2026-10-17 |
 | ADR-016 | Project dev ports: Django 8010, Vite 5280 | Accepted | 2026-10-17 |
+| ADR-017 | One open cycle enforced by a nullable-unique `is_current` column | Accepted | 2026-10-17 |
 
 ---
 
@@ -88,3 +89,8 @@ Format: [[ADR Template]]. Status: Proposed · Accepted · Superseded.
 **Context:** ports 8000, 5173 and 5180 are already used by other projects on the developer machine (MySQL/Redis were moved to 3307/6380 for the same reason).
 **Decision:** Django dev server on **8010**, Vite on **5280** (overridable with `VITE_BACKEND_URL` / `FRONTEND_PORT`).
 **Consequences:** `.env.example` uses `FRONTEND_URL` / `CSRF_TRUSTED_ORIGINS` = `http://localhost:5280`.
+
+### ADR-017: One open cycle, enforced by the database
+**Context:** at most one cycle may be OPEN, so a member's evaluation always has an unambiguous cycle. MySQL has no partial unique indexes, and a check in code alone can race.
+**Decision:** `EvaluationCycle.is_current` is `True` while OPEN and `NULL` otherwise, with a **unique** index (MySQL allows many NULLs). `open_cycle` sets it in a transaction and maps an `IntegrityError` to a 409.
+**Consequences:** concurrent opens cannot both succeed. Closing sets the column back to NULL.

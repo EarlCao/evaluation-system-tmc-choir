@@ -2,7 +2,7 @@
 tags: [module]
 module: evaluations
 phase: 2-3
-status: planned
+status: configuration implemented (2.2); submissions 2.3, revisions 3.1, moderation 4.4
 ---
 # Module: Evaluations
 
@@ -88,3 +88,25 @@ evaluation returns 404; historical evaluations keep their criterion versions aft
 criterion edit (BR-07); moderation keeps the original (BR-17).
 
 Related: [[Feedback]] · [[Data Model]] · [[Privacy Model]]
+
+## Implementation notes (step 2.2): configuration
+- **Models:** `CriterionCategory`, `RatingCriterion` (+ `current_version`), `CriterionVersion` (**AppendOnlyModel**;
+  DB checks `max > min`, `step > 0`; unique `(criterion, version)`), `FormVersion` (save() refuses changes once PUBLISHED),
+  `FormVersionItem`, `EvaluationCycle` (DB checks `ends_at > starts_at`, `edit_deadline ≥ starts_at`;
+  **`is_current` nullable-unique**, so at most one OPEN cycle at DB level, ADR-017). FKs from immutable rows use PROTECT.
+- **Scales** (`scales.py`): NUMERIC or PERCENT (0–100); min ≥ 0, max > min, step > 0 dividing the range exactly,
+  ≤ 101 points; label keys must be scale points (normalised: `"4"`, `"2.5"`), texts 1–60 characters.
+- **Services:** `create/update_category`; `create_criterion` (v1, unique slug key), `update_criterion` (wording or scale
+  change → **new version**; category / is_active in place; archived → 409), `reorder_criteria` (must list all), `archive_criterion`;
+  `create/update_form_version` (draft only; ≥ 1 active, unique criteria; text limits 1–5000), `publish_form_version`
+  (re-points items to the **current** versions, then freezes); `create/update_cycle` (edit_deadline defaults to ends_at;
+  fields editable per status: DRAFT all, OPEN name/description/ends_at/edit_deadline, CLOSED/ARCHIVED name/description),
+  `open_cycle` (needs a published form, end in the future, no other open cycle), `close_cycle`, `archive_cycle`.
+- **Events** (all audited): `category.changed`, `criterion.changed` (action, version, changes), `form.changed`,
+  `form.published` (criterion_version_ids), `cycle.changed`, `cycle.opened`, `cycle.closed`.
+- **Admin API** (`api/admin_urls.py`, mounted at `/api/v1/admin/`, `IsSuperAdmin` everywhere): see [[API Endpoints]].
+  Decimals are JSON numbers (`COERCE_DECIMAL_TO_STRING = False`).
+- **`manage.py seed_demo_data [--open-cycle] [--members N]`**: idempotent; the 6 spec criteria (1–5 with labels),
+  "Standard choir evaluation" form (published) and "Demo cycle" (draft). `--members` needs `DEMO_MEMBER_PASSWORD`.
+  The dev DB was seeded (no members).
+- Cycles past `ends_at` stay OPEN until closed; submission checks the time window (2.3). An auto-close job is a later follow-up.
