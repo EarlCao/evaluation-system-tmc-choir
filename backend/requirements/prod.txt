@@ -1,0 +1,2 @@
+# Production. The ASGI server (daphne) is added in step 5.1 and hardened in step 6.3.
+-r base.txt

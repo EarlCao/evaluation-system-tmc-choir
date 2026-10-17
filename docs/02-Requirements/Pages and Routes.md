@@ -1,0 +1,39 @@
+---
+tags: [requirements, frontend]
+---
+# Pages and Routes
+
+Frontend routes (React Router). The **Guard** column is UX only. The API enforces access.
+
+| Page | Route | Guard | Feature folder | Phase |
+|---|---|---|---|---|
+| Public / Welcome | `/` | public | `features/auth` | 1 |
+| Login | `/login` | guest | `features/auth` | 1 |
+| Register | `/register` | guest | `features/auth` | 1 |
+| Forgot / Reset Password | `/forgot-password`, `/reset-password/:uid/:token` | guest | `features/auth` | 1 |
+| Profile | `/profile` | member | `features/auth` | 1 |
+| Member Dashboard | `/app` | member | `features/dashboard` | 2 |
+| Choir Member Directory | `/app/members` | member | `features/members` | 2 |
+| Member Profile | `/app/members/:publicId` | member | `features/members` | 2 |
+| Evaluate a Member | `/app/members/:publicId/evaluate` | member | `features/evaluations` | 2 |
+| My Submitted Evaluations | `/app/my-evaluations` | member | `features/evaluations` | 2 |
+| Evaluation Details & Revision History | `/app/my-evaluations/:publicId` | member (author only) | `features/evaluations` | 3 |
+| Feedback I Received | `/app/feedback` | member | `features/feedback` | 3 |
+| Notifications | `/app/notifications` | member | `features/notifications` | 5 |
+| Privacy Notice | `/privacy` | public | `features/auth` | 2 |
+| Super Admin Dashboard | `/admin` | super admin | `features/admin` | 4 |
+| Manage Members & Roles | `/admin/members` | super admin | `features/admin` | 4 |
+| Manage Evaluation Cycles | `/admin/cycles` | super admin | `features/admin` | 4 |
+| Manage Rating Criteria & Form Settings | `/admin/criteria`, `/admin/forms` | super admin | `features/admin` | 4 |
+| All Evaluations | `/admin/evaluations`, `/admin/evaluations/:publicId` | super admin | `features/admin` | 4 |
+| Moderation Queue | `/admin/moderation` | super admin | `features/admin` | 4 |
+| Reports & Analytics | `/admin/reports` | super admin | `features/reports` | 4 |
+| Audit Logs | `/admin/audit` | super admin | `features/admin` | 4 |
+| System Settings & Privacy Policy | `/admin/settings` | super admin | `features/admin` | 4 |
+
+> [!note] Django admin
+> Django's built-in admin is mounted at a non-default path (`/django-admin/`), restricted
+> to `SUPER_ADMIN` + `is_staff`, and intended for emergencies only. Day-to-day admin work
+> uses the React admin screens, which are audited.
+
+Related: [[Frontend Structure]] · [[API Endpoints]]
