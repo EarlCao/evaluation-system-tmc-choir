@@ -168,6 +168,7 @@ REST_FRAMEWORK = {
         "login": "5/min",
         "register": "3/hour",
         "password_reset": "3/hour",
+        "evaluation_submit": "30/hour",
     },
     # Client IP for throttling: REMOTE_ADDR, or the last X-Forwarded-For hop when behind
     # our proxy. Never trust client-supplied X-Forwarded-For (throttle bypass).
@@ -185,6 +186,11 @@ SPECTACULAR_SETTINGS = {
     "SCHEMA_PATH_PREFIX": r"/api/v1",
     "ENUM_NAME_OVERRIDES": {
         "HealthStateEnum": "apps.core.api.serializers.HEALTH_STATES",
+        "UserStatusEnum": "apps.accounts.constants.UserStatus",
+        "UserRoleEnum": "apps.accounts.constants.UserRole",
+        "CycleStatusEnum": "apps.evaluations.constants.CycleStatus",
+        "FormStatusEnum": "apps.evaluations.constants.FormStatus",
+        "ScaleTypeEnum": "apps.evaluations.constants.ScaleType",
     },
     # Locked down by default; dev settings open it up.
     "SERVE_PERMISSIONS": ["apps.core.permissions.IsSuperAdmin"],

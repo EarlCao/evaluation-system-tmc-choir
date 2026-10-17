@@ -50,7 +50,7 @@ instance raises, and so does `delete()`.
 - Constants: `RegistrationMode`, `MIN_AGGREGATE_GROUP_SIZE_FLOOR`, `DEFAULT_PRIVACY_NOTICE`.
 
 ## API
-Public: `GET /api/v1/system/public/` · Admin: `GET/PATCH /api/v1/admin/settings/`
+Public: `GET /api/v1/system/public/` ✅ (2.3) · Admin: `GET/PATCH /api/v1/admin/settings/` (4.6)
 
 ## Data management (Phase 6)
 - `manage.py apply_retention` (scheduled): purges or anonymises per the retention fields,

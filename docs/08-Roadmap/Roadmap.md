@@ -47,7 +47,7 @@ tags: [roadmap]
   placeholder plus `GET /dashboard/`.
 - [x] **2.2 Evaluation configuration (backend)**: categories, criteria + versions, form
   versions + publish, cycles + open/close, admin APIs, validation, `seed_demo_data` command.
-- [ ] **2.3 Evaluation submission (backend)**: eligibility endpoint, current cycle and
+- [x] **2.3 Evaluation submission (backend)**: eligibility endpoint, current cycle and
   form endpoints, `submit_evaluation` (all rules BR-01/12/13/14, revision 1), my
   evaluations list and detail, throttle, privacy notice in `system/public`.
 - [ ] **2.4 Evaluate & My Evaluations (frontend)**: dynamic form from form version,

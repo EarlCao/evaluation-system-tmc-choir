@@ -46,3 +46,5 @@ Related: [[Feedback]] · [[Audit]] · [[Evaluations]]
 `apps/reports` exists with `selectors.member_dashboard(user)` → `{active_members, voice_section}` at
 `GET /api/v1/dashboard/`. Steps 2.3 (open cycle, evaluations to do) and 3.2 (feedback received) extend it.
 Frontend `features/dashboard`: `DashboardPage` (greeting, stat cards, shortcuts).
+
+Step 2.3: the dashboard adds `open_cycle {public_id, name, ends_at, evaluations_given, members_left}` (or null).

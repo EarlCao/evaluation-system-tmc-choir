@@ -44,12 +44,12 @@ Perm: **P** public · **M** active member · **A** super admin
 ## Evaluations (`apps/evaluations`)
 | Method | Path | Perm | Req | Phase | Status |
 |---|---|---|---|---|---|
-| GET | `/api/v1/evaluation-cycles/current/` | M | EVAL-06 | 2 | 📝 |
-| GET | `/api/v1/evaluation-cycles/{public_id}/form/` | M | EVAL-01, EVAL-03 | 2 | 📝 |
-| GET | `/api/v1/evaluations/eligibility/?recipient=` | M | MEM-04, BR-14 | 2 | 📝 |
-| POST | `/api/v1/evaluations/` | M | EVAL-01..08 | 2 | 📝 |
-| GET | `/api/v1/evaluations/mine/` | M | MINE-01 | 2 | 📝 |
-| GET | `/api/v1/evaluations/mine/{public_id}/` | M | MINE-01 | 2 | 📝 |
+| GET | `/api/v1/evaluation-cycles/current/` → `{cycle\|null}` | M | EVAL-06 | 2 | ✅ |
+| GET | `/api/v1/evaluation-cycles/{public_id}/form/` | M | EVAL-01, EVAL-03 | 2 | ✅ |
+| GET | `/api/v1/evaluations/eligibility/?recipient=` | M | MEM-04, BR-14 | 2 | ✅ |
+| POST | `/api/v1/evaluations/` (30/h/user) | M | EVAL-01..08 | 2 | ✅ |
+| GET | `/api/v1/evaluations/mine/` (`?cycle=`) | M | MINE-01 | 2 | ✅ |
+| GET | `/api/v1/evaluations/mine/{public_id}/` (author only) | M | MINE-01 | 2 | ✅ |
 | PATCH | `/api/v1/evaluations/mine/{public_id}/` | M | MINE-02 | 3 | 📝 |
 | GET | `/api/v1/evaluations/mine/{public_id}/revisions/` | M | MINE-04 | 3 | 📝 |
 | GET/POST | `/api/v1/admin/criterion-categories/` · PATCH `/{id}/` | A | CFG-01 | 2 | ✅ |
@@ -93,7 +93,7 @@ Perm: **P** public · **M** active member · **A** super admin
 ## System (`apps/system`)
 | Method | Path | Perm | Req | Phase | Status |
 |---|---|---|---|---|---|
-| GET | `/api/v1/system/public/` | P | SET-03 | 2 | 📝 |
+| GET | `/api/v1/system/public/` | P | SET-03 | 2 | ✅ |
 | GET/PATCH | `/api/v1/admin/settings/` | A | SET-01 | 4 | 📝 |
 
 ## Notifications (`apps/notifications`)

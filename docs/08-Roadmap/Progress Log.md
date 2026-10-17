@@ -12,6 +12,24 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-17 · Step 2.3: Evaluation submission (backend) ✅
+**What:** evaluation, rating, comment and append-only revision models; shared eligibility rules; `submit_evaluation`
+(server-chosen open cycle, combined validation, text cleaning, revision 1, audited event); member API (current cycle,
+cycle form, eligibility, submit with throttle, my evaluations list and detail); public settings endpoint (privacy notice);
+dashboard cycle progress; `services` became a package.
+**Requirements:** EVAL-01, EVAL-05, EVAL-07 (server side), EVAL-08, MINE-01, MINE-03 (revision 1), MEM-04, SET-03;
+BR-01 (service + DB check), BR-02, BR-05, BR-10, BR-12, BR-13, BR-14, BR-15 (NULL, not zero)
+**Verification (MySQL):** `pytest` **306 passed** (+32: happy path incl. labels / optional NULL / comments / revision / audit,
+immutable revisions, text cleaning, self-evaluation in service and DB, once-per-cycle + resubmission numbering, window
+not started / ended, inactive → 404, not-evaluable, same-section scope, super admin refused, required + scale + unknown/duplicate
++ length validation, API 201/400/409/401, recipient can't see 'mine', throttling, public settings, dashboard progress).
+The OpenAPI schema validates with `--fail-on-warn` (enum names fixed). Dev DB migrated.
+**Fixes during the step:** rating and text errors are now reported together (previously the rating errors hid the comment error).
+**Docs updated:** [[Evaluations]], [[System Settings]], [[Reports]], [[API Endpoints]], [[Module Boundaries]], [[Open Questions]], [[Roadmap]]
+**Commit:** `feat(evaluations): step 2.3 evaluation submission`
+
+---
+
 ## 2026-10-17 · Step 2.2: Evaluation configuration (backend) ✅
 **What:** `apps/evaluations` configuration: categories, criteria with immutable versions, form versions (draft →
 published, frozen), cycles (DRAFT → OPEN → CLOSED → ARCHIVED, one open cycle at DB level), scale validation, Super Admin

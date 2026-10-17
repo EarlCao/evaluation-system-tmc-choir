@@ -2,7 +2,7 @@
 tags: [module]
 module: evaluations
 phase: 2-3
-status: configuration implemented (2.2); submissions 2.3, revisions 3.1, moderation 4.4
+status: configuration (2.2) + submissions (2.3) implemented; editing/revisions 3.1, moderation 4.4
 ---
 # Module: Evaluations
 
@@ -110,3 +110,21 @@ Related: [[Feedback]] · [[Data Model]] · [[Privacy Model]]
   "Standard choir evaluation" form (published) and "Demo cycle" (draft). `--members` needs `DEMO_MEMBER_PASSWORD`.
   The dev DB was seeded (no members).
 - Cycles past `ends_at` stay OPEN until closed; submission checks the time window (2.3). An auto-close job is a later follow-up.
+
+## Implementation notes (step 2.3): submissions
+- **Models:** `Evaluation` (DB check `evaluator ≠ recipient`; unique `(cycle, evaluator, recipient, submission_number)`;
+  indexes on (recipient, cycle), (evaluator, cycle), (cycle, submitted_at)), `EvaluationRating` (value NULL = not rated;
+  label snapshot), `EvaluationComment` (COMMENT / SUGGESTION, row only when non-empty), `EvaluationRevision` (**append-only**, snapshot JSON).
+- **`rules.py`** is shared by the eligibility endpoint and the submit service, so they can't disagree. Order:
+  SELF → NOT_A_MEMBER (no profile, e.g. Super Admin, Q9) → NO_OPEN_CYCLE → NOT_STARTED / ENDED → NOT_EVALUABLE →
+  OUT_OF_SCOPE (SAME_SECTION) → ALREADY_EVALUATED (unless `allow_resubmission`). Reasons describe only the viewer's own situation.
+  Inactive or unknown recipients → 404. `can_edit` = SUBMITTED + cycle OPEN + now ≤ edit_deadline.
+- **`services.submit_evaluation`:** the server picks the open cycle (the client never chooses). Ratings and texts are validated
+  together, so all errors come back at once (`fields.ratings.{criterion_version_id}`, `fields.comment`, `fields.suggestion`).
+  Required criteria, values on the scale (min/max/step), no unknown or duplicate criteria, required texts and length limits.
+  Text is cleaned (`text.clean_text`: CRLF → LF, control/format characters dropped, NFC, trimmed). Writes evaluation +
+  ratings + comments + **revision 1** atomically. Publishes `evaluation.submitted` (IDs only). A duplicate race → IntegrityError → 409.
+- **Services package:** `services/config.py` + `services/submissions.py`, re-exported from `services/__init__.py`.
+- **Member API:** `GET /evaluation-cycles/current/` → `{cycle|null}`, `GET /evaluation-cycles/{id}/form/` (non-draft),
+  `GET /evaluations/eligibility/?recipient=`, `POST /evaluations/` (throttle `evaluation_submit` 30/h/user),
+  `GET /evaluations/mine/` (`?cycle=`), `GET /evaluations/mine/{id}/` (author only; the recipient gets 404).

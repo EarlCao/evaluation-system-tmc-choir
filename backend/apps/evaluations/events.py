@@ -60,3 +60,13 @@ class CycleOpened(DomainEvent):
 class CycleClosed(DomainEvent):
     name = "evaluations.cycle.closed"
     target_type = "evaluations.EvaluationCycle"
+
+
+@dataclass(frozen=True, kw_only=True)
+class EvaluationSubmitted(DomainEvent):
+    """IDs only. Consumers must never pass ``actor_id`` (the evaluator) to members."""
+
+    name = "evaluations.evaluation.submitted"
+    target_type = "evaluations.Evaluation"
+    recipient_id: int
+    cycle_id: int

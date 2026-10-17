@@ -1,8 +1,4 @@
-"""Public write API of the evaluations module.
-
-Step 2.2: configuration (categories, criteria + versions, form versions, cycles).
-Submissions (2.3), editing/revisions (3.1) and moderation (4.4) are added later.
-"""
+"""Configuration services (step 2.2): categories, criteria + versions, forms, cycles."""
 
 from collections.abc import Sequence
 from datetime import datetime
@@ -16,8 +12,8 @@ from django.utils.text import slugify
 from apps.core.events import publish
 from apps.core.exceptions import BusinessRuleViolation, ValidationError
 
-from . import events
-from .constants import (
+from .. import events
+from ..constants import (
     CRITERION_DESCRIPTION_MAX,
     CRITERION_NAME_MAX,
     TEXT_LIMIT_MAX,
@@ -26,7 +22,7 @@ from .constants import (
     FeedbackVisibility,
     FormStatus,
 )
-from .models import (
+from ..models import (
     CriterionCategory,
     CriterionVersion,
     EvaluationCycle,
@@ -34,7 +30,7 @@ from .models import (
     FormVersionItem,
     RatingCriterion,
 )
-from .scales import normalize_labels, validate_scale
+from ..scales import normalize_labels, validate_scale
 
 VERSION_FIELDS = (
     "name",

@@ -1,4 +1,4 @@
-"""Evaluation configuration models (step 2.2). Submissions and revisions arrive in 2.3 / 3.1.
+"""Evaluation models: configuration (step 2.2) and submissions + revisions (step 2.3).
 
 Versioning rules (Data Model, BR-07, BR-18, CFG-06):
 - A ``RatingCriterion`` is a stable identity; its wording and scale live in immutable
@@ -18,10 +18,13 @@ from .constants import (
     CRITERION_DESCRIPTION_MAX,
     CRITERION_NAME_MAX,
     DEFAULT_TEXT_LIMIT,
+    CommentKind,
     CycleStatus,
     EvaluationScope,
+    EvaluationStatus,
     FeedbackVisibility,
     FormStatus,
+    ModerationStatus,
     ScaleType,
 )
 
@@ -188,3 +191,111 @@ class EvaluationCycle(PublicIdModel, TimeStampedModel):
 
     def __str__(self) -> str:
         return self.name
+
+
+class Evaluation(PublicIdModel, TimeStampedModel):
+    """One evaluator's submission about one recipient in one cycle (EVAL-01).
+
+    ``evaluator`` is visible to the author and the Super Admin only. Member-facing
+    feedback goes exclusively through ``apps.feedback`` (Privacy Model)."""
+
+    cycle = models.ForeignKey(EvaluationCycle, on_delete=models.PROTECT, related_name="evaluations")
+    evaluator = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="evaluations_given"
+    )
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="evaluations_received"
+    )
+    form_version = models.ForeignKey(FormVersion, on_delete=models.PROTECT, related_name="+")
+    submission_number = models.PositiveSmallIntegerField(default=1)
+    status = models.CharField(
+        max_length=16, choices=EvaluationStatus.choices, default=EvaluationStatus.SUBMITTED
+    )
+    current_revision_number = models.PositiveIntegerField(default=1)
+    is_edited = models.BooleanField(default=False)
+    moderation_status = models.CharField(
+        max_length=16, choices=ModerationStatus.choices, default=ModerationStatus.VISIBLE
+    )
+    submitted_at = models.DateTimeField()
+    last_edited_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-submitted_at", "-id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=~Q(evaluator=F("recipient")), name="evaluation_not_self"
+            ),
+            models.UniqueConstraint(
+                fields=["cycle", "evaluator", "recipient", "submission_number"],
+                name="evaluation_once_per_cycle",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["recipient", "cycle"], name="evaluation_recipient_idx"),
+            models.Index(fields=["evaluator", "cycle"], name="evaluation_evaluator_idx"),
+            models.Index(fields=["cycle", "submitted_at"], name="evaluation_cycle_time_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return str(self.public_id)
+
+
+class EvaluationRating(models.Model):
+    evaluation = models.ForeignKey(Evaluation, on_delete=models.PROTECT, related_name="ratings")
+    criterion_version = models.ForeignKey(
+        CriterionVersion, on_delete=models.PROTECT, related_name="ratings"
+    )
+    value = models.DecimalField(
+        max_digits=6, decimal_places=2, null=True, blank=True, help_text="NULL = not rated."
+    )
+    label = models.CharField(max_length=60, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["evaluation", "criterion_version"], name="rating_once_per_criterion"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.evaluation_id}:{self.criterion_version_id}={self.value}"
+
+
+class EvaluationComment(models.Model):
+    evaluation = models.ForeignKey(Evaluation, on_delete=models.PROTECT, related_name="comments")
+    kind = models.CharField(max_length=16, choices=CommentKind.choices)
+    body = models.TextField()
+    moderation_status = models.CharField(
+        max_length=16, choices=ModerationStatus.choices, default=ModerationStatus.VISIBLE
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["evaluation", "kind"], name="comment_once_per_kind"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.evaluation_id}:{self.kind}"
+
+
+class EvaluationRevision(AppendOnlyModel):
+    """Immutable snapshot written on every create/edit (MINE-03, BR-05). Visible to the
+    author and the Super Admin only; kept separate from the audit log (AUD-05)."""
+
+    evaluation = models.ForeignKey(Evaluation, on_delete=models.PROTECT, related_name="revisions")
+    revision_number = models.PositiveIntegerField()
+    snapshot = models.JSONField()
+    editor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+")
+    change_summary = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["evaluation_id", "revision_number"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["evaluation", "revision_number"], name="revision_number_unique"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.evaluation_id} r{self.revision_number}"

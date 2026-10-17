@@ -38,3 +38,33 @@ LABEL_MAX = 60
 MAX_SCALE_POINTS = 101
 TEXT_LIMIT_MAX = 5000
 DEFAULT_TEXT_LIMIT = 2000
+
+
+class EvaluationStatus(models.TextChoices):
+    SUBMITTED = "SUBMITTED", "Submitted"
+    WITHDRAWN = "WITHDRAWN", "Withdrawn"
+
+
+class ModerationStatus(models.TextChoices):
+    VISIBLE = "VISIBLE", "Visible"
+    FLAGGED = "FLAGGED", "Flagged for review"
+    HIDDEN = "HIDDEN", "Hidden by moderation"
+
+
+class CommentKind(models.TextChoices):
+    COMMENT = "COMMENT", "Comment"
+    SUGGESTION = "SUGGESTION", "Suggestion"
+
+
+class Ineligibility(models.TextChoices):
+    """Why the *viewer* cannot evaluate someone. Every reason is about the viewer's own
+    situation or public settings, never about other members' activity (Privacy Model)."""
+
+    SELF = "SELF", "You cannot evaluate yourself."
+    NOT_A_MEMBER = "NOT_A_MEMBER", "Only choir members can submit evaluations."
+    NO_OPEN_CYCLE = "NO_OPEN_CYCLE", "There is no open evaluation period."
+    NOT_STARTED = "NOT_STARTED", "The evaluation period has not started yet."
+    ENDED = "ENDED", "The evaluation period has ended."
+    NOT_EVALUABLE = "NOT_EVALUABLE", "This member is not part of evaluations."
+    OUT_OF_SCOPE = "OUT_OF_SCOPE", "In this period you evaluate members of your own voice section."
+    ALREADY_EVALUATED = "ALREADY_EVALUATED", "You already evaluated this member in this period."
