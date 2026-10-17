@@ -6,6 +6,9 @@ import { NavLink } from "react-router";
 const ADMIN_LINKS = [
   { to: "/admin", label: "Dashboard", end: true },
   { to: "/admin/members", label: "Members", end: false },
+  { to: "/admin/cycles", label: "Periods", end: false },
+  { to: "/admin/criteria", label: "Criteria", end: false },
+  { to: "/admin/forms", label: "Forms", end: false },
 ];
 
 export function AdminNav() {

@@ -22,7 +22,8 @@ tags: [testing]
 - Query counts: `django_assert_max_num_queries` on list endpoints.
 - Fake credentials in tests: keep each one on a **single line** ending with
   `# gitleaks:allow (fake test password)`; use a constant if the line gets long. Never allowlist whole directories.
-- Frontend: Testing Library `asyncUtilTimeout` is 3s and Vitest `testTimeout` 15s (jsdom + MUI under parallel load).
+- Frontend: Testing Library `asyncUtilTimeout` is 3s, Vitest `testTimeout` 15s and `maxWorkers: "50%"` (jsdom + MUI starve when every core
+  runs a worker; the dev VM has 4 cores and is shared with other projects' containers). Lazy routes are preloaded in `beforeAll` in their tests.
   Name lists and regions (`aria-label`) so queries stay unambiguous.
 - Shared fixtures (`backend/conftest.py`): `api_client`, `csrf_api_client`, `member`, `super_admin`, `actor`,
   `member_client`, `admin_client_api`, `registration_mode(mode)`. The cache is cleared around every test.

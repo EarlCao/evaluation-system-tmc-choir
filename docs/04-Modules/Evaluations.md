@@ -159,3 +159,16 @@ Related: [[Feedback]] · [[Data Model]] · [[Privacy Model]]
   "Saved as revision N" confirmation.
 - `RevisionHistory`: author-only timeline (newest first), the changes in words (`revisions.describeChanges`: "Attendance: 3 → 5",
   "Comment changed"), and the full snapshot in `<details>`. It states that only the author and the Super Admin can see it.
+
+## Implementation notes (step 4.3): configuration UI
+- `/admin/cycles` (list) and `/admin/cycles/new|:id`: settings form whose disabled fields mirror the server's per-status rules
+  (`CYCLE_EDITABLE`); local-time `datetime-local` ↔ UTC ISO (`lib/datetime`); empty edit deadline = the end; only published forms are offered.
+  Transitions (Open → Close → Archive) are behind `ConfirmDialog`s that explain the consequences; server conflicts (e.g. "Another cycle is already open") are shown.
+- `/admin/criteria`: display order with ↑/↓ (`reorder`), active switch, archive (confirm), version shown; `CriterionDialog` for create/edit
+  with a Zod schema mirroring `scales.py` (step divides the range, ≤ 101 points, percent ≤ 100, min ≥ 0), labels per point for ≤ 11 points,
+  a version note in edit mode and the version history. Categories: list + add.
+- `/admin/forms` and `/admin/forms/new|:id`: draft editor (title, criteria checklist kept in display order, comment/suggestion rules and limits),
+  "Publish…" (freeze warning; enabled once saved), a published form is read-only with "Copy into a new draft" (`?from=`).
+- **Bug found by the tests:** label inputs named `labels.1`, `labels.2` made React Hook Form treat labels as an array, so Zod rejected it on an
+  invisible field and the dialog silently refused to submit. Fix: labels are held as an array by point position and mapped to point keys on submit;
+  any `labels` error is now shown.

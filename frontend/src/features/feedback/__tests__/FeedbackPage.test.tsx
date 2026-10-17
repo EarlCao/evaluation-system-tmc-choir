@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { api, loggedInAs, memberUser } from "@/test/handlers";
 import { renderRoute } from "@/test/render";
@@ -59,6 +59,12 @@ const items: FeedbackItem[] = [
     suggestion: "",
   },
 ];
+
+// The page is a lazy route; load (and transform) its module once up front so the first
+// test doesn't spend its time budget on the dynamic import.
+beforeAll(async () => {
+  await import("../pages/FeedbackPage");
+});
 
 let listRequests: URLSearchParams[] = [];
 let summaryRequests: URLSearchParams[] = [];

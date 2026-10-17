@@ -12,6 +12,24 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-17 · Step 4.3: Cycles, criteria & form management UI ✅
+**What:** admin pages for evaluation periods (status-aware settings, confirmed transitions), criteria (order, active, archive, create/edit
+with scale validation, labels, version history, categories) and forms (draft editor, publish with freeze warning, read-only published view,
+copy to a new draft). Nav: Dashboard · Members · Periods · Criteria · Forms.
+**Requirements:** EVAL-02, EVAL-03, EVAL-04, EVAL-06, CFG-01..06 (UI)
+**Verification:** typecheck + lint clean; `vitest` **112 passed** on 2 consecutive runs (+13: schema mirrors the server, reorder payload,
+create criterion with labels + client-side scale error, published form read-only + copy link, open-period conflict shown, locked fields for an
+open period, new-period validation); build OK.
+**Bugs fixed:** (1) silent submit failure in the criterion dialog (RHF numeric path segments → array; see [[Evaluations]]); (2) a form draft stayed
+"dirty" after saving, so Publish stayed disabled (form reset to the saved values).
+**Test infrastructure:** the dev VM was at load average 14–16 on 4 cores (other projects' containers). A run started alongside typecheck/lint
+starved and timed out; runs with no concurrent work pass. Vitest now uses `maxWorkers: "50%"`; the lazy feedback page is preloaded in its test file.
+**Follow-ups:** main bundle 941 kB (admin pages); lazy-load the admin area in Phase 6.
+**Docs updated:** [[Evaluations]], [[Pages and Routes]], [[Testing Strategy]], [[Roadmap]]
+**Commit:** `feat(admin): step 4.3 periods, criteria and forms UI`
+
+---
+
 ## 2026-10-17 · Step 4.2: Member & role management ✅
 **What:** role changes (self/last-admin guards, Django-admin access follows role), admin password-reset email, Q9 enforced for promoted members,
 participation excludes Super Admins; admin member API in `members` (list/filter, detail, profile edit, approve, status + reason, role, reset,
