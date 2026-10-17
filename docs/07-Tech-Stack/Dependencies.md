@@ -21,7 +21,7 @@ tags: [tech-stack]
 | mysqlclient==2.3.0 | MySQL driver (needs `default-libmysqlclient-dev`, `pkg-config`, `build-essential`) | 1.2 | ✅ verified on MySQL (container); local venv install pending system packages |
 | django-environ==0.14.0 | env config | 1.2 | ✅ |
 | drf-spectacular==0.30.0 | OpenAPI | 1.2 | ✅ |
-| django-filter | API filtering | 2.1 | 📝 |
+| django-filter==26.2 | API filtering (`DirectoryFilter`) | 2.1 | ✅ |
 | argon2-cffi==25.1.0 | Argon2 password hashing (first in `PASSWORD_HASHERS`) | 1.4 | ✅ |
 | pytest==9.1.1, pytest-django==4.14.0, factory-boy==3.3.3 | tests (dev) | 1.2 | ✅ |
 | ruff==0.17.1 | lint/format (dev) | 1.2 | ✅ |

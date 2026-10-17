@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from ..models import VoiceSection
+from ..models import MemberProfile, VoiceSection
 
 
 class VoiceSectionSerializer(serializers.ModelSerializer):
@@ -21,3 +21,32 @@ class RegisterSerializer(serializers.Serializer):
 class RegistrationResultSerializer(serializers.Serializer):
     status = serializers.CharField()
     detail = serializers.CharField()
+
+
+class DirectoryEntrySerializer(serializers.ModelSerializer):
+    """MEM-01 basic profile information. No email, username or account details."""
+
+    public_id = serializers.UUIDField(source="user.public_id", read_only=True)
+    first_name = serializers.CharField(source="user.first_name", read_only=True)
+    last_name = serializers.CharField(source="user.last_name", read_only=True)
+    display_name = serializers.CharField(source="user.display_name", read_only=True)
+    voice_section = VoiceSectionSerializer(read_only=True)
+
+    class Meta:
+        model = MemberProfile
+        fields = ["public_id", "first_name", "last_name", "display_name", "voice_section"]
+
+
+class MemberDetailSerializer(DirectoryEntrySerializer):
+    is_self = serializers.SerializerMethodField()
+
+    class Meta(DirectoryEntrySerializer.Meta):
+        fields = [*DirectoryEntrySerializer.Meta.fields, "bio", "joined_choir_on", "is_self"]
+
+    def get_is_self(self, obj: MemberProfile) -> bool:
+        request = self.context.get("request")
+        return bool(request and request.user.pk == obj.user_id)
+
+
+class OwnProfileUpdateSerializer(serializers.Serializer):
+    bio = serializers.CharField(max_length=500, allow_blank=True, trim_whitespace=True)

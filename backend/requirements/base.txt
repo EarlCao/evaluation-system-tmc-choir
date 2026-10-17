@@ -4,4 +4,5 @@ djangorestframework==3.18.3
 django-environ==0.14.0
 drf-spectacular==0.30.0
 argon2-cffi==25.1.0
+django-filter==26.2
 mysqlclient==2.3.0

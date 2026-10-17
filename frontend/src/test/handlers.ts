@@ -39,8 +39,19 @@ export const notAuthenticated = () =>
     { status: 401 },
   );
 
+export const voiceSections = [
+  { id: 1, name: "Soprano" },
+  { id: 2, name: "Alto" },
+  { id: 3, name: "Tenor" },
+  { id: 4, name: "Bass" },
+];
+
 /** Default: API healthy, visitor anonymous. Override per test with server.use(...). */
 export const handlers = [
+  http.get(api("/members/voice-sections/"), () => HttpResponse.json(voiceSections)),
+  http.get(api("/dashboard/"), () =>
+    HttpResponse.json({ active_members: 3, voice_section: "Tenor" }),
+  ),
   http.get(api("/health/"), () => HttpResponse.json({ status: "ok", db: "ok" })),
   http.get(api("/auth/me/"), notAuthenticated),
   http.get(api("/auth/csrf/"), () =>

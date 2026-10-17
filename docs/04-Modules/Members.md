@@ -2,7 +2,7 @@
 tags: [module]
 module: members
 phase: 2
-status: registration + voice sections implemented (step 1.4); directory in step 2.1
+status: registration (1.4) + directory, detail, own profile (2.1) implemented; admin management in step 4.2
 ---
 # Module: Members
 
@@ -71,3 +71,15 @@ Related: [[Accounts]] · [[Evaluations]]
   with a mode-specific next step. A CLOSED registration returns 409.
 - `GET /api/v1/members/voice-sections/` is public and unpaginated.
 - Factory: `MemberProfileFactory` (creates an ACTIVE user). Helper `voice_section(name)`.
+
+## Implementation notes (step 2.1)
+- `filters.DirectoryFilter` (django-filter): `search` (every word must match first, last or display name),
+  `voice_section` (active sections only; an invalid id → 400 `fields.voice_section`).
+- `selectors.list_directory(params)` covers ACTIVE accounts with a profile only (super admins have none), ordered by
+  last and first name, with `select_related("user", "voice_section")`. A test caps the queries (no N+1).
+- `selectors.get_member_profile(public_id)`: inactive or unknown members → `NotFound` (404).
+- `services.update_own_profile(user, bio)` (≤ 500 characters) publishes `members.profile.updated` (audited).
+- API: `GET /members/` (DirectoryEntry: public_id, first/last/display name, voice_section; **no email,
+  username or status**), `GET /members/{public_id}/` (+ bio, joined_choir_on, is_self), `GET/PATCH /members/me/` (bio).
+- Frontend `features/members`: `MemberDirectoryPage` (debounced search, section filter and pagination, all in the URL;
+  skeleton, empty and error states; list labelled "Members"), `MemberProfilePage` (read-only for others, bio editor for self, 404 page).

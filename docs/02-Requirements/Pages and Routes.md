@@ -13,9 +13,9 @@ Frontend routes (React Router). The **Guard** column is UX only. The API enforce
 | Forgot / Reset Password | `/forgot-password` (guest), `/reset-password/:uid/:token` (public) | guest / public | `features/auth` | 1 ✅ |
 | Verify Email | `/verify-email/:uid/:token` | public | `features/auth` | 1 ✅ |
 | Profile | `/app/profile` | member | `features/auth` | 1 ✅ |
-| Member Dashboard | `/app` | member | `features/dashboard` | 2 |
-| Choir Member Directory | `/app/members` | member | `features/members` | 2 |
-| Member Profile | `/app/members/:publicId` | member | `features/members` | 2 |
+| Member Dashboard | `/app` | member | `features/dashboard` | 2 ✅ |
+| Choir Member Directory | `/app/members` | member | `features/members` | 2 ✅ |
+| Member Profile | `/app/members/:publicId` | member | `features/members` | 2 ✅ |
 | Evaluate a Member | `/app/members/:publicId/evaluate` | member | `features/evaluations` | 2 |
 | My Submitted Evaluations | `/app/my-evaluations` | member | `features/evaluations` | 2 |
 | Evaluation Details & Revision History | `/app/my-evaluations/:publicId` | member (author only) | `features/evaluations` | 3 |

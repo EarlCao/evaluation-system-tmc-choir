@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # third party
     "rest_framework",
+    "django_filters",
     "drf_spectacular",
     # project modules (see AGENT.md §2)
     "apps.core",
@@ -48,6 +49,7 @@ INSTALLED_APPS = [
     "apps.audit",
     "apps.accounts",
     "apps.members",
+    "apps.reports",
 ]
 
 # ---------------------------------------------------------------------------

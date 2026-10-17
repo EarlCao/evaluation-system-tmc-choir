@@ -20,14 +20,14 @@ describe("route guards (UX only, the API enforces access)", () => {
   it("lets members into the member area", async () => {
     server.use(loggedInAs(memberUser));
     renderRoute("/app");
-    expect(await heading(/member dashboard/i)).toBeVisible();
-    expect(screen.getByText("Mira")).toBeVisible();
+    expect(await heading(/welcome, mira/i)).toBeVisible();
+    expect(screen.getByRole("navigation", { name: "Main" })).toBeVisible();
   });
 
   it("keeps members out of the admin area", async () => {
     server.use(loggedInAs(memberUser));
     const { router } = renderRoute("/admin");
-    expect(await heading(/member dashboard/i)).toBeVisible();
+    expect(await heading(/welcome, mira/i)).toBeVisible();
     expect(router.state.location.pathname).toBe("/app");
   });
 
@@ -56,7 +56,7 @@ describe("route guards (UX only, the API enforces access)", () => {
 
     server.use(loggedInAs(memberUser));
     await userEvent.click(screen.getByRole("button", { name: /try again/i }));
-    expect(await heading(/member dashboard/i)).toBeVisible();
+    expect(await heading(/welcome, mira/i)).toBeVisible();
   });
 });
 

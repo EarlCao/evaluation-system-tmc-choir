@@ -4,6 +4,8 @@ import { ComingSoon } from "@/components/ComingSoon";
 import { NotFoundPage } from "@/components/NotFoundPage";
 import { RouteErrorPage } from "@/components/RouteErrorPage";
 import { guestAuthRoutes, memberAuthRoutes, publicAuthRoutes } from "@/features/auth";
+import { dashboardRoutes } from "@/features/dashboard";
+import { memberRoutes } from "@/features/members";
 
 import { GuestOnly } from "./guards/GuestOnly";
 import { RequireAuth } from "./guards/RequireAuth";
@@ -27,10 +29,7 @@ export const routes: RouteObject[] = [
           {
             path: "app",
             element: <MemberLayout />,
-            children: [
-              { index: true, element: <ComingSoon title="Member dashboard" step="2.1" /> },
-              ...memberAuthRoutes,
-            ],
+            children: [...dashboardRoutes, ...memberRoutes, ...memberAuthRoutes],
           },
           {
             element: <RequireSuperAdmin />,

@@ -35,9 +35,9 @@ Perm: **P** public · **M** active member · **A** super admin
 |---|---|---|---|---|---|
 | POST | `/api/v1/members/register/` | P | AUTH-01 | 1 | ✅ |
 | GET | `/api/v1/members/voice-sections/` | P | AUTH-01 | 1 | ✅ |
-| GET | `/api/v1/members/` | M | MEM-01, MEM-02 | 2 | 📝 |
-| GET | `/api/v1/members/{public_id}/` | M | MEM-03 | 2 | 📝 |
-| PATCH | `/api/v1/members/me/profile/` | M | AUTH-04 | 2 | 📝 |
+| GET | `/api/v1/members/` (`?search=&voice_section=&page=`) | M | MEM-01, MEM-02 | 2 | ✅ |
+| GET | `/api/v1/members/{public_id}/` | M | MEM-03 | 2 | ✅ |
+| GET/PATCH | `/api/v1/members/me/` (bio) | M | AUTH-04 | 2 | ✅ |
 | PATCH | `/api/v1/admin/members/{public_id}/` | A | MEM-05 | 4 | 📝 |
 | CRUD | `/api/v1/admin/voice-sections/` | A | MEM-05 | 4 | 📝 |
 
@@ -72,7 +72,7 @@ Perm: **P** public · **M** active member · **A** super admin
 ## Reports (`apps/reports`)
 | Method | Path | Perm | Req | Phase | Status |
 |---|---|---|---|---|---|
-| GET | `/api/v1/dashboard/` | M | – | 2 | 📝 |
+| GET | `/api/v1/dashboard/` | M | – | 2 | ✅ (grows in 2.3 / 3.2) |
 | GET | `/api/v1/admin/reports/dashboard/` | A | ADM-01 | 4 | 📝 |
 | GET | `/api/v1/admin/reports/members/{public_id}/` | A | REP-01 | 4 | 📝 |
 | GET | `/api/v1/admin/reports/choir/` | A | REP-01 | 4 | 📝 |

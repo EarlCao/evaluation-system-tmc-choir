@@ -9,10 +9,11 @@ import { Link as RouterLink } from "react-router";
 interface AppHeaderProps {
   home: string;
   badge?: string;
+  nav?: ReactNode;
   children?: ReactNode;
 }
 
-export function AppHeader({ home, badge, children }: AppHeaderProps) {
+export function AppHeader({ home, badge, nav, children }: AppHeaderProps) {
   return (
     <AppBar
       position="sticky"
@@ -30,6 +31,7 @@ export function AppHeader({ home, badge, children }: AppHeaderProps) {
           🎼 Choir Evaluation
         </Typography>
         {badge ? <Chip label={badge} color="secondary" size="small" /> : null}
+        {nav}
         <Box sx={{ flexGrow: 1 }} />
         {children}
       </Toolbar>

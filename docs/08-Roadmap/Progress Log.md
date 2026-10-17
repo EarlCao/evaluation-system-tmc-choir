@@ -12,6 +12,22 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-17 · Step 2.1: Member directory ✅
+**What:** backend directory (django-filter search + voice section, ACTIVE only, ordered, paginated, no N+1),
+member detail (404 for inactive), own profile bio, `apps/reports` with `GET /dashboard/`. Frontend: directory page
+(URL-synced filters and pagination), member profile page (bio editor for self), dashboard page, main navigation with `aria-current`.
+**Requirements:** MEM-01, MEM-02, MEM-03, AUTH-04 (bio); NFR-03 (pagination, query cap), NFR-05
+**Verification:** backend `pytest` **214 passed** on MySQL (+20: directory filters, privacy of fields, pagination,
+query count, detail 404s, bio update + audit, dashboard) · ruff clean · `check` / `makemigrations --check` clean.
+Frontend: typecheck + lint clean, `vitest` **64 passed** on 3 consecutive runs (+11).
+**Fixes during the step:** a URL update during render was moved into an effect; a timing-sensitive test was fixed with a 3s async timeout (stable over 3 runs);
+the member list got an accessible name because the pagination also renders a list.
+**Dependencies added:** django-filter 26.2.
+**Docs updated:** [[Members]], [[Reports]], [[API Endpoints]], [[Pages and Routes]], [[Dependencies]], [[Testing Strategy]], [[Roadmap]]
+**Commit:** `feat(members): step 2.1 member directory`
+
+---
+
 ## 2026-10-17 · Step 1.6: Frontend auth pages ✅ (Phase 1 complete → tag `phase-1`)
 **What:** login, registration (voice sections, mode-specific result), forgot password, reset password, email
 verification (explicit confirm), profile (names + password change), account menu with logout (clears the cache),

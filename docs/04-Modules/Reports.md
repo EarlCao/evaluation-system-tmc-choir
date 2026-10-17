@@ -2,7 +2,7 @@
 tags: [module]
 module: reports
 phase: 4
-status: planned
+status: member dashboard endpoint started (2.1); admin reports in 4.1 / 4.5
 ---
 # Module: Reports & Analytics
 
@@ -41,3 +41,8 @@ Averages ignore missing values; division by zero is handled; thresholds apply to
 breakdowns; members get 403 on every admin report; each export is audited.
 
 Related: [[Feedback]] · [[Audit]] · [[Evaluations]]
+
+## Implementation notes (step 2.1)
+`apps/reports` exists with `selectors.member_dashboard(user)` → `{active_members, voice_section}` at
+`GET /api/v1/dashboard/`. Steps 2.3 (open cycle, evaluations to do) and 3.2 (feedback received) extend it.
+Frontend `features/dashboard`: `DashboardPage` (greeting, stat cards, shortcuts).

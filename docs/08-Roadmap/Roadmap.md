@@ -42,7 +42,7 @@ tags: [roadmap]
   - Done when: you can register, log in and log out end-to-end against the real backend, and component tests pass.
 
 ## Phase 2: Member & Evaluation Flow
-- [ ] **2.1 Member directory**: `members` selectors and API (search, filter, paginate,
+- [x] **2.1 Member directory**: `members` selectors and API (search, filter, paginate,
   django-filter), member profile; frontend directory and profile pages; member dashboard
   placeholder plus `GET /dashboard/`.
 - [ ] **2.2 Evaluation configuration (backend)**: categories, criteria + versions, form

@@ -22,6 +22,8 @@ tags: [testing]
 - Query counts: `django_assert_max_num_queries` on list endpoints.
 - Fake credentials in tests: keep each one on a **single line** ending with
   `# gitleaks:allow (fake test password)`; use a constant if the line gets long. Never allowlist whole directories.
+- Frontend: Testing Library `asyncUtilTimeout` is 3s and Vitest `testTimeout` 15s (jsdom + MUI under parallel load).
+  Name lists and regions (`aria-label`) so queries stay unambiguous.
 - Shared fixtures (`backend/conftest.py`): `api_client`, `csrf_api_client`, `member`, `super_admin`, `actor`,
   `member_client`, `admin_client_api`, `registration_mode(mode)`. The cache is cleared around every test.
 
