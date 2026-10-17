@@ -5,13 +5,18 @@ the same transaction as the business change, or to log sensitive *read* access
 (Module Boundaries). Everything else is recorded from domain events (handlers.py).
 """
 
+import json
 from collections.abc import Mapping
 from typing import Any
 
 from django.contrib.auth import get_user_model
+from django.core.serializers.json import DjangoJSONEncoder
 
+from apps.core.exceptions import ValidationError
+from apps.core.exports import CONTENT_TYPES, Document, Table, render
 from apps.core.middleware import get_request_context
 
+from . import selectors
 from .models import AuditLog
 
 REDACTED = "[REDACTED]"
@@ -62,3 +67,69 @@ def record(
         user_agent=context.user_agent if context else "",
         request_id=context.request_id if context else "",
     )
+
+
+EXPORT_EVENT = "audit.export.generated"
+EXPORT_LIMIT = 50_000
+
+
+def export_logs(*, actor, file_type: str, filters: dict):
+    """AUD-04: CSV / Excel export of the filtered log. The export itself is logged first."""
+    if file_type not in ("csv", "xlsx"):
+        raise ValidationError(fields={"file_type": ["Choose csv or xlsx."]})
+    logs = list(selectors.list_logs(**filters)[: EXPORT_LIMIT + 1])
+    if len(logs) > EXPORT_LIMIT:
+        raise ValidationError(
+            fields={"occurred_from": [f"More than {EXPORT_LIMIT} entries: narrow the dates."]}
+        )
+    shown = {k: str(v) for k, v in filters.items() if v not in (None, "")}
+    doc = Document(
+        title="Audit log",
+        filename_stem="audit-log",
+        details=[f"Filters: {', '.join(f'{k}={v}' for k, v in shown.items())}"] if shown else [],
+        tables=[
+            Table(
+                title="Entries",
+                columns=[
+                    "Time (UTC)",
+                    "Event",
+                    "Actor",
+                    "Actor role",
+                    "Target type",
+                    "Target id",
+                    "Before",
+                    "After",
+                    "Details",
+                    "IP address",
+                    "Request id",
+                ],
+                rows=[
+                    [
+                        log.occurred_at.strftime("%Y-%m-%d %H:%M:%S"),
+                        log.event_type,
+                        log.actor.get_full_name() if log.actor else "",
+                        log.actor_role,
+                        log.target_type,
+                        log.target_id,
+                        _json(log.before),
+                        _json(log.after),
+                        _json(log.metadata),
+                        log.ip_address or "",
+                        log.request_id,
+                    ]
+                    for log in logs
+                ],
+            )
+        ],
+    )
+    content = render(doc, file_type)
+    record(
+        event_type=EXPORT_EVENT,
+        actor=actor,
+        metadata={"file_type": file_type, "filters": shown, "rows": len(logs)},
+    )
+    return doc.filename_stem, CONTENT_TYPES[file_type], content
+
+
+def _json(value) -> str:
+    return "" if value in (None, {}) else json.dumps(value, cls=DjangoJSONEncoder, sort_keys=True)

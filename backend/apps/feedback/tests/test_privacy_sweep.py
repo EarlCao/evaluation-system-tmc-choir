@@ -20,7 +20,14 @@ from apps.members.tests.factories import MemberProfileFactory
 
 pytestmark = pytest.mark.django_db
 
-ADMIN_NAMESPACES = {"evaluations-admin", "reports-admin", "members-admin", "admin"}
+ADMIN_NAMESPACES = {
+    "evaluations-admin",
+    "reports-admin",
+    "members-admin",
+    "audit-admin",
+    "system-admin",
+    "admin",
+}
 DOCS_ROUTES = {"schema", "swagger-ui"}
 
 # Member-facing routes that only accept unsafe methods (no GET payload to sweep). Their

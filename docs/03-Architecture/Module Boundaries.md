@@ -51,6 +51,7 @@ Consumers re-query what they need. One exception: configuration events may carry
 | `evaluations.evaluation.edited` ✅ | evaluations | audit, notifications (author) | actor_id, target_id, revision_number |
 | `evaluations.evaluation.moderated` ✅ | evaluations | audit | actor_id, target_id, action, moderation_target, changes (moderation_status), reason |
 | `admin.sensitive_access` ✅ *(direct `audit.services.record`, not an event)* | evaluations | audit | actor, view, target_id or filters/page/results |
+| `audit.export.generated` ✅ *(written by `audit.services.export_logs`)* | audit | audit | actor, file_type, filters, rows |
 | `reports.export.generated` ✅ *(direct `audit.services.record`, before the file is returned)* | reports | audit | actor, report, file_type, filters, rows, identities |
 | `system.settings.changed` ✅ | system | audit | actor_id, target_id=1, changes |
 

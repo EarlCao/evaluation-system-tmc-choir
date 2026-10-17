@@ -11,11 +11,11 @@ from django.utils import timezone
 
 from apps.audit import services as audit
 from apps.core.exceptions import ValidationError
+from apps.core.exports import CONTENT_TYPES, Document, Table, render
 from apps.evaluations import selectors as evaluation_selectors
 from apps.evaluations.constants import CommentKind
 
 from . import selectors
-from .exports import CONTENT_TYPES, Document, Table, render
 
 EXPORT_EVENT = "reports.export.generated"
 REPORTS = ("choir", "member", "participation", "evaluations")

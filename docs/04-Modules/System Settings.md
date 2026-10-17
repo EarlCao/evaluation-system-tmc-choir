@@ -2,7 +2,7 @@
 tags: [module]
 module: system
 phase: 1 (model), 4 (UI), 6 (retention/backups)
-status: model + services implemented (step 1.3); API/UI in steps 2.3 / 4.6
+status: model + services (1.3), public API (2.3), admin API/UI + privacy page (4.6) implemented; retention jobs in 6.4
 ---
 # Module: System Settings
 
@@ -61,3 +61,14 @@ Public: `GET /api/v1/system/public/` ✅ (2.3) · Admin: `GET/PATCH /api/v1/admi
   export (their own profile + submitted evaluations + anonymised received feedback).
 
 Related: [[Privacy Model]] · [[Accounts]]
+
+## Implementation notes (step 4.6): settings UI & privacy page
+- `GET/PATCH /api/v1/admin/settings/` (namespace `system-admin`): GET reads the row fresh (not the 60 s cache); PATCH validates
+  shape/ranges (`SettingsUpdateSerializer`: privacy floor ≥ 3, debounce 0–1440, audit retention ≥ 30 or empty) and calls
+  `services.update_settings` (model `full_clean` is authoritative, e.g. unknown time zones). Unchanged values write nothing.
+  Response includes `updated_at` and `updated_by`.
+- UI `/admin/settings`: groups General / Registration and privacy / Notifications / Data retention; client checks mirror the
+  server; only changed fields are sent; time zone picker from `Intl.supportedValuesOf("timeZone")`; saving invalidates the
+  public settings query so the new privacy notice shows everywhere at once. Retention values are stored now and applied in 6.4.
+- Public `/privacy` page (`features/auth`): the choir's notice plus a fixed "who sees what" table describing what the software
+  guarantees; `components/SiteFooter` links to it from every layout.

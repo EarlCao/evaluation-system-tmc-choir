@@ -1,5 +1,6 @@
 import type { RouteObject } from "react-router";
 
+import { AdminAuditPage } from "./pages/AdminAuditPage";
 import { AdminCriteriaPage } from "./pages/AdminCriteriaPage";
 import { AdminCyclePage } from "./pages/AdminCyclePage";
 import { AdminCyclesPage } from "./pages/AdminCyclesPage";
@@ -11,6 +12,7 @@ import { AdminFormsPage } from "./pages/AdminFormsPage";
 import { AdminMemberPage } from "./pages/AdminMemberPage";
 import { AdminMembersPage } from "./pages/AdminMembersPage";
 import { AdminModerationPage } from "./pages/AdminModerationPage";
+import { AdminSettingsPage } from "./pages/AdminSettingsPage";
 import { AdminVoiceSectionsPage } from "./pages/AdminVoiceSectionsPage";
 
 /** Super Admin area routes (/admin/...). */
@@ -29,4 +31,6 @@ export const adminRoutes: RouteObject[] = [
   { path: "evaluations", element: <AdminEvaluationsPage /> },
   { path: "evaluations/:publicId", element: <AdminEvaluationPage /> },
   { path: "moderation", element: <AdminModerationPage /> },
+  { path: "audit", element: <AdminAuditPage /> },
+  { path: "settings", element: <AdminSettingsPage /> },
 ];

@@ -12,6 +12,25 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-17 · Step 4.6: Audit log viewer + System settings + Privacy page ✅ (Phase 4 complete → tag `phase-4`)
+**What:** read-only audit log API + `/admin/audit` (search, event/actor/date filters, expandable before/after/details,
+CSV/Excel export that is itself audited); system settings API + `/admin/settings` (general, registration, privacy floor,
+privacy notice, notification debounce, retention values); public `/privacy` page with the choir's notice and a "who sees
+what" table, linked from a footer on every page. `core.exports` now shared by reports and audit.
+**Requirements:** AUD-03, AUD-04, SET-01, SET-03 · ADM-06
+**Verification:** backend `pytest` **444 passed** (+22: permissions, read-only 405s, newest-first with actor, 5 filter cases,
+actor filter + date validation, event types, export content + its own audit row, PDF refused; settings read/update with cache
+invalidation + audit before/after, 5 validation cases incl. privacy floor and unknown time zone, no-op update writes nothing);
+privacy sweep updated with the `audit-admin` and `system-admin` namespaces (its completeness check would otherwise fail);
+`check`, `makemigrations --check`, `spectacular --validate --fail-on-warn` clean. Frontend typecheck + lint clean, `vitest`
+**126 passed** (+5), build OK.
+**Not done here:** a live browser/HTTP smoke run of Phase 4 (all checks above go through Django's full middleware stack in
+tests on MySQL, but nothing was clicked through in a real browser).
+**Phase 4 summary:** dashboard, members & roles, periods/criteria/forms, evaluations browser + moderation with identity-access
+auditing, reports & exports, audit log, settings, privacy page.
+**Docs updated:** [[Audit]], [[System Settings]], [[Module Boundaries]], [[API Endpoints]], [[Pages and Routes]], [[Roadmap]]
+**Commit:** `feat(admin): step 4.6 audit log, settings and privacy page` + tag `phase-4`
+
 ## 2026-10-17 · Step 4.5: Reports & exports ✅
 **What:** admin reports: choir summary (filters: period, voice section, criterion, dates), member summary, participation per
 member; exports as CSV / Excel / PDF (evaluator-detail export CSV/Excel from the evaluations browser). Every export is audited

@@ -336,6 +336,9 @@ export function AdminMemberPage() {
         >
           Report
         </Button>
+        <Button component={RouterLink} to={`/admin/audit?actor=${m.public_id}`} variant="outlined">
+          Activity in the audit log
+        </Button>
       </Stack>
 
       <ConfirmDialog

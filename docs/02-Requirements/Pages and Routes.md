@@ -21,7 +21,7 @@ Frontend routes (React Router). The **Guard** column is UX only. The API enforce
 | Evaluation Details & Revision History | `/app/my-evaluations/:publicId` | member (author only) | `features/evaluations` | 2–3 ✅ |
 | Feedback I Received | `/app/feedback` (lazy chunk) | member | `features/feedback` | 3 ✅ |
 | Notifications | `/app/notifications` | member | `features/notifications` | 5 |
-| Privacy Notice | `/privacy` (shown on the evaluate review step ✅; standalone page in 4.6) | public | `features/auth` | 2 / 4 |
+| Privacy Notice | `/privacy` (also on the evaluate review step; linked from every page footer) | public | `features/auth` | 2 / 4 ✅ |
 | Super Admin Dashboard | `/admin` | super admin | `features/admin` | 4 ✅ |
 | Manage Members & Roles | `/admin/members`, `/admin/members/:publicId`, `/admin/voice-sections` | super admin | `features/admin` | 4 ✅ |
 | Manage Evaluation Cycles | `/admin/cycles`, `/admin/cycles/new`, `/admin/cycles/:publicId` | super admin | `features/admin` | 4 ✅ |
@@ -29,8 +29,8 @@ Frontend routes (React Router). The **Guard** column is UX only. The API enforce
 | All Evaluations | `/admin/evaluations`, `/admin/evaluations/:publicId` | super admin | `features/admin` | 4 ✅ |
 | Moderation Queue | `/admin/moderation` | super admin | `features/admin` | 4 ✅ |
 | Reports & Analytics | `/admin/reports` (`?view=participation`), `/admin/reports/members/:publicId` | super admin | `features/reports` (lazy) | 4 ✅ |
-| Audit Logs | `/admin/audit` | super admin | `features/admin` | 4 |
-| System Settings & Privacy Policy | `/admin/settings` | super admin | `features/admin` | 4 |
+| Audit Logs | `/admin/audit` | super admin | `features/admin` | 4 ✅ |
+| System Settings & Privacy Policy | `/admin/settings` | super admin | `features/admin` | 4 ✅ |
 
 > [!note] Django admin
 > Django's built-in admin is mounted at a non-default path (`/django-admin/`), restricted

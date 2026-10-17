@@ -10,13 +10,13 @@ from django.utils import timezone
 from openpyxl import load_workbook
 
 from apps.audit.models import AuditLog
+from apps.core.exports import Document, Table, safe_text, to_csv
 from apps.evaluations import services
 from apps.evaluations.constants import ModerationStatus
 from apps.evaluations.models import Evaluation
 from apps.evaluations.tests.factories import make_criterion, make_cycle, make_form
 from apps.members.tests.factories import MemberProfileFactory, voice_section
 from apps.reports import selectors
-from apps.reports.exports import Document, Table, safe_text, to_csv
 
 pytestmark = pytest.mark.django_db
 

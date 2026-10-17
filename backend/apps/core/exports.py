@@ -1,4 +1,4 @@
-"""Render report documents as CSV, Excel or PDF (ADM-07, ADR-018).
+"""Render tables as CSV, Excel or PDF (ADM-07, AUD-04, ADR-018); used by reports and audit.
 
 A report is a ``Document`` of titled tables. Renderers never interpret cell content:
 * CSV / XLSX: text that a spreadsheet would run as a formula (= + - @, tab, CR) is prefixed

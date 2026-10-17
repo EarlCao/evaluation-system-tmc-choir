@@ -2,13 +2,15 @@ import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import { NavLink } from "react-router";
 
-/** Super Admin navigation; entries are added as the admin pages are built (Phase 4). */
+/** Super Admin navigation (Phase 4). */
 const ADMIN_LINKS = [
   { to: "/admin", label: "Dashboard", end: true },
   { to: "/admin/members", label: "Members", end: false },
   { to: "/admin/evaluations", label: "Evaluations", end: false },
   { to: "/admin/moderation", label: "Moderation", end: false },
   { to: "/admin/reports", label: "Reports", end: false },
+  { to: "/admin/audit", label: "Audit log", end: false },
+  { to: "/admin/settings", label: "Settings", end: false },
   { to: "/admin/cycles", label: "Periods", end: false },
   { to: "/admin/criteria", label: "Criteria", end: false },
   { to: "/admin/forms", label: "Forms", end: false },

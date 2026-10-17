@@ -2,7 +2,7 @@
 tags: [module, security]
 module: audit
 phase: 1 (model + handlers), 4 (viewer UI)
-status: model + record + event handler implemented (step 1.3); viewer API/UI in step 4.6
+status: model + record + event handler (1.3), viewer API/UI + export (4.6) implemented
 ---
 # Module: Audit
 
@@ -60,3 +60,16 @@ settings changes are audited end-to-end.
 Later: members get 403 on the viewer API (4.6); the export itself is logged.
 
 Related: [[Security Model]] · [[Module Boundaries]]
+
+## Implementation notes (step 4.6): viewer & export
+- `selectors.list_logs(search, event_type, actor, target_type, target_id, occurred_from, occurred_to)` (newest first;
+  `event_type` ending in `.` is a prefix), `get_log(pk)`, `list_event_types()`.
+- API (namespace `audit-admin`, Super Admin only): list (paginated), detail, event types, export. **Read-only**: no write
+  methods (405), and `AppendOnlyModel` still refuses updates/deletes underneath (a test fixture that tried to back-date a row
+  with `.update()` was refused, as designed).
+- `services.export_logs(actor, file_type, filters)`: CSV/Excel through `core.exports` (formula-safe), max 50 000 rows (else
+  400: narrow the dates), then records `audit.export.generated`. Viewing the log is not itself logged (it would flood the log);
+  exporting is.
+- `core.exports` (moved from `reports` in this step) is shared so `audit` keeps depending on `core` only.
+- UI `/admin/audit`: debounced search + event/date filters in the URL, actor chip (from a member's admin page: "Activity in
+  the audit log"), expandable rows showing before / after / details JSON, request id and user agent, CSV/Excel export links.

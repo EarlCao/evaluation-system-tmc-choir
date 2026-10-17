@@ -70,7 +70,7 @@ tags: [roadmap]
 - [x] **4.3 Cycles, criteria & form management UI** (EVAL-02, CFG-*)
 - [x] **4.4 All evaluations browser + moderation** with identity-access auditing (ADM-02/03/05)
 - [x] **4.5 Reports & exports**: CSV/XLSX/PDF, audited (REP-*, ADM-07)
-- [ ] **4.6 Audit log viewer + System settings + Privacy page** (AUD-04, SET-01, SET-03)
+- [x] **4.6 Audit log viewer + System settings + Privacy page** (AUD-04, SET-01, SET-03)
 
 ## Phase 5: Real-Time
 - [ ] **5.1 Channels foundation**: channels, channels-redis, daphne, ASGI routing,

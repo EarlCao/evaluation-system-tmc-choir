@@ -89,15 +89,16 @@ Export query: `report` = `choir` | `member` (+ `member`) | `participation` (+ `c
 ## Audit (`apps/audit`)
 | Method | Path | Perm | Req | Phase | Status |
 |---|---|---|---|---|---|
-| GET | `/api/v1/admin/audit-logs/` | A | AUD-04 | 4 | 📝 |
-| GET | `/api/v1/admin/audit-logs/{id}/` | A | AUD-04 | 4 | 📝 |
-| GET | `/api/v1/admin/audit-logs/export/` | A | AUD-04 | 4 | 📝 |
+| GET | `/api/v1/admin/audit-logs/` (filters: search, event_type (exact or `prefix.`), actor, target_type, target_id, occurred_from/to) | A | AUD-04 | 4 | ✅ |
+| GET | `/api/v1/admin/audit-logs/event-types/` | A | AUD-04 | 4 | ✅ |
+| GET | `/api/v1/admin/audit-logs/{id}/` (read-only: PUT/PATCH/DELETE → 405) | A | AUD-03, AUD-04 | 4 | ✅ |
+| GET | `/api/v1/admin/audit-logs/export/?file_type=csv\|xlsx` (+ filters; max 50 000 rows; audited as `audit.export.generated`) | A | AUD-04 | 4 | ✅ |
 
 ## System (`apps/system`)
 | Method | Path | Perm | Req | Phase | Status |
 |---|---|---|---|---|---|
 | GET | `/api/v1/system/public/` | P | SET-03 | 2 | ✅ |
-| GET/PATCH | `/api/v1/admin/settings/` | A | SET-01 | 4 | 📝 |
+| GET/PATCH | `/api/v1/admin/settings/` (PATCH partial; audited as `system.settings.changed`) | A | SET-01, SET-03 | 4 | ✅ |
 
 ## Notifications (`apps/notifications`)
 | Method | Path | Perm | Req | Phase | Status |

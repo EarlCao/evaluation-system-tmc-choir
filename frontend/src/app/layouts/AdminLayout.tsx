@@ -1,6 +1,8 @@
 import Container from "@mui/material/Container";
 import { Outlet } from "react-router";
 
+import { SiteFooter } from "@/components/SiteFooter";
+
 import { SkipLink } from "@/components/SkipLink";
 import { AccountMenu } from "@/features/auth";
 
@@ -17,6 +19,7 @@ export function AdminLayout() {
       <Container component="main" id="main" maxWidth="xl">
         <Outlet />
       </Container>
+      <SiteFooter />
     </>
   );
 }
