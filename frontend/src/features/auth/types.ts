@@ -15,3 +15,17 @@ export interface CurrentUser {
   email_verified: boolean;
   date_joined: string;
 }
+
+export interface VoiceSection {
+  id: number;
+  name: string;
+}
+
+export interface RegistrationResult {
+  status: UserStatus;
+  detail: string;
+}
+
+export interface Detail {
+  detail: string;
+}

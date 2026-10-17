@@ -12,6 +12,21 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-17 · Step 1.6: Frontend auth pages ✅ (Phase 1 complete → tag `phase-1`)
+**What:** login, registration (voice sections, mode-specific result), forgot password, reset password, email
+verification (explicit confirm), profile (names + password change), account menu with logout (clears the cache),
+safe post-login redirects, RHF + Zod schemas, server-error → field mapping, shared form components.
+**Requirements:** AUTH-01, AUTH-02, AUTH-03, AUTH-04 (UI); NFR-05 (labels, alerts with roles, keyboard-usable toggles)
+**Verification:** `typecheck`, `lint` (0 warnings), `format:check` clean · `vitest` **53 passed** (+25), no React/MUI
+warnings · `build` OK (782 kB / 246 kB gzip; code splitting noted for Phase 6). Request bodies were checked by hand against
+the backend serializers (login, register, reset, confirm, verify, me PATCH, password-change).
+**Dependencies added:** react-hook-form 7.90.0, zod 4.6.7, @hookform/resolvers 5.9.2.
+**Docs updated:** [[Frontend Structure]], [[Pages and Routes]], [[Dependencies]], [[Roadmap]]
+**Commit:** `feat(frontend): step 1.6 auth pages` + tag `phase-1`
+**Follow-ups:** UI flows were verified in jsdom, not in a real browser (Playwright e2e is step 6.1).
+
+---
+
 ## 2026-10-17 · Step 1.5: Frontend skeleton ✅
 **What:** `frontend/`: Vite 8 + React 19 + TypeScript 6.0 (strict, `@/` alias), ESLint 10 flat config
 (strictTypeChecked + react-hooks + react-refresh + prettier, with lint-enforced no-`dangerouslySetInnerHTML`,

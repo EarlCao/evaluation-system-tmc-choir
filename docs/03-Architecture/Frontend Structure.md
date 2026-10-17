@@ -82,3 +82,18 @@ Related: [[Pages and Routes]] · [[Tech Stack]]
   default axios import only in `lib/apiClient.ts`.
 - **Tests:** `src/test/` (MSW server + default handlers: healthy API, anonymous visitor), `renderRoute(path)` renders the real route tree.
 - **Bundle:** one 560 kB chunk (180 kB gzipped). Route-level code splitting is a follow-up (Phase 6 performance).
+
+## Implementation notes (step 1.6): auth pages
+- Pages (`features/auth/pages`): `LoginPage`, `RegisterPage` (voice-section select, pending/verify/active
+  result screen), `ForgotPasswordPage` (identical answer always), `ResetPasswordPage` (`/reset-password/:uid/:token`),
+  `VerifyEmailPage` (`/verify-email/:uid/:token`; **explicit button** so scanners and StrictMode never consume the
+  single-use link), `ProfilePage` (`/app/profile`: names + change password). `AccountMenu` (name, Profile, Log out) sits in the member and admin headers.
+- Redirects: `postLoginPath(user, from)` (internal paths only, so no open redirects; members never land in `/admin`).
+  `GuestOnly` performs the post-login redirect.
+- Forms: RHF + `zodResolver`, schemas in `features/auth/schemas.ts` mirroring backend rules (password ≥ 10, not all digits,
+  username charset). `lib/forms.applyServerErrors` maps envelope `fields` onto inputs and everything else to `root.server`.
+- Shared form components: `components/form/{FormTextField,PasswordField,FormAlert}`, `components/AuthCard`.
+- Logout clears the whole query cache, so no previous user's data survives.
+- Lint: `no-misused-promises` allows promise handlers in JSX attributes (RHF), and `_`-prefixed / rest-sibling vars may go unused.
+- Tests: 53 (login / register / password / verify / profile / logout flows with stateful MSW handlers; `postLoginPath` cases).
+  Password inputs are queried with `{ selector: "input" }` because the Show/Hide toggles carry specific accessible names.

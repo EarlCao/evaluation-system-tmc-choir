@@ -1,0 +1,111 @@
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { http, HttpResponse } from "msw";
+import { describe, expect, it } from "vitest";
+
+import { api, memberUser, notAuthenticated, superAdminUser } from "@/test/handlers";
+import { renderRoute } from "@/test/render";
+import { server } from "@/test/server";
+
+import type { CurrentUser } from "../types";
+
+/** Session that becomes `user` after a successful login with `password`. */
+function sessionServer(user: CurrentUser, password = "Correct-Horse-1") {
+  let current: CurrentUser | null = null;
+  const bodies: unknown[] = [];
+  server.use(
+    http.get(api("/auth/me/"), () => (current ? HttpResponse.json(current) : notAuthenticated())),
+    http.post(api("/auth/login/"), async ({ request }) => {
+      const body = (await request.json()) as { identifier: string; password: string };
+      bodies.push(body);
+      if (body.password !== password) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: "invalid_credentials",
+              message: "Invalid credentials or account not active.",
+            },
+          },
+          { status: 400 },
+        );
+      }
+      current = user;
+      return HttpResponse.json(user);
+    }),
+  );
+  return bodies;
+}
+
+async function fillAndSubmit(identifier: string, password: string) {
+  const user = userEvent.setup();
+  await user.type(await screen.findByLabelText(/username or email/i), identifier);
+  await user.type(screen.getByLabelText(/^password/i, { selector: "input" }), password);
+  await user.click(screen.getByRole("button", { name: /^log in$/i }));
+}
+
+describe("LoginPage", () => {
+  it("validates required fields on the client", async () => {
+    renderRoute("/login");
+    await userEvent.click(await screen.findByRole("button", { name: /^log in$/i }));
+    expect(await screen.findByText("Enter your username or email.")).toBeVisible();
+    expect(screen.getByText("Enter your password.")).toBeVisible();
+  });
+
+  it("logs a member in and lands on the member dashboard", async () => {
+    const bodies = sessionServer(memberUser);
+    const { router } = renderRoute("/login");
+    await fillAndSubmit("member_q1", "Correct-Horse-1");
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/app");
+    });
+    expect(bodies).toEqual([{ identifier: "member_q1", password: "Correct-Horse-1" }]);
+    expect(await screen.findByRole("button", { name: /log out/i })).toBeVisible();
+  });
+
+  it("sends super admins to the admin area", async () => {
+    sessionServer(superAdminUser);
+    const { router } = renderRoute("/login");
+    await fillAndSubmit("admin_q1", "Correct-Horse-1");
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/admin");
+    });
+  });
+
+  it("returns to the page the visitor originally asked for", async () => {
+    sessionServer(memberUser);
+    const { router } = renderRoute("/app/profile"); // guard redirects to /login with state.from
+    await fillAndSubmit("member_q1", "Correct-Horse-1");
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/app/profile");
+    });
+  });
+
+  it("shows the server's generic error for bad credentials", async () => {
+    sessionServer(memberUser);
+    renderRoute("/login");
+    await fillAndSubmit("member_q1", "wrong-password");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Invalid credentials or account not active.",
+    );
+  });
+
+  it("shows throttling messages", async () => {
+    server.use(
+      http.post(api("/auth/login/"), () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: "throttled",
+              message: "Request was throttled. Expected available in 42 seconds.",
+            },
+          },
+          { status: 429 },
+        ),
+      ),
+    );
+    renderRoute("/login");
+    await fillAndSubmit("member_q1", "anything");
+    expect(await screen.findByRole("alert")).toHaveTextContent(/throttled/i);
+  });
+});

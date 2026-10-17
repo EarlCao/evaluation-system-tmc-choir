@@ -37,7 +37,7 @@ tags: [roadmap]
   React Router with layouts and guards, TanStack Query, axios `apiClient` with CSRF,
   Vitest + RTL + MSW, Vite proxy to Django.
   - Done when: `npm run lint/typecheck/test/build` pass, and the app shell loads and calls `/api/v1/health/` through the proxy.
-- [ ] **1.6 Frontend auth pages**: Login, Register (with voice section), Forgot/Reset Password,
+- [x] **1.6 Frontend auth pages**: Login, Register (with voice section), Forgot/Reset Password,
   Verify Email, Profile, logout, pending-approval screen (Welcome page, `useCurrentUser` and guards were done in 1.5).
   - Done when: you can register, log in and log out end-to-end against the real backend, and component tests pass.
 

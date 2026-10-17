@@ -1,15 +1,26 @@
 import type { RouteObject } from "react-router";
 
-import { ComingSoon } from "@/components/ComingSoon";
-
+import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
+import { LoginPage } from "./pages/LoginPage";
+import { ProfilePage } from "./pages/ProfilePage";
+import { RegisterPage } from "./pages/RegisterPage";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
+import { VerifyEmailPage } from "./pages/VerifyEmailPage";
 import { WelcomePage } from "./pages/WelcomePage";
 
-/** Public pages (anyone). */
-export const publicAuthRoutes: RouteObject[] = [{ index: true, element: <WelcomePage /> }];
-
-/** Pages for visitors who are not logged in (GuestOnly). Real pages arrive in step 1.6. */
-export const guestAuthRoutes: RouteObject[] = [
-  { path: "login", element: <ComingSoon title="Log in" step="1.6" /> },
-  { path: "register", element: <ComingSoon title="Create an account" step="1.6" /> },
-  { path: "forgot-password", element: <ComingSoon title="Forgot password" step="1.6" /> },
+/** Public pages (anyone, logged in or not). Email links land here. */
+export const publicAuthRoutes: RouteObject[] = [
+  { index: true, element: <WelcomePage /> },
+  { path: "reset-password/:uid/:token", element: <ResetPasswordPage /> },
+  { path: "verify-email/:uid/:token", element: <VerifyEmailPage /> },
 ];
+
+/** Pages for visitors who are not logged in (GuestOnly). */
+export const guestAuthRoutes: RouteObject[] = [
+  { path: "login", element: <LoginPage /> },
+  { path: "register", element: <RegisterPage /> },
+  { path: "forgot-password", element: <ForgotPasswordPage /> },
+];
+
+/** Pages inside the member area (/app/...). */
+export const memberAuthRoutes: RouteObject[] = [{ path: "profile", element: <ProfilePage /> }];

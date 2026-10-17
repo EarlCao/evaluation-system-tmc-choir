@@ -3,7 +3,7 @@ import type { RouteObject } from "react-router";
 import { ComingSoon } from "@/components/ComingSoon";
 import { NotFoundPage } from "@/components/NotFoundPage";
 import { RouteErrorPage } from "@/components/RouteErrorPage";
-import { guestAuthRoutes, publicAuthRoutes } from "@/features/auth";
+import { guestAuthRoutes, memberAuthRoutes, publicAuthRoutes } from "@/features/auth";
 
 import { GuestOnly } from "./guards/GuestOnly";
 import { RequireAuth } from "./guards/RequireAuth";
@@ -29,6 +29,7 @@ export const routes: RouteObject[] = [
             element: <MemberLayout />,
             children: [
               { index: true, element: <ComingSoon title="Member dashboard" step="2.1" /> },
+              ...memberAuthRoutes,
             ],
           },
           {

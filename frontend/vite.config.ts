@@ -29,6 +29,7 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
     restoreMocks: true,
+    testTimeout: 15_000, // form tests type into many fields
     css: false,
   },
 });

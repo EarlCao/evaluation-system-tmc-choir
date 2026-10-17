@@ -7,11 +7,12 @@ Frontend routes (React Router). The **Guard** column is UX only. The API enforce
 
 | Page | Route | Guard | Feature folder | Phase |
 |---|---|---|---|---|
-| Public / Welcome | `/` | public | `features/auth` | 1 |
-| Login | `/login` | guest | `features/auth` | 1 |
-| Register | `/register` | guest | `features/auth` | 1 |
-| Forgot / Reset Password | `/forgot-password`, `/reset-password/:uid/:token` | guest | `features/auth` | 1 |
-| Profile | `/profile` | member | `features/auth` | 1 |
+| Public / Welcome | `/` | public | `features/auth` | 1 ✅ |
+| Login | `/login` | guest | `features/auth` | 1 ✅ |
+| Register | `/register` | guest | `features/auth` | 1 ✅ |
+| Forgot / Reset Password | `/forgot-password` (guest), `/reset-password/:uid/:token` (public) | guest / public | `features/auth` | 1 ✅ |
+| Verify Email | `/verify-email/:uid/:token` | public | `features/auth` | 1 ✅ |
+| Profile | `/app/profile` | member | `features/auth` | 1 ✅ |
 | Member Dashboard | `/app` | member | `features/dashboard` | 2 |
 | Choir Member Directory | `/app/members` | member | `features/members` | 2 |
 | Member Profile | `/app/members/:publicId` | member | `features/members` | 2 |
