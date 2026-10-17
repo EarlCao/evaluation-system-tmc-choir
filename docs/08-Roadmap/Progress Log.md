@@ -12,6 +12,18 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-17 · Step 3.1: Editing & revisions (backend) ✅
+**What:** `edit_evaluation` (author-only, edit window, validation against the original form version, row lock, no-op for identical
+content, revision n+1, audited event with IDs only), moderation carry-over on rewrite, PATCH + revisions API.
+**Requirements:** MINE-02, MINE-03, MINE-04, MINE-05 (history hidden from recipient), MINE-07, BR-05, BR-07, AUD-05
+**Verification (MySQL):** `pytest` **319 passed** (+13: revision n+1 keeps the original, no-op, sequential numbers, recipient/other → 404,
+deadline and closed-cycle 409, deadline after end allowed, original-form validation after a criterion re-version, moderation kept,
+validation, PATCH API, 409 + `can_edit` false, revisions author-only) · schema `--fail-on-warn` clean · ruff, check, makemigrations clean.
+**Docs updated:** [[Evaluations]], [[API Endpoints]], [[Module Boundaries]], [[Open Questions]], [[Roadmap]]
+**Commit:** `feat(evaluations): step 3.1 editing and revisions`
+
+---
+
 ## 2026-10-17 · Step 2.4: Evaluate & My Evaluations (frontend) ✅ (Phase 2 complete → tag `phase-2`)
 **What:** evaluate page (eligibility, dynamic Zod schema from the form, accessible `RatingInput`, counters, review step with
 `PrivacyNotice` and focus management, success), my evaluations list and detail, profile "Evaluate" link, nav item, dashboard

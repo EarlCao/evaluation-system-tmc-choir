@@ -1,4 +1,4 @@
-"""Submission services (step 2.3): submit an evaluation, write revision 1."""
+"""Submission services: submit (2.3) and edit (3.1) evaluations; every change is a revision."""
 
 from collections.abc import Sequence
 from decimal import Decimal, InvalidOperation
@@ -12,7 +12,7 @@ from apps.core.exceptions import BusinessRuleViolation, ValidationError
 from apps.members import selectors as member_selectors
 
 from .. import events, rules, selectors
-from ..constants import CommentKind, Ineligibility
+from ..constants import CommentKind, Ineligibility, ModerationStatus
 from ..models import (
     Evaluation,
     EvaluationComment,
@@ -124,7 +124,9 @@ def build_snapshot(*, evaluation: Evaluation, ratings, texts: dict[str, str]) ->
 
 
 def write_content(*, evaluation: Evaluation, ratings, texts: dict[str, str]) -> None:
-    """(Re)write the current ratings and texts of an evaluation."""
+    """(Re)write the current ratings and texts of an evaluation. Comment moderation status
+    is carried over per kind, so editing can never un-hide moderated text (ADM-05)."""
+    previous_status = dict(evaluation.comments.values_list("kind", "moderation_status"))
     evaluation.ratings.all().delete()
     EvaluationRating.objects.bulk_create(
         EvaluationRating(
@@ -137,7 +139,12 @@ def write_content(*, evaluation: Evaluation, ratings, texts: dict[str, str]) -> 
     )
     evaluation.comments.all().delete()
     EvaluationComment.objects.bulk_create(
-        EvaluationComment(evaluation=evaluation, kind=kind, body=texts[field])
+        EvaluationComment(
+            evaluation=evaluation,
+            kind=kind,
+            body=texts[field],
+            moderation_status=previous_status.get(kind, ModerationStatus.VISIBLE),
+        )
         for kind, field in (
             (CommentKind.COMMENT, "comment"),
             (CommentKind.SUGGESTION, "suggestion"),
@@ -203,3 +210,59 @@ def submit_evaluation(
     except IntegrityError as exc:  # lost a race with a duplicate submission (BR-12)
         raise BusinessRuleViolation(Ineligibility.ALREADY_EVALUATED.label) from exc
     return evaluation
+
+
+CHANGE_SUMMARY_MAX = 200
+
+
+def edit_evaluation(
+    *,
+    editor,
+    evaluation_public_id,
+    ratings: Sequence[dict],
+    comment: str = "",
+    suggestion: str = "",
+    change_summary: str = "",
+) -> Evaluation:
+    """MINE-02 / MINE-03 / BR-05: the author edits within the window; every real change writes
+    the next immutable revision. Identical content is a no-op (no revision)."""
+    evaluation = selectors.get_my_evaluation(user=editor, public_id=evaluation_public_id)
+    if not rules.can_edit(evaluation):
+        raise BusinessRuleViolation("The edit window for this evaluation has closed.")
+    summary = clean_text(change_summary)
+    if len(summary) > CHANGE_SUMMARY_MAX:
+        raise ValidationError(
+            fields={"change_summary": [f"Keep it under {CHANGE_SUMMARY_MAX} characters."]}
+        )
+    # Validate against the form the evaluation was submitted with (BR-07).
+    checked_ratings, texts = validated_content(
+        evaluation.form_version, ratings, comment, suggestion
+    )
+
+    with transaction.atomic():
+        locked = Evaluation.objects.select_for_update().get(pk=evaluation.pk)
+        latest = locked.revisions.order_by("-revision_number").first()
+        snapshot = build_snapshot(evaluation=locked, ratings=checked_ratings, texts=texts)
+        if latest is not None and latest.snapshot == snapshot:
+            return evaluation
+        number = locked.current_revision_number + 1
+        write_content(evaluation=locked, ratings=checked_ratings, texts=texts)
+        EvaluationRevision.objects.create(
+            evaluation=locked,
+            revision_number=number,
+            snapshot=snapshot,
+            editor=editor,
+            change_summary=summary or "Edited",
+        )
+        Evaluation.objects.filter(pk=locked.pk).update(
+            current_revision_number=number,
+            is_edited=True,
+            last_edited_at=timezone.now(),
+            updated_at=timezone.now(),
+        )
+        publish(
+            events.EvaluationEdited(
+                actor_id=editor.pk, target_id=str(locked.public_id), revision_number=number
+            )
+        )
+    return selectors.get_my_evaluation(user=editor, public_id=evaluation_public_id)

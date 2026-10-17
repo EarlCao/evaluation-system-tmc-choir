@@ -55,7 +55,7 @@ tags: [roadmap]
   My Submitted Evaluations list and detail.
 
 ## Phase 3: Feedback Privacy & Revisions
-- [ ] **3.1 Editing & revisions (backend)**: `edit_evaluation` within edit window,
+- [x] **3.1 Editing & revisions (backend)**: `edit_evaluation` within edit window,
   immutable revisions, `is_edited`, revisions API (author), events.
 - [ ] **3.2 Feedback module (backend)**: `apps/feedback` anonymised list, summary and
   count; opaque IDs; thresholds; visibility rules; full privacy tests.

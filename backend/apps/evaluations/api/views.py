@@ -16,8 +16,10 @@ from ..throttles import EvaluationSubmitThrottle
 from .serializers import (
     CurrentCycleSerializer,
     CycleFormSerializer,
+    EditEvaluationSerializer,
     EligibilitySerializer,
     MyEvaluationSerializer,
+    MyRevisionSerializer,
     SubmitEvaluationSerializer,
 )
 
@@ -88,7 +90,33 @@ class MyEvaluationListView(ListAPIView):
 
 
 class MyEvaluationDetailView(APIView):
+    def get_throttles(self):
+        # Edits share the submission budget; reads are not throttled.
+        return [EvaluationSubmitThrottle()] if self.request.method == "PATCH" else []
+
     @extend_schema(responses=MyEvaluationSerializer)
     def get(self, request, public_id):
         mine = selectors.get_my_evaluation(user=request.user, public_id=public_id)
         return Response(MyEvaluationSerializer(mine).data)
+
+    @extend_schema(request=EditEvaluationSerializer, responses=MyEvaluationSerializer)
+    def patch(self, request, public_id):
+        data = EditEvaluationSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        values = data.validated_data
+        mine = services.edit_evaluation(
+            editor=request.user,
+            evaluation_public_id=public_id,
+            ratings=[dict(r) for r in values["ratings"]],
+            comment=values["comment"],
+            suggestion=values["suggestion"],
+            change_summary=values["change_summary"],
+        )
+        return Response(MyEvaluationSerializer(mine).data)
+
+
+class MyRevisionsView(APIView):
+    @extend_schema(responses=MyRevisionSerializer(many=True))
+    def get(self, request, public_id):
+        revisions = selectors.list_my_revisions(user=request.user, public_id=public_id)
+        return Response(MyRevisionSerializer(revisions, many=True).data)

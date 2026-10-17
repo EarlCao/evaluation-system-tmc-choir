@@ -70,3 +70,12 @@ class EvaluationSubmitted(DomainEvent):
     target_type = "evaluations.Evaluation"
     recipient_id: int
     cycle_id: int
+
+
+@dataclass(frozen=True, kw_only=True)
+class EvaluationEdited(DomainEvent):
+    """IDs only (the content history lives in EvaluationRevision, AUD-05)."""
+
+    name = "evaluations.evaluation.edited"
+    target_type = "evaluations.Evaluation"
+    revision_number: int

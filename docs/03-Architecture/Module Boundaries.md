@@ -48,7 +48,7 @@ Consumers re-query what they need. One exception: configuration events may carry
 | `evaluations.criterion.changed` ✅ | evaluations | audit | action, version, changes |
 | `evaluations.form.published` ✅ | evaluations | audit | version, criterion_version_ids |
 | `evaluations.evaluation.submitted` ✅ | evaluations | audit, notifications (recipient, debounced, 5.2) | actor_id (evaluator, **never forward to members**), target_id, recipient_id, cycle_id |
-| `evaluations.evaluation.edited` | evaluations | audit, notifications (author) | evaluation_id, revision_number |
+| `evaluations.evaluation.edited` ✅ | evaluations | audit, notifications (author) | actor_id, target_id, revision_number |
 | `evaluations.evaluation.moderated` | evaluations | audit | evaluation_id, action, actor_id |
 | `reports.export.generated` | reports | audit | report_type, filters, actor_id |
 | `system.settings.changed` ✅ | system | audit | actor_id, target_id=1, changes |

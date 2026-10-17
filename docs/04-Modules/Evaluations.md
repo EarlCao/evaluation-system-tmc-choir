@@ -2,7 +2,7 @@
 tags: [module]
 module: evaluations
 phase: 2-3
-status: configuration (2.2) + submissions (2.3) implemented; editing/revisions 3.1, moderation 4.4
+status: configuration (2.2), submissions (2.3), editing + revisions (3.1) implemented; moderation 4.4
 ---
 # Module: Evaluations
 
@@ -141,3 +141,14 @@ Related: [[Feedback]] · [[Data Model]] · [[Privacy Model]]
 - `members` → `evaluations` dependency avoided: the profile page only links to `/evaluate`; eligibility is checked on that page (ADR-004 style).
 - `lib/errors.FieldErrors` supports nested errors; `lib/forms.applyServerErrors` maps dotted paths under known prefixes.
 - Nav: Dashboard · Members · My evaluations. The dashboard shows open-cycle progress (`evaluations_given`, `members_left`).
+
+## Implementation notes (step 3.1): editing & revisions
+- `services.edit_evaluation(editor, evaluation_public_id, ratings, comment, suggestion, change_summary)`:
+  author only (others → 404 via `get_my_evaluation`); `rules.can_edit` (SUBMITTED, cycle OPEN, now ≤ edit_deadline;
+  the deadline may be after `ends_at`) else 409 "The edit window for this evaluation has closed."
+  Validated against the evaluation's **own** form version (BR-07). Runs under `select_for_update`. Identical snapshot →
+  **no-op** (no revision). Otherwise rewrite content, add revision `n+1` (editor, change_summary ≤ 200, default "Edited"), set
+  `is_edited`, `current_revision_number`, `last_edited_at`, and publish `evaluation.edited` (`revision_number` only; content stays in revisions, AUD-05).
+- Comment `moderation_status` is carried over per kind on rewrite, so an edit can't un-hide moderated text.
+- API: `PATCH /evaluations/mine/{id}/` (throttled for PATCH only), `GET /evaluations/mine/{id}/revisions/` →
+  `[{revision_number, created_at, editor{public_id, first/last name}, change_summary, snapshot}]`, author only.

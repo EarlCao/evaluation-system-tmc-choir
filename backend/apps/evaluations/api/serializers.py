@@ -8,7 +8,13 @@ from apps.members.api.serializers import VoiceSectionSerializer
 
 from .. import rules
 from ..constants import CommentKind
-from ..models import CriterionVersion, Evaluation, EvaluationCycle, FormVersionItem
+from ..models import (
+    CriterionVersion,
+    Evaluation,
+    EvaluationCycle,
+    EvaluationRevision,
+    FormVersionItem,
+)
 
 _decimal = {"max_digits": 6, "decimal_places": 2, "coerce_to_string": False}
 
@@ -163,3 +169,32 @@ class MyEvaluationSerializer(serializers.ModelSerializer):
 
     def get_can_edit(self, obj: Evaluation) -> bool:
         return rules.can_edit(obj)
+
+
+class EditEvaluationSerializer(serializers.Serializer):
+    ratings = RatingInputSerializer(many=True, allow_empty=True)
+    comment = serializers.CharField(
+        allow_blank=True, required=False, default="", trim_whitespace=False
+    )
+    suggestion = serializers.CharField(
+        allow_blank=True, required=False, default="", trim_whitespace=False
+    )
+    change_summary = serializers.CharField(
+        allow_blank=True, required=False, default="", max_length=200
+    )
+
+
+class RevisionEditorSerializer(serializers.Serializer):
+    public_id = serializers.UUIDField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+
+
+class MyRevisionSerializer(serializers.ModelSerializer):
+    """MINE-04: original/edited content, time and editor, for the author only."""
+
+    editor = RevisionEditorSerializer()
+
+    class Meta:
+        model = EvaluationRevision
+        fields = ["revision_number", "created_at", "editor", "change_summary", "snapshot"]

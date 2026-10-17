@@ -17,4 +17,9 @@ urlpatterns = [
         views.MyEvaluationDetailView.as_view(),
         name="mine-detail",
     ),
+    path(
+        "evaluations/mine/<uuid:public_id>/revisions/",
+        views.MyRevisionsView.as_view(),
+        name="mine-revisions",
+    ),
 ]

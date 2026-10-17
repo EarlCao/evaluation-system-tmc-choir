@@ -16,7 +16,7 @@ from .config import (
     update_cycle,
     update_form_version,
 )
-from .submissions import submit_evaluation
+from .submissions import edit_evaluation, submit_evaluation
 
 __all__ = [
     "archive_criterion",
@@ -26,6 +26,7 @@ __all__ = [
     "create_criterion",
     "create_cycle",
     "create_form_version",
+    "edit_evaluation",
     "open_cycle",
     "publish_form_version",
     "reorder_criteria",
