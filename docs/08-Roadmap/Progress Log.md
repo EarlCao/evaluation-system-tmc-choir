@@ -12,6 +12,33 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-17 · Step 1.5: Frontend skeleton ✅
+**What:** `frontend/`: Vite 8 + React 19 + TypeScript 6.0 (strict, `@/` alias), ESLint 10 flat config
+(strictTypeChecked + react-hooks + react-refresh + prettier, with lint-enforced no-`dangerouslySetInnerHTML`,
+feature-index-only imports and axios-only-in-apiClient), Prettier, MUI 9 theme (light/dark), React Router 8
+route tree (public / guest-only / member / super admin) with layouts and guards, TanStack Query client
+(no 4xx retries), axios `apiClient` (CSRF header, `ApiError` normalisation, `ensureCsrfCookie`), `useCurrentUser`,
+Welcome page with live API status, not-found and route-error pages, skip link. Tests use Vitest + RTL + MSW 3.
+Pre-commit runs frontend eslint, prettier and typecheck.
+**Requirements:** NFR-05 (skip link, labelled spinner, responsive layout), NFR-06, BR-09 (guards are UX only), BR-10 (XSS lint rule)
+**Verification:**
+- `npm run typecheck`, `npm run lint` (0 warnings), `npm run format:check`: clean
+- `npm run test`: **28 passed** (apiClient envelope/network/CSRF header, retry policy, fetchCurrentUser, Welcome + API status, all guard redirects, retryable session error, 404, skip link). No React/MUI warnings in the output.
+- `npm run build`: OK (1 chunk, 560 kB / 180 kB gzip; size warning noted as a follow-up)
+- **Live proxy check** (Django on :8010 in the runner container against the dev DB, Vite on :5280): app shell
+  served with our title; `/src/main.tsx` served as JS; deep links fall back to index.html; `/api/v1/health/` through the
+  proxy → 200 `{"status":"ok","db":"ok"}` + `X-Request-ID`; CSRF cookie set via the proxy; same-origin POST passes the CSRF origin
+  check (generic 400); foreign `Origin` → 403; anonymous `/me` → 401. Both servers were stopped afterwards.
+- Backend suite re-run after the `FRONTEND_URL` default change: **194 passed**.
+**Incident:** ports 8000/5173/5180 belong to other local projects. A first check hit another app and was
+discarded (my stray `npx vite` was stopped). The dev ports moved to 8010/5280 (ADR-016).
+**Dependencies added:** see [[Dependencies]] (frontend table). Forms libraries moved to 1.6.
+**Docs updated:** [[Frontend Structure]], [[Tech Stack]], [[Dependencies]], [[Dev Environment Setup]], [[Decisions Log]], [[Roadmap]], AGENT.md, README
+**Commit:** see `git log` (`feat(frontend): step 1.5 frontend skeleton`)
+**Follow-ups:** route-level code splitting (Phase 6). The real browser render was covered by jsdom tests, not checked visually.
+
+---
+
 ## 2026-10-17 · Step 1.4: Accounts + registration ✅
 **What:**
 - `apps/accounts`: custom `User` (public_id, email/username unique, role, status-derived

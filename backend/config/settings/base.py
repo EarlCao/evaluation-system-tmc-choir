@@ -27,7 +27,7 @@ CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
 FEEDBACK_ID_KEY = env("FEEDBACK_ID_KEY")
 
 # Public URL of the SPA, used to build links in emails (password reset).
-FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:5173")
+FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:5280")
 
 # Only trust X-Forwarded-For when running behind our own reverse proxy (prod).
 USE_X_FORWARDED_FOR = env.bool("USE_X_FORWARDED_FOR", default=False)

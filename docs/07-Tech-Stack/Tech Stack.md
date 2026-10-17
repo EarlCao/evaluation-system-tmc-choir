@@ -15,8 +15,8 @@ tags: [tech-stack]
 | ASGI server | **daphne** (dev and prod) | behind Nginx in prod |
 | Auth | **Django session auth** + CSRF | same-origin SPA (ADR-003) |
 | Config | **django-environ** | `.env` in dev |
-| Frontend | **React + Vite + TypeScript** | Node 24 available locally |
-| Routing | **React Router** | |
+| Frontend | **React 19 + Vite 8 + TypeScript 6.0** | Node 24; TS pinned < 6.1 (ADR-015) |
+| Routing | **React Router 8** (`react-router`) | `RouterProvider` from `react-router/dom` |
 | Server state | **TanStack Query** | |
 | Forms | **React Hook Form + Zod** | |
 | HTTP | **axios** | single instance in `lib/apiClient.ts` (ADR-006) |

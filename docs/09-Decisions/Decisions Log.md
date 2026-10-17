@@ -21,6 +21,8 @@ Format: [[ADR Template]]. Status: Proposed · Accepted · Superseded.
 | ADR-012 | Business-rule violations return 409 Conflict | Accepted | 2026-10-17 |
 | ADR-013 | Privacy floor: `min_aggregate_group_size` ≥ 3 | Accepted | 2026-10-17 |
 | ADR-014 | Audit records every domain event generically (event envelope) | Accepted | 2026-10-17 |
+| ADR-015 | Frontend toolchain versions: TypeScript 6.0 (not 7), React Router 8 | Accepted | 2026-10-17 |
+| ADR-016 | Project dev ports: Django 8010, Vite 5280 | Accepted | 2026-10-17 |
 
 ---
 
@@ -76,3 +78,13 @@ Format: [[ADR Template]]. Status: Proposed · Accepted · Superseded.
 **Context:** BR-08 requires every privileged or configuration change to be logged, and writing one handler per event would be error-prone.
 **Decision:** `DomainEvent` carries `actor_id`, `target_id` (fields) and `target_type`, `audited` (class vars). `audit.handlers` subscribes to the base class and records every event. Configuration events may include `changes` tuples, which become before/after.
 **Consequences:** a new event is audited by default. Payloads must stay free of personal content because they land in `metadata`.
+
+### ADR-015: Frontend toolchain versions
+**Context:** in Oct 2026 the latest TypeScript is 7.0, but typescript-eslint 8.71 supports only `>=4.8.4 <6.1.0`.
+**Decision:** pin **TypeScript 6.0.3**. Use React Router 8 through the `react-router` package (`react-router-dom` is no longer needed).
+**Consequences:** move to TS 7 once typescript-eslint supports it. Re-check peer ranges with `npm view <pkg> peerDependencies` before any upgrade.
+
+### ADR-016: Non-default dev ports
+**Context:** ports 8000, 5173 and 5180 are already used by other projects on the developer machine (MySQL/Redis were moved to 3307/6380 for the same reason).
+**Decision:** Django dev server on **8010**, Vite on **5280** (overridable with `VITE_BACKEND_URL` / `FRONTEND_PORT`).
+**Consequences:** `.env.example` uses `FRONTEND_URL` / `CSRF_TRUSTED_ORIGINS` = `http://localhost:5280`.

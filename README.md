@@ -47,8 +47,19 @@ backend/.venv/bin/pip install -r backend/requirements/dev.txt
 backend/.venv/bin/pre-commit install
 ```
 
-Backend and frontend run instructions are added as those parts are built (roadmap
-steps 1.2 and 1.5).
+```bash
+# 4. Backend (needs `sudo apt-get install -y default-libmysqlclient-dev pkg-config` once)
+cd backend && .venv/bin/pip install -r requirements/dev.txt
+.venv/bin/python manage.py migrate
+.venv/bin/python manage.py runserver 8010
+
+# 5. Frontend (new terminal)
+cd frontend && npm install
+npm run dev                  # http://localhost:5280 (proxies /api and /ws to :8010)
+```
+
+Dev ports avoid clashes with other local projects: Django **8010**, Vite **5280**,
+MySQL **3307**, Redis **6380**.
 
 ## Useful commands
 

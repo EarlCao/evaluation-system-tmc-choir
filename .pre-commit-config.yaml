@@ -1,6 +1,5 @@
 # Install once:  backend/.venv/bin/pre-commit install
 # Run manually:  backend/.venv/bin/pre-commit run --all-files
-# Frontend hooks (eslint/prettier) are added in step 1.5.
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -34,3 +33,25 @@ repos:
         files: ^backend/
       - id: ruff-format
         files: ^backend/
+
+  # Frontend: lint, formatting and types (uses the project's own node_modules)
+  - repo: local
+    hooks:
+      - id: frontend-lint
+        name: frontend eslint
+        entry: npm --prefix frontend run -s lint
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+      - id: frontend-format
+        name: frontend prettier
+        entry: npm --prefix frontend run -s format:check
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+      - id: frontend-typecheck
+        name: frontend typecheck
+        entry: npm --prefix frontend run -s typecheck
+        language: system
+        files: ^frontend/
+        pass_filenames: false

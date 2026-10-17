@@ -36,13 +36,17 @@ tags: [tech-stack]
 ## Frontend
 | Package | Purpose | Added in step | Status |
 |---|---|---|---|
-| react, react-dom, vite, typescript | runtime/build | 1.5 | 📝 |
-| react-router-dom | routing | 1.5 | 📝 |
-| @tanstack/react-query | server state | 1.5 | 📝 |
-| axios | HTTP | 1.5 | 📝 |
-| react-hook-form, zod, @hookform/resolvers | forms | 1.5 | 📝 |
-| @mui/material, @emotion/react, @emotion/styled, @mui/icons-material | UI | 1.5 | 📝 |
-| vitest, @testing-library/react, @testing-library/user-event, @testing-library/jest-dom, jsdom, msw | tests | 1.5 | 📝 |
-| eslint, prettier (+ TS/React plugins) | quality | 1.5 | 📝 |
+| react / react-dom 19.3.1 | runtime | 1.5 | ✅ |
+| react-router 8.4.0 | routing | 1.5 | ✅ |
+| @tanstack/react-query 5.104.3 | server state | 1.5 | ✅ |
+| axios 1.20.0 | HTTP | 1.5 | ✅ |
+| @mui/material 9.5.0, @emotion/react 11.14.0, @emotion/styled 11.14.1 | UI | 1.5 | ✅ |
+| vite 8.3.4, @vitejs/plugin-react 6.1.2, typescript 6.0.3, @types/react(-dom) 19.3.0, @types/node 24 | build/types | 1.5 | ✅ |
+| vitest 5.0.5, jsdom 30.1.3, @testing-library/react 16.3.3, /dom 10.4.2, /user-event 14.6.8, /jest-dom 7.0.1, msw 3.0.3 | tests | 1.5 | ✅ |
+| eslint 10.13.0, @eslint/js 10.0.1, typescript-eslint 8.71.2, eslint-plugin-react-hooks 7.1.1, eslint-plugin-react-refresh 0.5.7, globals 17.13.0, prettier 3.9.10, eslint-config-prettier 10.1.8 | quality | 1.5 | ✅ |
+| react-hook-form, zod, @hookform/resolvers | forms | 1.6 | 📝 (moved from 1.5: first form is in 1.6) |
+| @mui/icons-material | icons | when first needed | 📝 |
 | recharts | charts | 3.3 | 📝 |
 | @playwright/test | e2e | 6.1 | 📝 |
+
+All frontend versions are pinned exactly (`--save-exact`) and locked in `frontend/package-lock.json`.

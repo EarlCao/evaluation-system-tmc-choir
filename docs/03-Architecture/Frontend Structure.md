@@ -7,15 +7,15 @@ tags: [architecture, frontend]
 frontend/
 ├── index.html
 ├── package.json
-├── vite.config.ts              # proxy /api and /ws → http://localhost:8000
-├── tsconfig.json               # strict
-├── eslint.config.js
-├── .prettierrc
+├── vite.config.ts              # dev server :5280, proxy /api and /ws → Django :8010, Vitest config
+├── tsconfig.json               # references tsconfig.app.json (src, strict) + tsconfig.node.json
+├── eslint.config.js            # strictTypeChecked + hooks + boundary rules
+├── .prettierrc.json
 └── src/
     ├── main.tsx
     ├── app/
     │   ├── App.tsx
-    │   ├── router.tsx          # composes each feature's routes.tsx
+    │   ├── routes.tsx          # route tree; composes each feature's routes.tsx
     │   ├── providers.tsx       # QueryClientProvider, ThemeProvider, AuthProvider
     │   ├── layouts/            # PublicLayout, MemberLayout, AdminLayout
     │   └── guards/             # RequireAuth, RequireSuperAdmin, GuestOnly (UX only)
@@ -63,3 +63,22 @@ features/<feature>/
 - Admin pages live under `/admin` with `AdminLayout`. The API enforces access anyway.
 
 Related: [[Pages and Routes]] · [[Tech Stack]]
+
+## Implementation notes (step 1.5)
+- **Versions:** React 19.3, Vite 8, TypeScript **6.0** (pinned: typescript-eslint supports TS < 6.1, ADR-015),
+  React Router **8** (package `react-router`; `RouterProvider` comes from `react-router/dom`), MUI 9, TanStack Query 5,
+  axios 1.20, Vitest 5 + jsdom, MSW 3 (`server.listen({ onUnhandledFrame: "error" })`).
+- **Path alias:** `@/` → `src/`.
+- **`lib/apiClient.ts`:** `baseURL /api/v1`, `withCredentials`, `xsrfCookieName: csrftoken` → `X-CSRFToken`
+  (read on every request, so token rotation after login is handled). Every failure rejects with
+  `ApiError {status, code, message, fields}` (`lib/errors.ts`; `network_error` / `http_error` when there's no envelope).
+  `ensureCsrfCookie()` fetches `/auth/csrf/` once.
+- **`lib/queryClient.ts`:** never retries 4xx; retries 5xx/network errors twice; staleTime 30s.
+- **`features/auth`:** `useCurrentUser()` (`null` = anonymous), `fetchCurrentUser`, `authKeys`. Welcome page with a live `ApiStatus`.
+- **Guards** (`app/guards`): `RequireAuth` → `/login` (keeps `state.from`); `RequireSuperAdmin` → `/app` for members;
+  `GuestOnly` → `/app` or `/admin`. They share `useGuardState` (spinner, retryable error).
+- **Layouts:** Public / Member / Admin, each with a skip link and `<main id="main">`.
+- **Lint-enforced rules:** no `dangerouslySetInnerHTML`; no deep imports `@/features/x/...` (use the feature index);
+  default axios import only in `lib/apiClient.ts`.
+- **Tests:** `src/test/` (MSW server + default handlers: healthy API, anonymous visitor), `renderRoute(path)` renders the real route tree.
+- **Bundle:** one 560 kB chunk (180 kB gzipped). Route-level code splitting is a follow-up (Phase 6 performance).

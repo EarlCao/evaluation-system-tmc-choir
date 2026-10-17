@@ -40,6 +40,10 @@ Before starting **any** task:
   5. **Stop and wait** for the user to approve the next step.
 - If a step turns out too large, split it in the roadmap first, then do only the
   first part.
+- **Standing authorization (2026-10-17):** the user asked for Phases 1–5 to be developed
+  continuously. Until Phase 5 is complete, move straight on to the next step after each
+  step's commit instead of stopping. Every per-step rule (verify, docs, one commit) still applies.
+  Stop and ask if a step needs a decision only the user can make, or if verification fails and can't be fixed.
 - Open product questions are in `docs/09-Decisions/Open Questions.md`. If a step
   depends on one that is still unresolved, ask the user before building on the default.
 
@@ -99,11 +103,11 @@ evaluation-system/
 │       └── system/             # system settings, privacy notice, retention policy
 └── frontend/
     ├── package.json
-    ├── vite.config.ts          # dev proxy: /api and /ws → Django
+    ├── vite.config.ts          # dev server :5280; proxy /api and /ws → Django :8010
     ├── tsconfig.json
     └── src/
         ├── main.tsx
-        ├── app/                # App.tsx, router.tsx, providers.tsx, layouts/, guards/
+        ├── app/                # App.tsx, routes.tsx, providers.tsx, layouts/, guards/
         ├── components/         # shared, reusable UI only (no feature logic)
         ├── features/
         │   ├── auth/
@@ -376,13 +380,14 @@ pip install -r requirements/dev.txt
 python manage.py migrate
 SUPER_ADMIN_PASSWORD='…' python manage.py create_super_admin \
     --email you@example.org --username you --first-name You --last-name Admin
-python manage.py runserver          # ASGI via daphne once channels is added (Phase 5)
+python manage.py runserver 8010     # dev port 8010 (ADR-016); ASGI via daphne from Phase 5
 pytest
 ruff check . && ruff format --check .
 
 # frontend (from frontend/)
 npm install
-npm run dev
+npm run dev                          # http://localhost:5280
 npm run test
-npm run lint && npm run typecheck
+npm run lint && npm run typecheck && npm run format:check
+npm run build
 ```
