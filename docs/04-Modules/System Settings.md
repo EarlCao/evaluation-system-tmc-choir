@@ -71,4 +71,4 @@ Related: [[Privacy Model]] · [[Accounts]]
   server; only changed fields are sent; time zone picker from `Intl.supportedValuesOf("timeZone")`; saving invalidates the
   public settings query so the new privacy notice shows everywhere at once. Retention values are stored now and applied in 6.4.
 - Public `/privacy` page (`features/auth`): the choir's notice plus a fixed "who sees what" table describing what the software
-  guarantees; `components/SiteFooter` links to it from every layout.
+  guarantees; `components/SiteFooter` links to it from the member and admin layouts (removed from the public sign-in pages on request, 2026-10-18).

@@ -21,7 +21,7 @@ Frontend routes (React Router). The **Guard** column is UX only. The API enforce
 | Evaluation Details & Revision History | `/app/my-evaluations/:publicId` | member (author only) | `features/evaluations` | 2–3 ✅ |
 | Feedback I Received | `/app/feedback` (lazy chunk) | member | `features/feedback` | 3 ✅ |
 | Notifications | `/app/notifications`, `/admin/notifications` (+ header bell on every signed-in page) | member, super admin | `features/notifications` | 5 ✅ |
-| Privacy Notice | `/privacy` (also on the evaluate review step; linked from every page footer) | public | `features/auth` | 2 / 4 ✅ |
+| Privacy Notice | `/privacy` (also on the evaluate review step; linked from the footer of the member and admin areas, not the sign-in pages) | public | `features/auth` | 2 / 4 ✅ |
 | Super Admin Dashboard | `/admin` | super admin | `features/admin` | 4 ✅ |
 | Manage Members & Roles | `/admin/members`, `/admin/members/:publicId`, `/admin/voice-sections` | super admin | `features/admin` | 4 ✅ |
 | Manage Evaluation Cycles | `/admin/cycles`, `/admin/cycles/new`, `/admin/cycles/:publicId` | super admin | `features/admin` | 4 ✅ |

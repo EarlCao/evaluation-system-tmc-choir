@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { api, loggedInAs, superAdminUser } from "@/test/handlers";
+import { api, loggedInAs, notAuthenticated, superAdminUser } from "@/test/handlers";
 import { renderRoute } from "@/test/render";
 import { server } from "@/test/server";
 
@@ -142,7 +142,7 @@ describe("System settings (SET-01/03)", () => {
 });
 
 describe("Privacy page (SET-03)", () => {
-  it("is public, shows the choir's notice and is linked from the footer", async () => {
+  it("is public and shows the choir's notice", async () => {
     renderRoute("/privacy");
     expect(
       await screen.findByText("Your name is hidden from members. The Super Admin can see it."),
@@ -150,7 +150,17 @@ describe("Privacy page (SET-03)", () => {
     expect(screen.getByRole("table", { name: "Who sees what" })).toHaveTextContent(
       "Never the member evaluated or other members",
     );
-    expect(screen.getByRole("link", { name: "Privacy: who sees what" })).toHaveAttribute(
+  });
+
+  it("is linked from the footer inside the app but not on the sign-in pages", async () => {
+    server.use(http.get(api("/auth/me/"), notAuthenticated)); // signed out: the login page shows
+    renderRoute("/login");
+    expect(await screen.findByRole("heading", { name: /log in/i })).toBeVisible();
+    expect(screen.queryByRole("link", { name: "Privacy: who sees what" })).not.toBeInTheDocument();
+
+    server.use(loggedInAs(superAdminUser));
+    renderRoute("/admin/settings");
+    expect(await screen.findByRole("link", { name: "Privacy: who sees what" })).toHaveAttribute(
       "href",
       "/privacy",
     );
