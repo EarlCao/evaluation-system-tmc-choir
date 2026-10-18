@@ -93,8 +93,7 @@ def cleanup_unverified_registration(*, email: str, username: str) -> None:
             stale.username = f"_unverified_{suffix}"
             stale.email = f"_unverified_{suffix}@invalid.local"
             stale.status = UserStatus.DEACTIVATED
-            stale.is_active = False
-            stale.save(update_fields=["username", "email", "status", "is_active", "updated_at"])
+            stale.save(update_fields=["username", "email", "status", "updated_at"])
 
 
 def _validate_registration_inputs(
