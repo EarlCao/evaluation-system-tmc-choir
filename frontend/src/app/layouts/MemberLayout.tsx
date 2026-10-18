@@ -49,9 +49,17 @@ export function MemberLayout() {
             borderColor: "divider",
           }}
         >
-          <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-            Navigation
-          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+            <Box
+              component="img"
+              src="/logo.png"
+              alt="Logo"
+              sx={{ width: 28, height: 28, objectFit: "contain" }}
+            />
+            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+              Navigation
+            </Typography>
+          </Box>
           <IconButton
             onClick={() => setMobileNavOpen(false)}
             aria-label="Close navigation menu"

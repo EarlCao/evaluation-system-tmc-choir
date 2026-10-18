@@ -9,11 +9,12 @@ interface AuthCardProps {
   title: string;
   subtitle?: string;
   badge?: string;
+  showLogo?: boolean;
   children: ReactNode;
 }
 
 /** Centered luxury card used by the login, registration and password pages. */
-export function AuthCard({ title, subtitle, badge, children }: AuthCardProps) {
+export function AuthCard({ title, subtitle, badge, showLogo = true, children }: AuthCardProps) {
   return (
     <Paper
       variant="outlined"
@@ -35,6 +36,55 @@ export function AuthCard({ title, subtitle, badge, children }: AuthCardProps) {
       />
       <Stack spacing={3} sx={{ p: { xs: 3, md: 4.5 } }}>
         <div>
+          {showLogo ? (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                mb: 2.5,
+              }}
+            >
+              <Box
+                component="img"
+                src="/logo.png"
+                alt="Alon Himig Logo"
+                sx={{
+                  width: { xs: 52, sm: 60 },
+                  height: { xs: 52, sm: 60 },
+                  objectFit: "contain",
+                  borderRadius: 2,
+                  filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.18))",
+                }}
+              />
+              <Box>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 800,
+                    letterSpacing: "0.04em",
+                    lineHeight: 1.2,
+                    fontSize: { xs: "1.05rem", sm: "1.2rem" },
+                  }}
+                >
+                  ALON HIMIG
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{
+                    display: "block",
+                    fontWeight: 600,
+                    letterSpacing: "0.03em",
+                    textTransform: "uppercase",
+                    fontSize: "0.72rem",
+                  }}
+                >
+                  Choir Member Evaluation System
+                </Typography>
+              </Box>
+            </Box>
+          ) : null}
           {badge ? (
             <Chip
               label={badge}

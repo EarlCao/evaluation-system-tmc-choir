@@ -83,23 +83,18 @@ export function AppHeader({ home, badge, nav, children, onOpenMobileNav }: AppHe
           }}
         >
           <Box
-            aria-hidden="true"
+            component="img"
+            src="/logo.png"
+            alt="Alon Himig Logo"
             sx={{
-              width: 36,
-              height: 36,
-              borderRadius: 2.5,
-              display: "grid",
-              placeItems: "center",
-              background: "linear-gradient(135deg, #1e1b4b 0%, #d4af37 100%)",
-              border: "1px solid rgba(212, 175, 55, 0.55)",
-              color: "#fff",
-              fontSize: 18,
-              boxShadow: "0 4px 14px rgba(212, 175, 55, 0.25)",
+              width: 38,
+              height: 38,
+              borderRadius: 2,
+              objectFit: "contain",
               flexShrink: 0,
+              filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.2))",
             }}
-          >
-            🎼
-          </Box>
+          />
           <Box sx={{ display: "flex", flexDirection: "column" }}>
             <Typography
               variant="subtitle1"

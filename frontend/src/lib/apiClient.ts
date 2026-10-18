@@ -18,7 +18,7 @@ export const apiClient = axios.create({
   withCredentials: true,
   xsrfCookieName: CSRF_COOKIE,
   xsrfHeaderName: "X-CSRFToken",
-  timeout: 15_000,
+  timeout: 30_000,
   headers: { Accept: "application/json" },
 });
 
