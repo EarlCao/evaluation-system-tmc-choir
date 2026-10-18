@@ -1,5 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
@@ -8,7 +7,6 @@ import Typography from "@mui/material/Typography";
 import { useForm } from "react-hook-form";
 import { Link as RouterLink } from "react-router";
 
-import { ApiStatus } from "@/components/ApiStatus";
 import { AuthCard } from "@/components/AuthCard";
 import { FormAlert } from "@/components/form/FormAlert";
 import { FormTextField } from "@/components/form/FormTextField";
@@ -74,12 +72,9 @@ export function LoginPage() {
           . If you registered recently, your account may still be waiting for approval.
         </Typography>
       </Stack>
-
-      <Box sx={{ pt: 0.5 }}>
-        <ApiStatus />
-      </Box>
     </AuthCard>
   );
 }
+
 
 
