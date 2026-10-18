@@ -107,7 +107,7 @@ Export query: `report` = `choir` | `member` (+ `member`) | `participation` (+ `c
 | GET | `/api/v1/notifications/unread-count/` | M | RT-05 | 5 | ✅ |
 | POST | `/api/v1/notifications/{id}/read/` | M | – | 5 | ✅ |
 | POST | `/api/v1/notifications/read-all/` | M | – | 5 | ✅ |
-| WS | `/ws/notifications/` | M | RT-01 | 5 | 📝 |
-| WS | `/ws/admin/` | A | RT-01, RT-04 | 5 | 📝 |
+| WS | `/ws/notifications/` (unread_count, notification.created; close 4401/4001) | M | RT-01 | 5 | ✅ |
+| WS | `/ws/admin/` | A | RT-01, RT-04 | 5 | ✅ |
 
 Related: [[API Conventions]] · [[Pages and Routes]]

@@ -42,6 +42,7 @@ services:
       retries: 20
 
   backend:
+    image: choir-eval-backend
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
@@ -68,6 +69,26 @@ services:
       timeout: 5s
       retries: 30
       start_period: 20s
+
+  worker:
+    # Delivers debounced "new feedback" notifications (Notifications, step 5.2).
+    image: choir-eval-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql://${MYSQL_USER:-choir}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-choir_eval}
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - .:/app
+    command: ["python", "manage.py", "deliver_notifications", "--loop", "60"]
 
   frontend:
     build:

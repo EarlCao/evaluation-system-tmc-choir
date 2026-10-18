@@ -8,3 +8,6 @@ class NotificationsConfig(AppConfig):
     name = "apps.notifications"
     label = "notifications"
     verbose_name = "Notifications"
+
+    def ready(self) -> None:
+        from . import handlers  # noqa: F401  (registers event subscribers)

@@ -20,6 +20,7 @@ class NotificationListView(ListAPIView):
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
+        services.deliver_due(recipient_id=self.request.user.pk)  # lazy delivery (no worker needed)
         unread = self.request.query_params.get("unread") == "true"
         return selectors.list_for(user=self.request.user, unread_only=unread)
 
@@ -29,6 +30,7 @@ class UnreadCountView(APIView):
 
     @extend_schema(responses=UnreadCountSerializer)
     def get(self, request):
+        services.deliver_due(recipient_id=request.user.pk)
         return Response({"unread": selectors.unread_count(user=request.user)})
 
 

@@ -175,7 +175,8 @@ Leave out files a module does not need. Keep the names exactly as above when the
    called directly when the log entry must be in the same transaction.
 6. **Dependency direction** (lower depends on nothing above it):
    `core` ← `system` ← `accounts` ← `members` ← `evaluations` ← `feedback`, `reports`.
-   `audit` and `notifications` depend only on `core` (and read `accounts` selectors).
+   `audit` and `notifications` depend only on `core` (and read `accounts`/`system` selectors;
+   `notifications` subscribes to other modules' `events`, ADR-020).
    Circular imports between modules are forbidden.
 7. **No cross-module DB joins in views.** If a query needs data from two modules,
    write it as a selector in the module that owns the main entity.

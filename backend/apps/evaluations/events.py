@@ -54,12 +54,18 @@ class CycleChanged(DomainEvent):
 class CycleOpened(DomainEvent):
     name = "evaluations.cycle.opened"
     target_type = "evaluations.EvaluationCycle"
+    cycle_id: int
+    cycle_name: str
+    feedback_visibility: str
 
 
 @dataclass(frozen=True, kw_only=True)
 class CycleClosed(DomainEvent):
     name = "evaluations.cycle.closed"
     target_type = "evaluations.EvaluationCycle"
+    cycle_id: int
+    cycle_name: str
+    feedback_visibility: str
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -70,6 +76,7 @@ class EvaluationSubmitted(DomainEvent):
     target_type = "evaluations.Evaluation"
     recipient_id: int
     cycle_id: int
+    feedback_visibility: str  # notifications hold AFTER_CLOSE feedback until the cycle closes
 
 
 @dataclass(frozen=True, kw_only=True)

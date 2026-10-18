@@ -26,6 +26,7 @@ Format: [[ADR Template]]. Status: Proposed · Accepted · Superseded.
 | ADR-017 | One open cycle enforced by a nullable-unique `is_current` column | Accepted | 2026-10-17 |
 | ADR-018 | Exports: stdlib csv, openpyxl, reportlab; formula-injection guard; synchronous audit | Accepted | 2026-10-17 |
 | ADR-019 | Containerised dev stack (backend + frontend services in docker-compose) | Accepted | 2026-10-18 |
+| ADR-020 | Feedback notices: pending rows + worker/lazy delivery; enriched events; best-effort WS push | Accepted | 2026-10-18 |
 
 ---
 
@@ -118,3 +119,18 @@ volume, polling file watch). DB/Redis URLs are overridden to service names; host
 host (`docker compose up -d mysql redis` + local servers) still works. Production images are separate (`deploy/`, Phase 6).
 **Consequences:** one command starts the whole system; backend tests run with `docker compose exec backend pytest`
 (same MySQL as before). Dev images are not hardened and must not be deployed.
+
+### ADR-020: Debounced feedback notices and realtime delivery
+**Context:** RT-02 / Privacy Model: a "new feedback" notification sent at submission time tells the recipient *when* someone
+evaluated them, which can identify the evaluator. There is no task queue (Celery) in the stack. The notifications module
+may depend only on lower modules.
+**Decision:** a submission creates (or joins) a `PendingFeedbackNotice` with `deliver_after = first submission +
+feedback_notification_debounce_minutes`; AFTER_CLOSE cycles hold it (`deliver_after` NULL) until `evaluations.cycle.closed`.
+Due notices become one generic notification per member (none while an earlier one is unread). Delivery runs from
+`manage.py deliver_notifications --loop 60` (compose `worker`, cron in production) **and** lazily when a member reads their
+notifications, so it works without the worker. Events carry what notifications need (`cycle_name`, `feedback_visibility`,
+`cycle_id`) instead of notifications querying evaluations; it reads only `accounts`/`system` selectors. WebSocket pushes
+happen after commit and are best effort (failures logged; REST is the source of truth, RT-05). Suspending/deactivating a
+user closes their sockets (`session.revoked`, close code 4001).
+**Consequences:** notification time is decoupled from submission time by up to the window (0 = immediate, an admin choice);
+the worker adds one container; the failed-login alert counts in the Django cache (per process in dev).

@@ -42,6 +42,8 @@ docker compose down                     # keep data;  down -v also deletes the D
   and `/ws` to `http://backend:8010` (`VITE_BACKEND_URL`); `VITE_USE_POLLING=true` because WSL/Windows bind mounts can miss
   file events. After changing `package.json`: `docker compose build frontend && docker volume rm choir-eval_frontend_node_modules`
   (with the frontend container removed), then `up -d frontend`.
+- **worker** (same image as backend): `python manage.py deliver_notifications --loop 60` delivers debounced
+  "new feedback" notifications (step 5.2, ADR-020).
 - Host ports: `BACKEND_HOST_PORT` (8010), `FRONTEND_HOST_PORT` (5280), bound to 127.0.0.1 only. Stop any host-run
   `runserver`/`npm run dev` on those ports first.
 - The host still runs `pre-commit` (git hooks) from `backend/.venv`; the frontend hooks use the host's `node_modules`.

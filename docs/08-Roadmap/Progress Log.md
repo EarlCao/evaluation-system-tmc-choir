@@ -12,6 +12,27 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-18 · Step 5.2: Event handlers & consumers ✅
+**What:** notification handlers for submissions (debounced / held for AFTER_CLOSE), cycle open/close, registrations,
+approvals, suspensions and failed-login bursts; `PendingFeedbackNotice` + `deliver_notifications` command + compose
+`worker`; best-effort after-commit WebSocket pushes; `/ws/notifications/` and `/ws/admin/` consumers. Events enriched
+(`cycle_id`, `cycle_name`, `feedback_visibility`); accounts selectors `active_user_ids`, `get_active_user`, `get_user_by_pk`.
+ADR-020. AGENT.md §2.3.6 wording updated to match (notifications reads `system` settings and subscribes to events).
+**Requirements:** RT-01..RT-06
+**Verification:** `docker compose exec backend pytest` **468 passed** (+13: 8 handler tests incl. debounce timing, one
+window for two submissions, anonymity of text and push payload, AFTER_CLOSE hold/release, fan-out without suspended users,
+registration + approval, failed-login alert once, suspension → `session.revoked`; 5 consumer tests through the real ASGI
+stack with session cookies: anonymous 4401, foreign origin refused, live `notification.created` + ping/pong, admin socket
+Super Admin only + `dashboard.changed` with empty payload, suspension closes with 4001); ruff, `check`,
+`makemigrations --check`, `spectacular --validate --fail-on-warn` clean. Live: worker container running
+(`deliver_notifications` → 0 due), anonymous WebSocket handshake through the Vite proxy → 403.
+**Not verified live:** an authenticated socket in a browser (no dev account was created in your database; 5.3 adds the UI).
+**Test notes:** consumer tests use `transaction=True, serialized_rollback=True` (the consumers read the DB from another
+thread; serialized rollback restores the voice sections/settings seeded by migrations).
+**Docs updated:** [[Notifications]], [[Privacy Model]], [[Module Boundaries]], [[Data Model]], [[Decisions Log]] (ADR-020),
+[[API Endpoints]], [[Dev Environment Setup]], [[Roadmap]]
+**Commit:** `feat(notifications): step 5.2 event handlers, delivery and websocket consumers`
+
 ## 2026-10-18 · Step 5.1a: Docker dev stack ✅ (user request: "put docker")
 **What:** `backend/Dockerfile.dev` + `frontend/Dockerfile.dev` and `backend` / `frontend` services in `docker-compose.yml`
 (ADR-019); Vite file-watch polling switch (`VITE_USE_POLLING`); `.env.example` host-port variables; AGENT.md commands.

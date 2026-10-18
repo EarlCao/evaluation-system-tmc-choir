@@ -48,8 +48,11 @@ See [[Open Questions]].
    is forbidden.
 6. **Notifications:** member notifications carry generic text and a link to
    `/app/feedback`. They are **debounced** (at most one "new feedback" notification per
-   recipient per window, default 60 min) to reduce timing correlation. WS payloads
-   carry no IDs that point to an evaluation.
+   recipient per window, default 60 min) to reduce timing correlation: the notice is created at
+   the **end** of the window that the first submission opened, never at submission time, and it
+   is skipped while an earlier one is unread. AFTER_CLOSE cycles hold notices until the cycle
+   closes (ADR-020). WS payloads carry no IDs that point to an evaluation; tests assert that
+   evaluator names, usernames and public ids appear nowhere in the notification or its push.
 7. **Exports and reports:** member-available exports contain only their own anonymised
    feedback. Identity-bearing reports exist only in `admin` endpoints.
 8. **Logs:** application logs never write comment text or evaluator/recipient pairs.

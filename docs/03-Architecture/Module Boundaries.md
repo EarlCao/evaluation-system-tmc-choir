@@ -41,13 +41,13 @@ Consumers re-query what they need. One exception: configuration events may carry
 | `accounts.user.status_changed` | accounts | audit | user_id, before, after, actor_id |
 | `accounts.user.role_changed` | accounts | audit | user_id, before, after, actor_id |
 | `accounts.password.reset_requested` | accounts | audit | user_id |
-| `evaluations.cycle.opened` / `.closed` ✅ | evaluations | audit, notifications (members) | actor_id, target_id (cycle public_id) |
+| `evaluations.cycle.opened` / `.closed` ✅ | evaluations | audit, notifications (members; admins on close; releases AFTER_CLOSE notices) | actor_id, target_id (cycle public_id), cycle_id, cycle_name, feedback_visibility |
 | `evaluations.cycle.changed` ✅ | evaluations | audit | action, changes |
 | `evaluations.category.changed` ✅ | evaluations | audit | action, changes |
 | `evaluations.form.changed` ✅ | evaluations | audit | action, changes |
 | `evaluations.criterion.changed` ✅ | evaluations | audit | action, version, changes |
 | `evaluations.form.published` ✅ | evaluations | audit | version, criterion_version_ids |
-| `evaluations.evaluation.submitted` ✅ | evaluations | audit, notifications (recipient, debounced, 5.2) | actor_id (evaluator, **never forward to members**), target_id, recipient_id, cycle_id |
+| `evaluations.evaluation.submitted` ✅ | evaluations | audit, notifications (recipient, debounced, 5.2) | actor_id (evaluator, **never forward to members**), target_id, recipient_id, cycle_id, feedback_visibility |
 | `evaluations.evaluation.edited` ✅ | evaluations | audit, notifications (author) | actor_id, target_id, revision_number |
 | `evaluations.evaluation.moderated` ✅ | evaluations | audit | actor_id, target_id, action, moderation_target, changes (moderation_status), reason |
 | `admin.sensitive_access` ✅ *(direct `audit.services.record`, not an event)* | evaluations | audit | actor, view, target_id or filters/page/results |

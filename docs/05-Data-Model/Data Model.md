@@ -87,8 +87,10 @@ The current state lives on `Evaluation.moderation_status` / `EvaluationComment.m
 `ip_address`, `user_agent`, `request_id`. Indexes: (target_type, target_id), (actor, -occurred_at)
 
 ### notifications
-**Notification**: `id`, `recipient_id`, `type`, `message`, `link`, `is_read`, `read_at`,
-`created_at`. Index (recipient, is_read, created_at).
+**Notification**: `id`, `public_id`, `recipient_id`, `type`, `message` (≤ 200, safe text), `link` (relative, ≤ 200), `is_read`, `read_at`,
+`created_at`. Index (recipient, is_read, -created_at).
+**PendingFeedbackNotice** (step 5.2): `recipient_id`, `held_for_cycle_id` (AFTER_CLOSE), `deliver_after` (idx; NULL while held), `created_at`.
+Deleted when delivered.
 
 ### system
 **SystemSettings** (singleton pk=1, seeded by migration `system.0002`): see [[System Settings]]

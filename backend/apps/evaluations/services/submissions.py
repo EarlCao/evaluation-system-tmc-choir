@@ -205,6 +205,7 @@ def submit_evaluation(
                     target_id=str(evaluation.public_id),
                     recipient_id=recipient_profile.user_id,
                     cycle_id=cycle.pk,
+                    feedback_visibility=cycle.feedback_visibility,
                 )
             )
     except IntegrityError as exc:  # lost a race with a duplicate submission (BR-12)

@@ -1,3 +1,10 @@
-"""WebSocket routes of this module (consumers: step 5.2, /ws/notifications/ and /ws/admin/)."""
+"""WebSocket routes of the notifications module (Realtime Architecture)."""
 
-websocket_urlpatterns: list = []
+from django.urls import path
+
+from . import consumers
+
+websocket_urlpatterns = [
+    path("ws/notifications/", consumers.NotificationConsumer.as_asgi()),
+    path("ws/admin/", consumers.AdminConsumer.as_asgi()),
+]

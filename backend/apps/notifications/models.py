@@ -30,3 +30,22 @@ class Notification(PublicIdModel):
 
     def __str__(self) -> str:
         return f"{self.type} → {self.recipient_id}"
+
+
+class PendingFeedbackNotice(models.Model):
+    """A "you have new feedback" notice not delivered yet (RT-02, Privacy Model: timing).
+
+    Immediate cycles: ``deliver_after`` = first submission + the debounce window, so the
+    notification time doesn't point at one submission. AFTER_CLOSE cycles: held with
+    ``deliver_after`` NULL and ``held_for_cycle_id`` set until that cycle closes.
+    """
+
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="+"
+    )
+    held_for_cycle_id = models.PositiveBigIntegerField(null=True, blank=True)
+    deliver_after = models.DateTimeField(null=True, blank=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f"pending feedback notice → {self.recipient_id}"

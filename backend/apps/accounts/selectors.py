@@ -21,3 +21,19 @@ def count_members_by_status() -> dict[str, int]:
         .annotate(n=Count("id"))
     )
     return {status: counts.get(status, 0) for status in UserStatus.values}
+
+
+def active_user_ids(*, role: str | None = None) -> list[int]:
+    """Ids of ACTIVE accounts, optionally of one role (notification fan-out)."""
+    qs = User.objects.filter(status=UserStatus.ACTIVE)
+    if role:
+        qs = qs.filter(role=role)
+    return list(qs.order_by().values_list("id", flat=True))
+
+
+def get_active_user(*, pk: int) -> User | None:
+    return User.objects.filter(pk=pk, status=UserStatus.ACTIVE).first()
+
+
+def get_user_by_pk(*, pk: int | str | None) -> User | None:
+    return User.objects.filter(pk=pk).first() if pk else None

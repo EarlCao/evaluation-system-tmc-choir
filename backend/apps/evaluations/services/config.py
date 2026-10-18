@@ -500,7 +500,15 @@ def open_cycle(*, actor, cycle: EvaluationCycle) -> EvaluationCycle:
             )
             if not updated:
                 raise BusinessRuleViolation("Only draft cycles can be opened.")
-            publish(events.CycleOpened(actor_id=_pk(actor), target_id=str(cycle.public_id)))
+            publish(
+                events.CycleOpened(
+                    actor_id=_pk(actor),
+                    target_id=str(cycle.public_id),
+                    cycle_id=cycle.pk,
+                    cycle_name=cycle.name,
+                    feedback_visibility=cycle.feedback_visibility,
+                )
+            )
     except IntegrityError as exc:  # is_current unique: someone opened another cycle meanwhile
         raise BusinessRuleViolation("Another cycle is already open. Close it first.") from exc
     cycle.refresh_from_db()
@@ -517,7 +525,15 @@ def close_cycle(*, actor, cycle: EvaluationCycle) -> EvaluationCycle:
             closed_at=timezone.now(),
             updated_at=timezone.now(),
         )
-        publish(events.CycleClosed(actor_id=_pk(actor), target_id=str(cycle.public_id)))
+        publish(
+            events.CycleClosed(
+                actor_id=_pk(actor),
+                target_id=str(cycle.public_id),
+                cycle_id=cycle.pk,
+                cycle_name=cycle.name,
+                feedback_visibility=cycle.feedback_visibility,
+            )
+        )
     cycle.refresh_from_db()
     return cycle
 
