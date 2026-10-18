@@ -70,6 +70,40 @@ class RequestContextMiddleware:
         return response
 
 
+from django.http import HttpResponse
+
+
+class CorsMiddleware:
+    """Allow credentialed cross-origin requests from configured frontend origins (e.g. Vercel)."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        origin = request.META.get("HTTP_ORIGIN", "")
+        allowed_origins = set(getattr(settings, "CORS_ALLOWED_ORIGINS", ())) | set(
+            getattr(settings, "CSRF_TRUSTED_ORIGINS", ())
+        )
+        is_allowed = bool(origin and origin in allowed_origins)
+
+        if request.method == "OPTIONS" and is_allowed:
+            response = HttpResponse(status=204)
+        else:
+            response = self.get_response(request)
+
+        if is_allowed:
+            response["Access-Control-Allow-Origin"] = origin
+            response["Access-Control-Allow-Credentials"] = "true"
+            response["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+            response["Access-Control-Allow-Headers"] = (
+                "Accept, Authorization, Content-Type, Origin, X-CSRFToken, X-Requested-With"
+            )
+            vary = response.get("Vary", "")
+            if "Origin" not in vary:
+                response["Vary"] = f"{vary}, Origin".strip(", ")
+        return response
+
+
 class PrivateApiCacheMiddleware:
     """Privacy hardening (step 3.4): API responses hold personal data (feedback, profiles), so
     browsers and shared proxies must not store them. Views may still set their own policy."""

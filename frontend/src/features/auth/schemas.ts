@@ -28,7 +28,10 @@ export const registerSchema = z
       .trim()
       .min(1, "Choose a username.")
       .max(150, "Username is too long.")
-      .regex(/^[\w.@+-]+$/, "Use letters, numbers and . @ + - _ only."),
+      .regex(
+        /^[a-z0-9_]+$/,
+        "Use only lowercase letters (a-z), numbers (0-9), and underscores (_).",
+      ),
     email: z.string().trim().pipe(z.email("Enter a valid email address.")),
     voice_section: z.string().min(1, "Choose your voice section."),
     password: newPassword,
@@ -50,6 +53,14 @@ export interface RegisterPayload {
   password: string;
 }
 
+export const verifyOtpSchema = z.object({
+  otp: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, "Enter the 6-digit OTP code from your email."),
+});
+export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>;
+
 export const forgotPasswordSchema = z.object({
   email: z.string().trim().pipe(z.email("Enter a valid email address.")),
 });
@@ -62,6 +73,21 @@ export const confirmResetSchema = z
     path: ["confirm_password"],
   });
 export type ConfirmResetInput = z.infer<typeof confirmResetSchema>;
+
+export const resetPasswordWithOtpSchema = z
+  .object({
+    otp: z
+      .string()
+      .trim()
+      .regex(/^\d{6}$/, "Enter the 6-digit OTP code from your email."),
+    new_password: newPassword,
+    confirm_password: z.string(),
+  })
+  .refine((data) => data.new_password === data.confirm_password, {
+    message: "The passwords don't match.",
+    path: ["confirm_password"],
+  });
+export type ResetPasswordWithOtpInput = z.infer<typeof resetPasswordWithOtpSchema>;
 
 export const profileSchema = z.object({
   first_name: name("First name"),

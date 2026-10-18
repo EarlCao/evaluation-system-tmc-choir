@@ -115,7 +115,11 @@ class PasswordResetConfirmView(PublicCsrfProtectedView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         services.confirm_password_reset(
-            uidb64=data["uid"], token=data["token"], new_password=data["new_password"]
+            uidb64=data.get("uid", ""),
+            token=data.get("token", ""),
+            new_password=data["new_password"],
+            email=data.get("email", ""),
+            otp=data.get("otp", ""),
         )
         return Response({"detail": "Your password has been reset. You can now log in."})
 
@@ -128,7 +132,12 @@ class EmailVerificationView(PublicCsrfProtectedView):
         serializer = EmailVerificationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        services.verify_email(uidb64=data["uid"], token=data["token"])
+        services.verify_email(
+            uidb64=data.get("uid", ""),
+            token=data.get("token", ""),
+            email=data.get("email", ""),
+            otp=data.get("otp", ""),
+        )
         return Response({"detail": "Your email address is confirmed. You can now log in."})
 
 

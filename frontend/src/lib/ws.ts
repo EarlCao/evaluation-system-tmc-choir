@@ -32,10 +32,17 @@ export interface SocketOptions {
 
 export function socketUrl(
   path: string,
-  location: Pick<Location, "protocol" | "host"> = window.location,
+  location?: Pick<Location, "protocol" | "host">,
 ) {
-  const protocol = location.protocol === "https:" ? "wss:" : "ws:";
-  return `${protocol}//${location.host}${path}`;
+  if (!location) {
+    const configuredWsBase = (import.meta.env.VITE_WS_BASE_URL as string | undefined)?.trim();
+    if (configuredWsBase) {
+      return `${configuredWsBase.replace(/\/+$/, "")}${path}`;
+    }
+  }
+  const loc = location ?? window.location;
+  const protocol = loc.protocol === "https:" ? "wss:" : "ws:";
+  return `${protocol}//${loc.host}${path}`;
 }
 
 /** Delay before reconnect attempt `attempt` (0-based): full backoff halved, plus jitter. */

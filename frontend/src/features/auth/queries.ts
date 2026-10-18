@@ -103,8 +103,21 @@ export function useConfirmPasswordReset(uid: string, token: string) {
   });
 }
 
+export function useConfirmPasswordResetWithOtp() {
+  return useMutation({
+    mutationFn: (input: { email: string; otp: string; new_password: string }) =>
+      api.confirmPasswordResetWithOtp(input),
+  });
+}
+
 export function useVerifyEmail(uid: string, token: string) {
   return useMutation({ mutationFn: () => api.verifyEmail(uid, token) });
+}
+
+export function useVerifyEmailOtp() {
+  return useMutation({
+    mutationFn: (input: { email: string; otp: string }) => api.verifyEmailOtp(input),
+  });
 }
 
 export function useUpdateProfile() {

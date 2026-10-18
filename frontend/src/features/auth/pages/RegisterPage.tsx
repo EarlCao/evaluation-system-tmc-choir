@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import Button from "@mui/material/Button";
+import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
@@ -14,8 +15,14 @@ import { FormTextField } from "@/components/form/FormTextField";
 import { PasswordField } from "@/components/form/PasswordField";
 import { applyServerErrors } from "@/lib/forms";
 
-import { useRegister, useVoiceSections } from "../queries";
-import { PASSWORD_MIN_LENGTH, registerSchema, type RegisterInput } from "../schemas";
+import { useRegister, useVerifyEmailOtp, useVoiceSections } from "../queries";
+import {
+  PASSWORD_MIN_LENGTH,
+  registerSchema,
+  verifyOtpSchema,
+  type RegisterInput,
+  type VerifyOtpInput,
+} from "../schemas";
 import type { RegistrationResult } from "../types";
 
 const SERVER_FIELDS = [
@@ -27,11 +34,15 @@ const SERVER_FIELDS = [
   "password",
 ] as const;
 
-/** AUTH-01 / AUTH-03: registration. The next step depends on the registration mode. */
+/** AUTH-01 / AUTH-03: registration with real 6-digit email OTP verification. */
 export function RegisterPage() {
   const register = useRegister();
+  const verifyOtp = useVerifyEmailOtp();
   const sections = useVoiceSections();
   const [result, setResult] = useState<RegistrationResult | null>(null);
+  const [registeredEmail, setRegisteredEmail] = useState("");
+  const [otpVerified, setOtpVerified] = useState<string | null>(null);
+
   const { control, handleSubmit, setError, formState } = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -45,21 +56,73 @@ export function RegisterPage() {
     },
   });
 
+  const otpForm = useForm<VerifyOtpInput>({
+    resolver: zodResolver(verifyOtpSchema),
+    defaultValues: { otp: "" },
+  });
+
   const onSubmit = handleSubmit(async ({ confirm_password: _confirm, voice_section, ...rest }) => {
     try {
-      setResult(await register.mutateAsync({ ...rest, voice_section: Number(voice_section) }));
+      const response = await register.mutateAsync({ ...rest, voice_section: Number(voice_section) });
+      setRegisteredEmail(rest.email.trim());
+      setResult(response);
     } catch (error) {
       applyServerErrors(error, setError, SERVER_FIELDS);
     }
   });
 
+  const onVerifyOtp = otpForm.handleSubmit(async ({ otp }) => {
+    try {
+      const res = await verifyOtp.mutateAsync({ email: registeredEmail, otp });
+      setOtpVerified(res.detail);
+    } catch (error) {
+      applyServerErrors(error, otpForm.setError, ["otp"]);
+    }
+  });
+
   if (result) {
     return (
-      <AuthCard title={result.status === "ACTIVE" ? "Account created" : "Almost there"}>
+      <AuthCard
+        title={otpVerified || result.status === "ACTIVE" ? "Account created" : "Verify your email"}
+        subtitle={
+          registeredEmail
+            ? `We sent a 6-digit OTP verification code to ${registeredEmail}.`
+            : undefined
+        }
+      >
         <FormAlert
           severity={result.status === "ACTIVE" ? "success" : "info"}
           message={result.detail}
         />
+        {otpVerified ? (
+          <FormAlert severity="success" message={otpVerified} />
+        ) : (
+          <Stack
+            component="form"
+            spacing={2}
+            noValidate
+            onSubmit={onVerifyOtp}
+            aria-label="Verify email OTP"
+          >
+            <FormAlert message={otpForm.formState.errors.root?.server?.message} />
+            <FormTextField
+              name="otp"
+              control={otpForm.control}
+              label="6-digit OTP code"
+              placeholder="123456"
+              autoComplete="one-time-code"
+              helperText="Enter the 6-digit OTP sent to your email address."
+            />
+            <Button
+              type="submit"
+              variant="outlined"
+              disabled={otpForm.formState.isSubmitting}
+            >
+              {otpForm.formState.isSubmitting ? "Verifying OTP…" : "Verify OTP"}
+            </Button>
+          </Stack>
+        )}
+        <Divider />
         <Button component={RouterLink} to="/login" variant="contained">
           Go to log in
         </Button>
@@ -91,7 +154,13 @@ export function RegisterPage() {
             autoComplete="family-name"
           />
         </Stack>
-        <FormTextField name="username" control={control} label="Username" autoComplete="username" />
+        <FormTextField
+          name="username"
+          control={control}
+          label="Username"
+          autoComplete="username"
+          helperText="Unique username: lowercase letters (a-z), numbers (0-9), and underscores (_) only."
+        />
         <FormTextField
           name="email"
           control={control}

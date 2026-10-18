@@ -11,8 +11,10 @@ export const CSRF_COOKIE = "csrftoken";
  *   rotates the token on login, so the header always reflects the current cookie.
  * - Every failure rejects with a normalised `ApiError`.
  */
+const configuredBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
+
 export const apiClient = axios.create({
-  baseURL: "/api/v1",
+  baseURL: configuredBaseUrl ? configuredBaseUrl.replace(/\/+$/, "") : "/api/v1",
   withCredentials: true,
   xsrfCookieName: CSRF_COOKIE,
   xsrfHeaderName: "X-CSRFToken",

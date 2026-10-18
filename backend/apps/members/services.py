@@ -40,6 +40,11 @@ def register_member(
     return user
 
 
+def send_registration_otp(user) -> None:
+    """Send a registration OTP verification email via the accounts module."""
+    account_services.send_verification_otp(user)
+
+
 def create_active_member(
     *,
     actor,

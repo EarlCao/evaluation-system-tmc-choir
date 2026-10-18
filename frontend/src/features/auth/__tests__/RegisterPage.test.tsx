@@ -125,4 +125,45 @@ describe("RegisterPage", () => {
     await submit(await fillForm());
     expect(await screen.findByRole("alert")).toHaveTextContent("Registration is currently closed.");
   });
+
+  it("rejects uppercase letters or disallowed characters in username", async () => {
+    renderRoute("/register");
+    await submit(await fillForm({ username: "Nova_Q1" }));
+    expect(
+      await screen.findByText(
+        "Use only lowercase letters (a-z), numbers (0-9), and underscores (_).",
+      ),
+    ).toBeVisible();
+  });
+
+  it("verifies email with a 6-digit OTP code after creating an account", async () => {
+    let verifyBody: unknown;
+    server.use(
+      http.post(api("/members/register/"), () =>
+        HttpResponse.json(
+          {
+            status: "PENDING",
+            detail: "We sent a 6-digit OTP verification code to your email.",
+          },
+          { status: 201 },
+        ),
+      ),
+      http.post(api("/auth/verify-email/"), async ({ request }) => {
+        verifyBody = await request.json();
+        return HttpResponse.json({
+          detail: "Your email address is confirmed. You can now log in.",
+        });
+      }),
+    );
+    renderRoute("/register");
+    const user = await fillForm();
+    await submit(user);
+
+    const otpInput = await screen.findByLabelText(/6-digit otp code/i);
+    await user.type(otpInput, "654321");
+    await user.click(screen.getByRole("button", { name: /verify otp/i }));
+
+    expect(await screen.findByText(/your email address is confirmed/i)).toBeVisible();
+    expect(verifyBody).toEqual({ email: "nova@example.org", otp: "654321" });
+  });
 });

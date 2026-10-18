@@ -60,9 +60,29 @@ export async function confirmPasswordReset(
   return data;
 }
 
+export async function confirmPasswordResetWithOtp(input: {
+  email: string;
+  otp: string;
+  new_password: string;
+}): Promise<Detail> {
+  await ensureCsrfCookie();
+  const { data } = await apiClient.post<Detail>("/auth/password-reset/confirm/", {
+    email: input.email,
+    otp: input.otp,
+    new_password: input.new_password,
+  });
+  return data;
+}
+
 export async function verifyEmail(uid: string, token: string): Promise<Detail> {
   await ensureCsrfCookie();
   const { data } = await apiClient.post<Detail>("/auth/verify-email/", { uid, token });
+  return data;
+}
+
+export async function verifyEmailOtp(input: { email: string; otp: string }): Promise<Detail> {
+  await ensureCsrfCookie();
+  const { data } = await apiClient.post<Detail>("/auth/verify-email/", input);
   return data;
 }
 

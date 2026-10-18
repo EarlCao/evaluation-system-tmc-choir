@@ -57,14 +57,18 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
-    uid = serializers.CharField(max_length=64)
-    token = serializers.CharField(max_length=128)
+    uid = serializers.CharField(max_length=64, required=False, allow_blank=True, default="")
+    token = serializers.CharField(max_length=128, required=False, allow_blank=True, default="")
+    email = serializers.EmailField(required=False, allow_blank=True, default="")
+    otp = serializers.CharField(max_length=12, required=False, allow_blank=True, default="")
     new_password = serializers.CharField(max_length=128, trim_whitespace=False)
 
 
 class EmailVerificationSerializer(serializers.Serializer):
-    uid = serializers.CharField(max_length=64)
-    token = serializers.CharField(max_length=128)
+    uid = serializers.CharField(max_length=64, required=False, allow_blank=True, default="")
+    token = serializers.CharField(max_length=128, required=False, allow_blank=True, default="")
+    email = serializers.EmailField(required=False, allow_blank=True, default="")
+    otp = serializers.CharField(max_length=12, required=False, allow_blank=True, default="")
 
 
 class DetailSerializer(serializers.Serializer):

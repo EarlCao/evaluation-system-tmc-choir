@@ -256,6 +256,50 @@ def test_password_reset_token_is_not_a_verification_token():
         services.verify_email(uidb64=encode_uid(user), token=password_reset_token.make_token(user))
 
 
+@pytest.mark.parametrize("bad_username", ["NovaSinger", "nova.singer", "nova-singer", "nova@1"])
+def test_username_must_be_lowercase_letters_numbers_or_underscore(bad_username):
+    with pytest.raises(ValidationError) as exc:
+        register(username=bad_username)
+    assert "username" in exc.value.fields
+
+
+def test_verify_email_with_otp(registration_mode, django_capture_on_commit_callbacks):
+    registration_mode("EMAIL_VERIFICATION")
+    with django_capture_on_commit_callbacks(execute=True):
+        user = register(email="otp.verify@example.org", username="otp_verify_1")
+    otp_match = re.search(r"Your 6-digit OTP verification code is:\s*(\d{6})", mail.outbox[-1].body)
+    assert otp_match is not None
+    otp = otp_match.group(1)
+
+    services.verify_email(email=user.email, otp=otp)
+    user.refresh_from_db()
+    assert user.status == UserStatus.ACTIVE
+    assert user.email_verified_at is not None
+
+    with pytest.raises(ValidationError) as exc:
+        services.verify_email(email=user.email, otp=otp)
+    assert "otp" in exc.value.fields
+
+
+def test_password_reset_with_otp(django_capture_on_commit_callbacks):
+    user = UserFactory(email="otp.reset@example.org")
+    with django_capture_on_commit_callbacks(execute=True):
+        services.request_password_reset(email=user.email)
+    otp_match = re.search(r"Your 6-digit OTP password reset code is:\s*(\d{6})", mail.outbox[-1].body)
+    assert otp_match is not None
+    otp = otp_match.group(1)
+
+    services.confirm_password_reset(email=user.email, otp=otp, new_password=NEW_PASSWORD)
+    user.refresh_from_db()
+    assert user.check_password(NEW_PASSWORD)
+
+    with pytest.raises(ValidationError) as exc:
+        services.confirm_password_reset(
+            email=user.email, otp=otp, new_password="Another-Chorus-Pass-99"
+        )
+    assert "otp" in exc.value.fields
+
+
 # --------------------------------------------------------------------------- profile
 def test_update_own_profile_changes_names_only(django_capture_on_commit_callbacks):
     user = UserFactory()

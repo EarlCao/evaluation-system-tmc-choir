@@ -22,6 +22,7 @@ SECRET_KEY = env("DJANGO_SECRET_KEY")
 DEBUG = env.bool("DJANGO_DEBUG", default=False)
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[])
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=CSRF_TRUSTED_ORIGINS)
 
 # HMAC key for opaque feedback IDs (Privacy Model). Must differ from SECRET_KEY.
 FEEDBACK_ID_KEY = env("FEEDBACK_ID_KEY")
@@ -83,6 +84,7 @@ PASSWORD_RESET_TIMEOUT = 2 * 60 * 60  # reset / verification links are valid for
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "apps.core.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -113,13 +115,19 @@ TEMPLATES = [
 ]
 
 # ---------------------------------------------------------------------------
-# Database: MySQL 8, utf8mb4, strict mode
+# Database: MySQL 8 (local Docker or Aiven for MySQL), utf8mb4, strict mode
 # ---------------------------------------------------------------------------
 DATABASES = {"default": env.db("DATABASE_URL")}
 DATABASES["default"]["CONN_MAX_AGE"] = env.int("DB_CONN_MAX_AGE", default=0)
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 if DATABASES["default"]["ENGINE"] == "django.db.backends.mysql":
-    DATABASES["default"].setdefault("OPTIONS", {}).update(
+    _db_options = DATABASES["default"].setdefault("OPTIONS", {})
+    # Aiven MySQL service URIs include `?ssl-mode=REQUIRED`, which django-environ parses into
+    # OPTIONS["ssl-mode"]. Convert that into the `ssl` dictionary expected by mysqlclient.
+    _ssl_mode = str(
+        _db_options.pop("ssl-mode", _db_options.pop("ssl_mode", ""))
+    ).upper()
+    _db_options.update(
         {
             "charset": "utf8mb4",
             "init_command": (
@@ -128,6 +136,18 @@ if DATABASES["default"]["ENGINE"] == "django.db.backends.mysql":
             ),
         }
     )
+    _db_ssl_ca = env("DB_SSL_CA", default="").strip()
+    _db_ssl_ca_cert = env("DB_SSL_CA_CERT", default="").strip()
+    if _db_ssl_ca_cert and not _db_ssl_ca:
+        _ca_file = Path("/tmp/aiven-mysql-ca.pem")
+        _ca_file.write_text(_db_ssl_ca_cert.replace("\\n", "\n"), encoding="utf-8")
+        _db_ssl_ca = str(_ca_file)
+    if _db_ssl_ca:
+        _db_options["ssl"] = {"ca": _db_ssl_ca}
+    elif _ssl_mode in {"REQUIRED", "VERIFY_CA", "VERIFY_IDENTITY"} or env.bool(
+        "DB_SSL_REQUIRED", default=False
+    ):
+        _db_options.setdefault("ssl", {})
     DATABASES["default"]["TEST"] = {"CHARSET": "utf8mb4", "COLLATION": "utf8mb4_unicode_ci"}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -144,18 +164,35 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # ---------------------------------------------------------------------------
-# Sessions & CSRF (ADR-003: same-origin session auth)
+# Sessions & CSRF (ADR-003: same-origin or credentialed CORS session auth)
 # ---------------------------------------------------------------------------
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = env("SESSION_COOKIE_SAMESITE", default="Lax")
 CSRF_COOKIE_HTTPONLY = False  # the SPA reads csrftoken and sends X-CSRFToken
-CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = env("CSRF_COOKIE_SAMESITE", default="Lax")
 
 # ---------------------------------------------------------------------------
-# Email
+# Email & Real SMTP OTP Delivery
 # ---------------------------------------------------------------------------
-EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-reply@example.org")
+EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL", default=False)
+EMAIL_TIMEOUT = env.int("EMAIL_TIMEOUT", default=15)
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND",
+    default=(
+        "django.core.mail.backends.smtp.EmailBackend"
+        if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD
+        else "django.core.mail.backends.console.EmailBackend"
+    ),
+)
+DEFAULT_FROM_EMAIL = env(
+    "DEFAULT_FROM_EMAIL",
+    default=EMAIL_HOST_USER if EMAIL_HOST_USER else "no-reply@example.org",
+)
 
 # ---------------------------------------------------------------------------
 # Django REST Framework
@@ -224,11 +261,19 @@ LOGGING = {
 
 
 # ---------------------------------------------------------------------------
-# Realtime (Realtime Architecture, step 5.1): Redis channel layer
+# Realtime (Realtime Architecture, step 5.1): Redis channel layer (or in-memory fallback)
 # ---------------------------------------------------------------------------
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {"hosts": [env("REDIS_URL", default="redis://127.0.0.1:6380/0")]},
+_redis_url = env("REDIS_URL", default="redis://127.0.0.1:6380/0").strip()
+if not _redis_url or _redis_url.startswith("memory://"):
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        }
     }
-}
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {"hosts": [_redis_url]},
+        }
+    }

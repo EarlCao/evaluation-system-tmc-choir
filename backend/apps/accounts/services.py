@@ -2,6 +2,7 @@
 
 import hashlib
 import hmac
+import re
 
 from django.conf import settings
 from django.contrib import auth
@@ -19,9 +20,16 @@ from apps.system.selectors import get_settings
 from . import emails, events
 from .constants import INVALID_CREDENTIALS_MESSAGE, INVALID_LINK_MESSAGE, UserRole, UserStatus
 from .models import User
-from .tokens import decode_uid, email_verification_token, password_reset_token
+from .tokens import (
+    decode_uid,
+    email_verification_token,
+    password_reset_token,
+    verify_email_otp,
+)
 
 EDITABLE_PROFILE_FIELDS = ("first_name", "last_name", "display_name")
+USERNAME_PATTERN = re.compile(r"^[a-z0-9_]+\Z")
+INVALID_OTP_MESSAGE = "Invalid or expired OTP code."
 
 
 class InvalidCredentials(DomainError):
@@ -63,7 +71,11 @@ def create_user(
     errors: dict[str, list[str]] = {}
     if User.objects.filter(email__iexact=email).exists():
         errors["email"] = ["An account with this email already exists."]
-    if User.objects.filter(username__iexact=username).exists():
+    if not USERNAME_PATTERN.match(username):
+        errors["username"] = [
+            "Username must contain only lowercase letters (a-z), numbers (0-9), and underscores (_)."
+        ]
+    elif User.objects.filter(username__iexact=username).exists():
         errors["username"] = ["This username is already taken."]
     if errors:
         raise ValidationError(fields=errors)
@@ -231,15 +243,27 @@ def _user_from_link(uidb64: str, token: str, generator) -> User:
     return user
 
 
-def confirm_password_reset(*, uidb64: str, token: str, new_password: str) -> User:
-    user = _user_from_link(uidb64, token, password_reset_token)
-    if user.status != UserStatus.ACTIVE:
-        raise ValidationError(INVALID_LINK_MESSAGE, fields={"token": [INVALID_LINK_MESSAGE]})
+def confirm_password_reset(
+    *,
+    uidb64: str = "",
+    token: str = "",
+    new_password: str,
+    email: str = "",
+    otp: str = "",
+) -> User:
+    if email or otp:
+        user = User.objects.filter(email__iexact=email.strip(), status=UserStatus.ACTIVE).first()
+        if user is None or not verify_email_otp(user, otp, purpose="password_reset"):
+            raise ValidationError(INVALID_OTP_MESSAGE, fields={"otp": [INVALID_OTP_MESSAGE]})
+    else:
+        user = _user_from_link(uidb64, token, password_reset_token)
+        if user.status != UserStatus.ACTIVE:
+            raise ValidationError(INVALID_LINK_MESSAGE, fields={"token": [INVALID_LINK_MESSAGE]})
     try:
         validate_password(new_password, user=user)
     except DjangoValidationError as exc:
         raise ValidationError(fields={"new_password": exc.messages}) from exc
-    user.set_password(new_password)  # also invalidates the token and all existing sessions
+    user.set_password(new_password)  # also invalidates the token/OTP and all existing sessions
     user.save(update_fields=["password", "updated_at"])
     publish(events.PasswordResetCompleted(actor_id=user.pk, target_id=user.pk))
     return user
@@ -248,16 +272,28 @@ def confirm_password_reset(*, uidb64: str, token: str, new_password: str) -> Use
 # ---------------------------------------------------------------------------
 # Email verification & profile
 # ---------------------------------------------------------------------------
-def verify_email(*, uidb64: str, token: str) -> User:
-    """AUTH-03 (EMAIL_VERIFICATION mode): confirms the address and activates a PENDING
-    account. The link stops working once used."""
-    user = _user_from_link(uidb64, token, email_verification_token)
+def verify_email(
+    *, uidb64: str = "", token: str = "", email: str = "", otp: str = ""
+) -> User:
+    """AUTH-03: confirms the address via 6-digit OTP or verification link and activates a
+    PENDING account. Single-use."""
+    if email or otp:
+        user = User.objects.filter(email__iexact=email.strip()).first()
+        if user is None or not verify_email_otp(user, otp, purpose="verify_email"):
+            raise ValidationError(INVALID_OTP_MESSAGE, fields={"otp": [INVALID_OTP_MESSAGE]})
+    else:
+        user = _user_from_link(uidb64, token, email_verification_token)
     user.email_verified_at = timezone.now()
     if user.status == UserStatus.PENDING:
         user.status = UserStatus.ACTIVE
     user.save(update_fields=["email_verified_at", "status", "updated_at"])
     publish(events.EmailVerified(actor_id=user.pk, target_id=user.pk))
     return user
+
+
+def send_verification_otp(user: User) -> None:
+    """Send a 6-digit OTP verification email for a newly registered account."""
+    transaction.on_commit(lambda: emails.send_verification_email(user))
 
 
 def update_own_profile(*, user: User, **changes) -> User:

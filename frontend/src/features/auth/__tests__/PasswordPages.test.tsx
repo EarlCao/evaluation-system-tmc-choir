@@ -25,6 +25,43 @@ describe("ForgotPasswordPage", () => {
     expect(await screen.findByText(GENERIC)).toBeVisible();
     expect(body).toEqual({ email: "someone@example.org" });
   });
+
+  it("resets the password using the 6-digit email OTP code", async () => {
+    let confirmBody: unknown;
+    server.use(
+      http.post(api("/auth/password-reset/"), () =>
+        HttpResponse.json({ detail: GENERIC }, { status: 202 }),
+      ),
+      http.post(api("/auth/password-reset/confirm/"), async ({ request }) => {
+        confirmBody = await request.json();
+        return HttpResponse.json({
+          detail: "Your password has been reset. You can now log in.",
+        });
+      }),
+    );
+    renderRoute("/forgot-password");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText(/email/i), "someone@example.org");
+    await user.click(screen.getByRole("button", { name: /send reset link/i }));
+
+    await user.type(await screen.findByLabelText(/6-digit otp code/i), "123456");
+    await user.type(
+      screen.getByLabelText(/^new password/i, { selector: "input" }),
+      "Brand-New-Chorus-77",
+    );
+    await user.type(
+      screen.getByLabelText(/confirm new password/i, { selector: "input" }),
+      "Brand-New-Chorus-77",
+    );
+    await user.click(screen.getByRole("button", { name: /reset password with otp/i }));
+
+    expect(await screen.findByText(/your password has been reset/i)).toBeVisible();
+    expect(confirmBody).toEqual({
+      email: "someone@example.org",
+      otp: "123456",
+      new_password: "Brand-New-Chorus-77",
+    });
+  });
 });
 
 describe("ResetPasswordPage", () => {

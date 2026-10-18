@@ -9,6 +9,10 @@ from .base import *
 
 DEBUG = False
 
+_render_hostname = env("RENDER_EXTERNAL_HOSTNAME", default="").strip()
+if _render_hostname and _render_hostname not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS = [*ALLOWED_HOSTS, _render_hostname]
+
 if not ALLOWED_HOSTS or "*" in ALLOWED_HOSTS:
     raise ImproperlyConfigured(
         "Production requires explicit DJANGO_ALLOWED_HOSTS (wildcard '*' is not allowed)."
@@ -36,10 +40,10 @@ X_FRAME_OPTIONS = "DENY"
 
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = env("SESSION_COOKIE_SAMESITE", default="Lax")
 SESSION_COOKIE_AGE = env.int("SESSION_COOKIE_AGE", default=60 * 60 * 12)
 CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = env("CSRF_COOKIE_SAMESITE", default="Lax")
 
 CONTENT_SECURITY_POLICY = env(
     "CONTENT_SECURITY_POLICY",

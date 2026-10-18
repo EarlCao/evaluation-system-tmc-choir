@@ -59,7 +59,10 @@ class RegisterView(APIView):
         serializer.is_valid(raise_exception=True)
         data = dict(serializer.validated_data)
         user = services.register_member(voice_section_id=data.pop("voice_section"), **data)
-        detail = _NEXT_STEP.get(get_settings().registration_mode, "Your account was created.")
+        mode = get_settings().registration_mode
+        if mode != RegistrationMode.EMAIL_VERIFICATION:
+            services.send_registration_otp(user)
+        detail = _NEXT_STEP.get(mode, "Your account was created.")
         return Response({"status": user.status, "detail": detail}, status=status.HTTP_201_CREATED)
 
 
