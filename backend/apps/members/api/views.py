@@ -58,7 +58,13 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = dict(serializer.validated_data)
-        user = services.register_member(voice_section_id=data.pop("voice_section"), **data)
+        voice_section_id = data.pop("voice_section")
+        if request.headers.get("X-Defer-Account-Creation") == "1":
+            result = services.stage_member_registration(
+                voice_section_id=voice_section_id, **data
+            )
+            return Response(result, status=status.HTTP_201_CREATED)
+        user = services.register_member(voice_section_id=voice_section_id, **data)
         mode = get_settings().registration_mode
         if mode != RegistrationMode.EMAIL_VERIFICATION:
             services.send_registration_otp(user)

@@ -141,3 +141,37 @@ def test_register_api_is_throttled():
         for i in range(4)
     ]
     assert codes == [201, 201, 201, 429]
+
+
+def test_deferred_registration_only_creates_account_after_otp_verification(
+    django_capture_on_commit_callbacks,
+):
+    import re
+    from django.core import mail
+
+    client = csrf_client()
+    data = payload(email="deferred@example.org", username="deferred_user")
+
+    # First attempt without verifying OTP: account must NOT exist in DB yet.
+    first = client.post(REGISTER_URL, data, HTTP_X_DEFER_ACCOUNT_CREATION="1")
+    assert first.status_code == 201
+    assert not User.objects.filter(username="deferred_user").exists()
+
+    # Second attempt with the exact same username and email must succeed without "already taken".
+    second = client.post(REGISTER_URL, data, HTTP_X_DEFER_ACCOUNT_CREATION="1")
+    assert second.status_code == 201
+    assert not User.objects.filter(username="deferred_user").exists()
+
+    otp_match = re.search(r"Your 6-digit OTP verification code is:\s*(\d{6})", mail.outbox[-1].body)
+    assert otp_match is not None
+    otp = otp_match.group(1)
+
+    with django_capture_on_commit_callbacks(execute=True):
+        verify = client.post(
+            reverse("accounts:verify-email"),
+            {"email": "deferred@example.org", "otp": otp},
+        )
+    assert verify.status_code == 200
+    created_user = User.objects.get(username="deferred_user")
+    assert created_user.email_verified_at is not None
+    assert created_user.member_profile.voice_section.name == "Bass"

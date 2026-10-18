@@ -38,7 +38,9 @@ export async function fetchVoiceSections(): Promise<VoiceSection[]> {
 
 export async function register(payload: RegisterPayload): Promise<RegistrationResult> {
   await ensureCsrfCookie();
-  const { data } = await apiClient.post<RegistrationResult>("/members/register/", payload);
+  const { data } = await apiClient.post<RegistrationResult>("/members/register/", payload, {
+    headers: { "X-Defer-Account-Creation": "1" },
+  });
   return data;
 }
 

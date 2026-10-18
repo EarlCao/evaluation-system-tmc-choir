@@ -85,18 +85,16 @@ export function RegisterPage() {
       <AuthCard
         title={otpVerified || result.status === "ACTIVE" ? "Account created" : "Verify your email"}
         subtitle={
-          registeredEmail
-            ? `We sent a 6-digit OTP verification code to ${registeredEmail}.`
+          !otpVerified && registeredEmail
+            ? `Enter the 6-digit OTP sent to ${registeredEmail} to finish creating your account.`
             : undefined
         }
       >
         <FormAlert
-          severity={result.status === "ACTIVE" ? "success" : "info"}
-          message={result.detail}
+          severity={otpVerified || result.status === "ACTIVE" ? "success" : "info"}
+          message={otpVerified ?? result.detail}
         />
-        {otpVerified ? (
-          <FormAlert severity="success" message={otpVerified} />
-        ) : (
+        {!otpVerified && (
           <Stack
             component="form"
             spacing={2}
@@ -111,19 +109,33 @@ export function RegisterPage() {
               label="6-digit OTP code"
               placeholder="123456"
               autoComplete="one-time-code"
-              helperText="Enter the 6-digit OTP sent to your email address."
+              helperText="Your account will only be created after you verify this 6-digit OTP."
             />
             <Button
               type="submit"
-              variant="outlined"
+              variant="contained"
               disabled={otpForm.formState.isSubmitting}
             >
               {otpForm.formState.isSubmitting ? "Verifying OTP…" : "Verify OTP"}
             </Button>
+            <Button
+              type="button"
+              variant="text"
+              onClick={() => {
+                setResult(null);
+                setOtpVerified(null);
+              }}
+            >
+              Back to edit registration details
+            </Button>
           </Stack>
         )}
         <Divider />
-        <Button component={RouterLink} to="/login" variant="contained">
+        <Button
+          component={RouterLink}
+          to="/login"
+          variant={otpVerified || result.status === "ACTIVE" ? "contained" : "outlined"}
+        >
           Go to log in
         </Button>
       </AuthCard>

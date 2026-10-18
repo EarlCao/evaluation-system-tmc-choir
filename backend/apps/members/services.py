@@ -13,6 +13,43 @@ from .models import MemberProfile, VoiceSection
 BIO_MAX_LENGTH = 500
 
 
+def _create_member_profile_for_verified_user(user, voice_section_id: int) -> MemberProfile:
+    voice_section = VoiceSection.objects.filter(pk=voice_section_id, is_active=True).first()
+    if voice_section is None:
+        raise ValidationError(fields={"voice_section": ["Choose a valid voice section."]})
+    profile, _ = MemberProfile.objects.get_or_create(
+        user=user, defaults={"voice_section": voice_section}
+    )
+    return profile
+
+
+account_services.register_profile_creator(_create_member_profile_for_verified_user)
+
+
+def stage_member_registration(
+    *,
+    email: str,
+    username: str,
+    password: str,
+    first_name: str,
+    last_name: str,
+    voice_section_id: int,
+) -> dict[str, str]:
+    """Validate member registration and send 6-digit OTP email without creating the database
+    account until the OTP is verified."""
+    voice_section = VoiceSection.objects.filter(pk=voice_section_id, is_active=True).first()
+    if voice_section is None:
+        raise ValidationError(fields={"voice_section": ["Choose a valid voice section."]})
+    return account_services.stage_pending_registration(
+        email=email,
+        username=username,
+        password=password,
+        first_name=first_name,
+        last_name=last_name,
+        voice_section_id=voice_section.pk,
+    )
+
+
 def register_member(
     *,
     email: str,

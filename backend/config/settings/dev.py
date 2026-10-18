@@ -11,3 +11,10 @@ REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = [
 ]
 
 SPECTACULAR_SETTINGS["SERVE_PERMISSIONS"] = ["rest_framework.permissions.AllowAny"]
+
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {
+    **REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"],
+    "login": "100/min",
+    "register": "100/min",
+    "password_reset": "100/min",
+}

@@ -7,8 +7,10 @@ import re
 from django.conf import settings
 from django.contrib import auth
 from django.contrib.auth.password_validation import validate_password
+from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status as http_status
 
@@ -25,11 +27,21 @@ from .tokens import (
     email_verification_token,
     password_reset_token,
     verify_email_otp,
+    verify_pending_registration_otp,
 )
 
 EDITABLE_PROFILE_FIELDS = ("first_name", "last_name", "display_name")
 USERNAME_PATTERN = re.compile(r"^[a-z0-9_]+\Z")
 INVALID_OTP_MESSAGE = "Invalid or expired OTP code."
+
+_PENDING_REGISTRATIONS: dict[str, dict] = {}
+_profile_creator_callback = None
+
+
+def register_profile_creator(callback) -> None:
+    """Register callback from members.services to create MemberProfile when OTP is verified."""
+    global _profile_creator_callback
+    _profile_creator_callback = callback
 
 
 class InvalidCredentials(DomainError):
@@ -56,12 +68,20 @@ def _check_password_strength(password: str, user: User) -> None:
 # ---------------------------------------------------------------------------
 # Registration
 # ---------------------------------------------------------------------------
-def create_user(
+def cleanup_unverified_registration(*, email: str, username: str) -> None:
+    """Remove any unverified member record that never completed OTP verification or logged in."""
+    User.objects.filter(
+        Q(email__iexact=email) | Q(username__iexact=username),
+        role=UserRole.MEMBER,
+        email_verified_at__isnull=True,
+        approved_at__isnull=True,
+        last_login__isnull=True,
+    ).delete()
+
+
+def _validate_registration_inputs(
     *, email: str, username: str, password: str, first_name: str, last_name: str
-) -> User:
-    """AUTH-01 / AUTH-03: create a member account. The initial status depends on
-    ``registration_mode``: OPEN → ACTIVE, APPROVAL / EMAIL_VERIFICATION → PENDING,
-    CLOSED → refused. Called by ``members.services.register_member`` (ADR-004)."""
+) -> tuple[str, str, str]:
     mode = get_settings().registration_mode
     if mode == RegistrationMode.CLOSED:
         raise BusinessRuleViolation("Registration is currently closed.")
@@ -82,6 +102,68 @@ def create_user(
 
     candidate = User(email=email, username=username, first_name=first_name, last_name=last_name)
     _check_password_strength(password, candidate)
+    return mode, email, username
+
+
+def stage_pending_registration(
+    *,
+    email: str,
+    username: str,
+    password: str,
+    first_name: str,
+    last_name: str,
+    voice_section_id: int,
+) -> dict[str, str]:
+    """Validate registration inputs and send a 6-digit OTP email WITHOUT creating the User row
+    in the database until the OTP is verified."""
+    clean_email = User.objects.normalize_email(email).strip().lower()
+    clean_username = User.normalize_username(username.strip())
+    cleanup_unverified_registration(email=clean_email, username=clean_username)
+    _mode, clean_email, clean_username = _validate_registration_inputs(
+        email=clean_email,
+        username=clean_username,
+        password=password,
+        first_name=first_name,
+        last_name=last_name,
+    )
+    record = {
+        "email": clean_email,
+        "username": clean_username,
+        "password": password,
+        "first_name": first_name.strip(),
+        "last_name": last_name.strip(),
+        "voice_section_id": voice_section_id,
+    }
+    _PENDING_REGISTRATIONS[clean_email] = record
+    try:
+        cache.set(f"pending_reg:{clean_email}", record, timeout=1800)
+    except Exception:
+        pass
+    emails.send_pending_registration_otp_email(
+        email=clean_email, username=clean_username, first_name=first_name
+    )
+    return {
+        "status": UserStatus.PENDING,
+        "detail": (
+            f"We sent a 6-digit OTP verification code to {clean_email}. "
+            "Enter the OTP code below to finish creating your account."
+        ),
+    }
+
+
+def create_user(
+    *, email: str, username: str, password: str, first_name: str, last_name: str
+) -> User:
+    """AUTH-01 / AUTH-03: create a member account. The initial status depends on
+    ``registration_mode``: OPEN → ACTIVE, APPROVAL / EMAIL_VERIFICATION → PENDING,
+    CLOSED → refused. Called by ``members.services.register_member`` (ADR-004)."""
+    mode, email, username = _validate_registration_inputs(
+        email=email,
+        username=username,
+        password=password,
+        first_name=first_name,
+        last_name=last_name,
+    )
 
     status = UserStatus.ACTIVE if mode == RegistrationMode.OPEN else UserStatus.PENDING
     try:
@@ -275,10 +357,43 @@ def confirm_password_reset(
 def verify_email(
     *, uidb64: str = "", token: str = "", email: str = "", otp: str = ""
 ) -> User:
-    """AUTH-03: confirms the address via 6-digit OTP or verification link and activates a
-    PENDING account. Single-use."""
+    """AUTH-03: confirms the address via 6-digit OTP or verification link and creates/activates
+    a PENDING account. Single-use."""
     if email or otp:
-        user = User.objects.filter(email__iexact=email.strip()).first()
+        clean_email = User.objects.normalize_email(email).strip().lower()
+        pending = _PENDING_REGISTRATIONS.get(clean_email)
+        if pending is None:
+            try:
+                pending = cache.get(f"pending_reg:{clean_email}")
+            except Exception:
+                pending = None
+        if pending is not None:
+            if not verify_pending_registration_otp(clean_email, pending["username"], otp):
+                raise ValidationError(INVALID_OTP_MESSAGE, fields={"otp": [INVALID_OTP_MESSAGE]})
+            cleanup_unverified_registration(email=clean_email, username=pending["username"])
+            with transaction.atomic():
+                user = create_user(
+                    email=pending["email"],
+                    username=pending["username"],
+                    password=pending["password"],
+                    first_name=pending["first_name"],
+                    last_name=pending["last_name"],
+                )
+                if _profile_creator_callback is not None:
+                    _profile_creator_callback(user, pending["voice_section_id"])
+                user.email_verified_at = timezone.now()
+                if user.status == UserStatus.PENDING:
+                    user.status = UserStatus.ACTIVE
+                user.save(update_fields=["email_verified_at", "status", "updated_at"])
+            _PENDING_REGISTRATIONS.pop(clean_email, None)
+            try:
+                cache.delete(f"pending_reg:{clean_email}")
+            except Exception:
+                pass
+            publish(events.EmailVerified(actor_id=user.pk, target_id=user.pk))
+            return user
+
+        user = User.objects.filter(email__iexact=clean_email).first()
         if user is None or not verify_email_otp(user, otp, purpose="verify_email"):
             raise ValidationError(INVALID_OTP_MESSAGE, fields={"otp": [INVALID_OTP_MESSAGE]})
     else:
