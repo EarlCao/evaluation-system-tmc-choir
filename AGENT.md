@@ -45,6 +45,9 @@ Before starting **any** task:
   step's commit instead of stopping. Every per-step rule (verify, docs, one commit) still applies.
   Stop and ask if a step needs a decision only the user can make, or if verification fails and can't be fixed.
   *Fulfilled 2026-10-18 (Phase 5 tagged); from Phase 6 on, stop after every step again.*
+- **Standing authorization (2026-10-18):** the user asked to "finish all pending fixes": the follow-up
+  fixes (roadmap step 6.0) and then Phase 6 (6.1–6.5) back-to-back, with the same per-step rules
+  (verify, docs, one commit each, tag `phase-6`). Stop only for user-only decisions or unfixable failures.
 - Open product questions are in `docs/09-Decisions/Open Questions.md`. If a step
   depends on one that is still unresolved, ask the user before building on the default.
 
