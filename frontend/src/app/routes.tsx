@@ -8,6 +8,7 @@ import { dashboardRoutes } from "@/features/dashboard";
 import { evaluationRoutes } from "@/features/evaluations";
 import { feedbackRoutes } from "@/features/feedback";
 import { memberRoutes } from "@/features/members";
+import { notificationRoutes } from "@/features/notifications";
 import { adminReportRoutes } from "@/features/reports";
 
 import { GuestOnly } from "./guards/GuestOnly";
@@ -38,6 +39,7 @@ export const routes: RouteObject[] = [
               ...evaluationRoutes,
               ...feedbackRoutes,
               ...memberAuthRoutes,
+              ...notificationRoutes,
             ],
           },
           {
@@ -46,7 +48,7 @@ export const routes: RouteObject[] = [
               {
                 path: "admin",
                 element: <AdminLayout />,
-                children: [...adminRoutes, ...adminReportRoutes],
+                children: [...adminRoutes, ...adminReportRoutes, ...notificationRoutes],
               },
             ],
           },

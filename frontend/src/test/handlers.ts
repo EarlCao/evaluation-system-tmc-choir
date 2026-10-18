@@ -1,4 +1,4 @@
-import { http, HttpResponse } from "msw";
+import { http, HttpResponse, ws } from "msw";
 
 import type { CurrentUser } from "@/features/auth";
 
@@ -47,7 +47,21 @@ export const voiceSections = [
 ];
 
 /** Default: API healthy, visitor anonymous. Override per test with server.use(...). */
+/** WebSocket endpoints (MSW intercepts sockets; unhandled ones fail the test). */
+export const notificationSocket = ws.link("*/ws/notifications"); // MSW drops the trailing slash before matching;
+export const adminSocket = ws.link("*/ws/admin");
+
 export const handlers = [
+  notificationSocket.addEventListener("connection", () => {
+    // accepted; the unread count comes from REST (tests push their own frames)
+  }),
+  adminSocket.addEventListener("connection", () => {
+    // accepted; tests broadcast "dashboard.changed" when they need it
+  }),
+  http.get(api("/notifications/unread-count/"), () => HttpResponse.json({ unread: 0 })),
+  http.get(api("/notifications/"), () =>
+    HttpResponse.json({ count: 0, next: null, previous: null, results: [] }),
+  ),
   http.get(api("/system/public/"), () =>
     HttpResponse.json({
       system_name: "Choir Member Evaluation System",

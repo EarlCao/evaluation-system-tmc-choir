@@ -60,3 +60,10 @@ cd backend && pytest                     # all
 pytest apps/evaluations -k privacy       # subset
 cd frontend && npm run test
 ```
+## WebSockets
+- Backend: consumers are tested through `config.asgi.application` with `channels.testing.WebsocketCommunicator`, a real
+  session cookie and an `Origin` header; mark them `django_db(transaction=True, serialized_rollback=True)`. Create cookies
+  *before* entering async code (session creation is synchronous ORM work).
+- Frontend: every socket the app opens must have an MSW `ws.link` handler (`onUnhandledFrame: "error"`); link patterns
+  have no trailing slash. Push frames with `link.broadcast(...)` or per-test `connection` listeners; keep REST stubs
+  consistent with what the socket says, because invalidations refetch over REST.

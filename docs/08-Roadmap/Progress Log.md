@@ -12,6 +12,26 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-18 · Step 5.3: Frontend realtime ✅ (Phase 5 complete → tag `phase-5`)
+**What:** `lib/ws.ts` (reconnect with backoff + jitter, no retry on 4401/4403/4001, ping, resync hook);
+`features/notifications` (bell with live unread badge and popover, notification center at `/app/notifications` and
+`/admin/notifications`, mark read / all read, socket hook that refreshes feedback/dashboard/evaluations and re-checks the
+session when revoked); polling fallback every 30 s (unread) / 60 s (admin dashboard) while sockets are down;
+`useAdminLiveUpdates` for live admin counts. Bell drawn with `SvgIcon` (no icon package added).
+**Requirements:** RT-01, RT-02, RT-03, RT-04, RT-05
+**Verification:** typecheck, ESLint, Prettier clean; `vitest` **140 passed** on 2 consecutive runs (+14: 6 `ws.ts` tests incl.
+backoff sequence 1→2→…→30 s, no retry for 3 close codes, stop() cancels a pending reconnect; 6 UI tests: unread pushed on
+connect and updated live, popover list + mark all read + open link marks read and navigates, polling notice when the socket
+drops, revoked socket → session re-check → /login, notification center unread filter, admin `dashboard.changed` → dashboard
+refetch); build OK. Live: the dev server serves the new modules (200). Backend unchanged since 5.2 (468 passed).
+**Bug found while testing:** MSW 3 strips the trailing slash from WebSocket client URLs before matching, so handlers for
+`*/ws/notifications/` never matched; test links now omit it (documented in [[Testing Strategy]]).
+**Not verified:** an authenticated end-to-end socket in a real browser (needs a dev account; Phase 6 E2E covers it).
+**Phase 5 summary:** Channels/Daphne/Redis foundation, Docker dev stack (5.1a, user request), notification handlers with
+debounced anonymous feedback notices, WebSocket consumers, and the realtime frontend.
+**Docs updated:** [[Notifications]], [[Pages and Routes]], [[Testing Strategy]], [[Roadmap]], AGENT.md (standing authorization fulfilled)
+**Commit:** `feat(notifications): step 5.3 frontend realtime` + tag `phase-5`
+
 ## 2026-10-18 · Step 5.2: Event handlers & consumers ✅
 **What:** notification handlers for submissions (debounced / held for AFTER_CLOSE), cycle open/close, registrations,
 approvals, suspensions and failed-login bursts; `PendingFeedbackNotice` + `deliver_notifications` command + compose

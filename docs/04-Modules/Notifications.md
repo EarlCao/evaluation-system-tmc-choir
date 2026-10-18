@@ -2,7 +2,7 @@
 tags: [module, realtime]
 module: notifications
 phase: 5
-status: model + services + REST (5.1), handlers + consumers + delivery (5.2) implemented; UI 5.3
+status: implemented (5.1 model + REST, 5.2 handlers + delivery + consumers, 5.3 UI + realtime client)
 ---
 # Module: Notifications
 
@@ -82,3 +82,19 @@ Related: [[Realtime Architecture]] · [[Privacy Model]]
 - Tests: handler privacy (no evaluator name/username/public id in the notification or its push), timing (nothing at submit,
   delivered after the window), AFTER_CLOSE hold/release, fan-out excludes suspended users, consumers through the real ASGI
   stack with a session cookie (anonymous 4401, foreign origin refused, live push, admin-only socket, suspension disconnects).
+## Implementation notes (step 5.3): frontend realtime
+- `lib/ws.ts` `connectSocket(path, {onMessage, onStatus, onReconnect, onFatal})`: URL from the page (`ws:`/`wss:` + host,
+  so the Vite proxy / Nginx carry it); backoff 1 s → 30 s with jitter (`backoffDelay`); no retry after 4401/4403/4001
+  (`onFatal`); `ping` every 25 s; `onReconnect` on every re-open so callers resync over REST.
+- `features/notifications`: `NotificationBell` in both layouts (badge from `unread_count` / `notification.created`
+  pushes; popover with the latest 5, "Mark all as read", "See all"); `NotificationsPage` at `/app/notifications` and
+  `/admin/notifications` (unread filter, pagination). Opening a notification marks it read and follows its relative link.
+- `useNotificationSocket`: updates the unread count from pushes; on FEEDBACK_AVAILABLE refreshes feedback + member dashboard,
+  on CYCLE_OPENED/CLOSED evaluations + dashboard; on reconnect resyncs notifications/feedback/dashboard; on a fatal close
+  re-checks the session (the route guards then send a revoked user to /login).
+- **Polling fallback (RT-05):** the unread count refetches every 30 s while the socket isn't open (and the popover says so);
+  the admin dashboard refetches every 60 s while `/ws/admin/` is down.
+- `useAdminLiveUpdates` (AdminLayout): `dashboard.changed` → refetch the admin dashboard, member list and evaluation lists.
+- Tests: MSW 3 `ws.link` handlers in `test/handlers.ts` (patterns **without** the trailing slash: MSW strips it from the
+  client URL before matching, so `*/ws/notifications/` never matched). `lib/__tests__/ws.test.ts` uses a fake WebSocket +
+  fake timers for backoff/close codes.

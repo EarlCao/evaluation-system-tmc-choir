@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 
 import { SkipLink } from "@/components/SkipLink";
 import { AccountMenu } from "@/features/auth";
+import { NotificationBell } from "@/features/notifications";
 
 import { AppHeader } from "./AppHeader";
 import { MemberNav } from "./MemberNav";
@@ -14,6 +15,7 @@ export function MemberLayout() {
     <>
       <SkipLink />
       <AppHeader home="/app" nav={<MemberNav />}>
+        <NotificationBell base="/app" />
         <AccountMenu />
       </AppHeader>
       <Container component="main" id="main" maxWidth="lg">

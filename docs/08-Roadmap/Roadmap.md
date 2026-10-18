@@ -77,7 +77,7 @@ tags: [roadmap]
   Notification model + REST API.
 - [x] **5.1a Docker dev stack** (user request 2026-10-18, ADR-019): backend + frontend services in docker-compose.
 - [x] **5.2 Event handlers & consumers**: safe notifications, debounce, user/admin groups, WS auth.
-- [ ] **5.3 Frontend realtime**: notification bell and center, `ws.ts` reconnect +
+- [x] **5.3 Frontend realtime**: notification bell and center, `ws.ts` reconnect +
   polling fallback, live admin dashboard counts.
 
 ## Phase 6: Quality & Deployment
