@@ -17,6 +17,6 @@ confirms or changes one, update its status and the affected notes.
 | Q7 | Notification channels: in-app, email, or both? | **In-app + real-time.** Email only for password reset and verification | later | 5.2 | ⏳ |
 | Q8 | Choir time zone? | `UTC` until confirmed | yes (setting `time_zone`) | 1.3 | ⏳ (default in place; one-line change) |
 | Q9 | Can the Super Admin also submit evaluations? | **No.** The Super Admin moderates and does not evaluate (keeps roles separate) | – | 2.3 | ⏳ (default implemented: NOT_A_MEMBER, also for promoted members with a profile) |
-| Q10 | Are profile photos needed? | **No in v1** (no Pillow) | – | 2.1 | ⏳ |
+| Q10 | Are profile photos needed? | **No in v1** (Pillow is installed only because the PDF export needs it, step 4.5) | – | 2.1 | ⏳ |
 
 Related: [[Decisions Log]] · [[Business Rules]]
