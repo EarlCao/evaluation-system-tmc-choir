@@ -81,7 +81,7 @@ describe("RegisterPage", () => {
     renderRoute("/register");
     await submit(await fillForm({ password: "short", confirm: "different" }));
     expect(
-      await screen.findByText(/at least 10 characters/i, { selector: "p.Mui-error" }),
+      await screen.findByText(/at least 8 characters/i, { selector: "p.Mui-error" }),
     ).toBeVisible();
     expect(screen.getByText("The passwords don't match.")).toBeVisible();
   });

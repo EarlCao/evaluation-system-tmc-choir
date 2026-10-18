@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /** Client-side mirrors of backend validation (the backend stays authoritative). */
 
-export const PASSWORD_MIN_LENGTH = 10;
+export const PASSWORD_MIN_LENGTH = 8;
 
 const name = (label: string) =>
   z.string().trim().min(1, `${label} is required.`).max(150, `${label} is too long.`);

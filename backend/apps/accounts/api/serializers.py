@@ -50,6 +50,17 @@ class LoginSerializer(serializers.Serializer):
 class PasswordChangeSerializer(serializers.Serializer):
     old_password = serializers.CharField(max_length=128, trim_whitespace=False)
     new_password = serializers.CharField(max_length=128, trim_whitespace=False)
+    confirm_password = serializers.CharField(
+        max_length=128, trim_whitespace=False, write_only=True, required=False
+    )
+
+    def validate(self, attrs):
+        confirm = attrs.pop("confirm_password", None)
+        if confirm is not None and confirm != attrs.get("new_password"):
+            raise serializers.ValidationError(
+                {"confirm_password": ["The passwords don't match."]}
+            )
+        return attrs
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
@@ -62,6 +73,17 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False, allow_blank=True, default="")
     otp = serializers.CharField(max_length=12, required=False, allow_blank=True, default="")
     new_password = serializers.CharField(max_length=128, trim_whitespace=False)
+    confirm_password = serializers.CharField(
+        max_length=128, trim_whitespace=False, write_only=True, required=False
+    )
+
+    def validate(self, attrs):
+        confirm = attrs.pop("confirm_password", None)
+        if confirm is not None and confirm != attrs.get("new_password"):
+            raise serializers.ValidationError(
+                {"confirm_password": ["The passwords don't match."]}
+            )
+        return attrs
 
 
 class EmailVerificationSerializer(serializers.Serializer):

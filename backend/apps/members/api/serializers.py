@@ -21,9 +21,20 @@ class RegisterSerializer(serializers.Serializer):
         },
     )
     password = serializers.CharField(max_length=128, trim_whitespace=False, write_only=True)
+    confirm_password = serializers.CharField(
+        max_length=128, trim_whitespace=False, write_only=True, required=False
+    )
     first_name = serializers.CharField(max_length=150)
     last_name = serializers.CharField(max_length=150)
     voice_section = serializers.IntegerField(min_value=1)
+
+    def validate(self, attrs):
+        confirm = attrs.pop("confirm_password", None)
+        if confirm is not None and confirm != attrs.get("password"):
+            raise serializers.ValidationError(
+                {"confirm_password": ["The passwords don't match."]}
+            )
+        return attrs
 
 
 class RegistrationResultSerializer(serializers.Serializer):
