@@ -57,7 +57,11 @@ def admin_list_members(
 ):
     """All accounts (members and Super Admins) with their choir profile, if any. Read-only
     composite of accounts.User + MemberProfile; writes go through the owning services."""
-    qs = get_user_model().objects.select_related("member_profile__voice_section")
+    qs = (
+        get_user_model()
+        .objects.select_related("member_profile__voice_section")
+        .exclude(email__endswith="@invalid.local")
+    )
     for term in search.split():
         qs = qs.filter(
             Q(first_name__icontains=term)

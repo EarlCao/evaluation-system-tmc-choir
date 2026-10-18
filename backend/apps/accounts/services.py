@@ -65,18 +65,36 @@ def _check_password_strength(password: str, user: User) -> None:
         raise ValidationError(fields={"password": exc.messages}) from exc
 
 
+import uuid
+
 # ---------------------------------------------------------------------------
 # Registration
 # ---------------------------------------------------------------------------
 def cleanup_unverified_registration(*, email: str, username: str) -> None:
-    """Remove any unverified member record that never completed OTP verification or logged in."""
-    User.objects.filter(
-        Q(email__iexact=email) | Q(username__iexact=username),
-        role=UserRole.MEMBER,
-        email_verified_at__isnull=True,
-        approved_at__isnull=True,
-        last_login__isnull=True,
-    ).delete()
+    """Remove or release any unverified member record that never completed OTP verification
+    or logged in. Handles AuditLog.actor PROTECT foreign keys gracefully."""
+    stale_users = list(
+        User.objects.filter(
+            Q(email__iexact=email) | Q(username__iexact=username),
+            role=UserRole.MEMBER,
+            email_verified_at__isnull=True,
+            approved_at__isnull=True,
+            last_login__isnull=True,
+        )
+    )
+    for stale in stale_users:
+        try:
+            with transaction.atomic():
+                stale.delete()
+        except Exception:
+            if hasattr(stale, "member_profile"):
+                stale.member_profile.delete()
+            suffix = f"{stale.pk}_{uuid.uuid4().hex[:8]}"
+            stale.username = f"_unverified_{suffix}"
+            stale.email = f"_unverified_{suffix}@invalid.local"
+            stale.status = UserStatus.DEACTIVATED
+            stale.is_active = False
+            stale.save(update_fields=["username", "email", "status", "is_active", "updated_at"])
 
 
 def _validate_registration_inputs(
