@@ -47,21 +47,25 @@ const LINKS: { to: string; label: string; end: boolean; icon: ReactNode }[] = [
   },
 ];
 
+interface MemberNavProps {
+  onNavigate?: () => void;
+}
+
 /** Primary side navigation of the member area. NavLink sets aria-current="page". */
-export function MemberNav() {
+export function MemberNav({ onNavigate }: MemberNavProps = {}) {
   return (
     <Box
       component="nav"
       aria-label="Main"
       sx={{
-        p: { xs: 1, md: 2 },
+        p: { xs: 1.5, md: 2 },
       }}
     >
       <Typography
         variant="overline"
         color="text.secondary"
         sx={{
-          display: { xs: "none", md: "block" },
+          display: "block",
           px: 1.5,
           pb: 1,
           fontWeight: 800,
@@ -71,9 +75,8 @@ export function MemberNav() {
         Member Workspace
       </Typography>
       <Stack
-        direction={{ xs: "row", md: "column" }}
+        direction="column"
         spacing={0.5}
-        sx={{ flexWrap: "wrap" }}
       >
         {LINKS.map((link) => (
           <Button
@@ -83,10 +86,11 @@ export function MemberNav() {
             end={link.end}
             size="medium"
             color="inherit"
+            onClick={onNavigate}
             sx={{
-              justifyContent: { xs: "center", md: "flex-start" },
-              px: { xs: 1.25, md: 1.75 },
-              py: { xs: 0.75, md: 1.15 },
+              justifyContent: "flex-start",
+              px: { xs: 1.5, md: 1.75 },
+              py: { xs: 0.9, md: 1.15 },
               borderRadius: 2.5,
               fontWeight: 600,
               color: "text.secondary",

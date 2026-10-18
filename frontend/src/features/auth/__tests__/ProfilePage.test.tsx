@@ -77,6 +77,8 @@ describe("logout", () => {
     );
     const { router } = renderRoute("/app");
     await userEvent.click(await screen.findByRole("button", { name: /log out/i }));
+    expect(await screen.findByRole("dialog")).toBeVisible();
+    await userEvent.click(screen.getByRole("button", { name: /^log out$/i }));
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/");
     });

@@ -86,20 +86,24 @@ const ADMIN_LINKS: { to: string; label: string; end: boolean; icon: ReactNode }[
   },
 ];
 
-export function AdminNav() {
+interface AdminNavProps {
+  onNavigate?: () => void;
+}
+
+export function AdminNav({ onNavigate }: AdminNavProps = {}) {
   return (
     <Box
       component="nav"
       aria-label="Admin"
       sx={{
-        p: { xs: 1, md: 2 },
+        p: { xs: 1.5, md: 2 },
       }}
     >
       <Typography
         variant="overline"
         color="text.secondary"
         sx={{
-          display: { xs: "none", md: "block" },
+          display: "block",
           px: 1.5,
           pb: 1,
           fontWeight: 800,
@@ -109,9 +113,8 @@ export function AdminNav() {
         Super Admin Console
       </Typography>
       <Stack
-        direction={{ xs: "row", md: "column" }}
+        direction="column"
         spacing={0.5}
-        sx={{ flexWrap: "wrap" }}
       >
         {ADMIN_LINKS.map((link) => (
           <Button
@@ -121,10 +124,11 @@ export function AdminNav() {
             end={link.end}
             size="medium"
             color="inherit"
+            onClick={onNavigate}
             sx={{
-              justifyContent: { xs: "center", md: "flex-start" },
-              px: { xs: 1.25, md: 1.75 },
-              py: { xs: 0.75, md: 1.05 },
+              justifyContent: "flex-start",
+              px: { xs: 1.5, md: 1.75 },
+              py: { xs: 0.85, md: 1.05 },
               borderRadius: 2.5,
               fontWeight: 600,
               color: "text.secondary",

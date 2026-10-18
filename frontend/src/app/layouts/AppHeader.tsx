@@ -10,14 +10,17 @@ import { Link as RouterLink } from "react-router";
 
 import { useThemeMode } from "@/styles/theme";
 
+import IconButton from "@mui/material/IconButton";
+
 interface AppHeaderProps {
   home: string;
   badge?: string;
   nav?: ReactNode;
   children?: ReactNode;
+  onOpenMobileNav?: () => void;
 }
 
-export function AppHeader({ home, badge, nav, children }: AppHeaderProps) {
+export function AppHeader({ home, badge, nav, children, onOpenMobileNav }: AppHeaderProps) {
   const { mode, toggleMode } = useThemeMode();
   const isDark = mode === "dark";
 
@@ -48,6 +51,26 @@ export function AppHeader({ home, badge, nav, children }: AppHeaderProps) {
           minHeight: { xs: 58, sm: 68 },
         }}
       >
+        {onOpenMobileNav ? (
+          <IconButton
+            type="button"
+            color="inherit"
+            onClick={onOpenMobileNav}
+            aria-label="Open navigation menu"
+            sx={{
+              display: { xs: "inline-flex", md: "none" },
+              mr: { xs: 0.5, sm: 1 },
+              p: 0.75,
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: 2,
+            }}
+          >
+            <SvgIcon fontSize="small">
+              <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+            </SvgIcon>
+          </IconButton>
+        ) : null}
         <Box
           component={RouterLink}
           to={home}
