@@ -90,6 +90,10 @@ All ports are bound to `127.0.0.1` only. Change them in `.env` (`FRONTEND_HOST_P
 
 ### Troubleshooting
 
+- **A different website opens (e.g. "SkillServe"):** that is another project on this machine
+  (it uses `localhost:5173`; others use `8000`/`8080`). This app is always **http://localhost:5280**.
+- **Nothing on 5280 after restarting the computer:** start the stack again with
+  `docker compose up -d` (your data is kept in Docker volumes).
 - **Port already in use:** stop whatever uses it (e.g. a host `npm run dev` on 5280) or change the port in `.env`.
 - **`backend` not healthy:** `docker compose logs backend`. Usually a wrong password in `.env`.
   If you changed `MYSQL_PASSWORD` after the first start, the old one is still in the volume:
