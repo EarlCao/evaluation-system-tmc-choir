@@ -12,6 +12,19 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-18 · Step 5.1a: Docker dev stack ✅ (user request: "put docker")
+**What:** `backend/Dockerfile.dev` + `frontend/Dockerfile.dev` and `backend` / `frontend` services in `docker-compose.yml`
+(ADR-019); Vite file-watch polling switch (`VITE_USE_POLLING`); `.env.example` host-port variables; AGENT.md commands.
+**Verification (live, 2026-10-18):** `docker compose up -d --build` → mysql, redis, backend healthy, frontend up. Backend log:
+"Starting ASGI/Daphne version 4.2.3", migrations applied. `GET :8010/api/v1/health/` 200; through the Vite proxy on :5280:
+SPA 200, `/src/main.tsx` 200, `/api/v1/system/public/` 200, CSRF cookie set, login POST with token → 400
+`invalid_credentials` (CSRF passed), without token → 403. `docker compose exec backend pytest` → **455 passed**.
+**Bugs fixed during the step:** Vite failed with `EACCES` creating its cache because `npm ci` ran as root; the image now
+installs as the `node` user (the fresh `frontend_node_modules` volume was recreated). One image build hit `npm ci` exit 152
+(network); the retry succeeded.
+**Not verified:** WebSockets end to end (no consumer until 5.2); HMR in a real browser.
+**Commit:** `build(docker): step 5.1a containerised dev stack`
+
 ## 2026-10-18 · Step 5.1: Channels foundation ✅
 **What:** Channels + Daphne + Redis channel layer, ASGI routing (HTTP + origin-checked, session-authenticated WebSockets),
 `apps.notifications` with the `Notification` model, `notify` / `mark_read` / `mark_all_read` services and the REST API

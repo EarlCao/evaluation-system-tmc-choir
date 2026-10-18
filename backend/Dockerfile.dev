@@ -1,0 +1,26 @@
+# Development image for the backend (ASGI: Django + Channels served by Daphne via runserver).
+# Production images live in deploy/ (Phase 6). Source is bind-mounted by docker-compose.yml.
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
+
+# mysqlclient needs the MySQL client headers and a compiler.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gcc pkg-config default-libmysqlclient-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements/ /tmp/requirements/
+RUN pip install -r /tmp/requirements/dev.txt
+
+# Same uid as the usual host user, so files written into the bind mount stay editable.
+ARG UID=1000
+ARG GID=1000
+RUN groupadd --gid "$GID" app && useradd --uid "$UID" --gid "$GID" --create-home app
+USER app
+
+WORKDIR /app/backend
+EXPOSE 8010
+CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8010"]

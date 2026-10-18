@@ -21,6 +21,31 @@ tags: [tech-stack, setup]
   so pytest-django can create and drop its test DB. It runs only on first volume
   creation; re-run it with `docker compose down -v`.
 
+## Run everything in Docker (recommended, ADR-019, added 2026-10-18)
+```bash
+cp .env.example .env                    # once; replace every change-me
+docker compose up -d --build            # mysql, redis, backend, frontend
+# SPA: http://localhost:5280   API: http://localhost:8010/api/v1/health/
+docker compose exec backend python manage.py create_super_admin \
+    --email you@example.org --username you --first-name You --last-name Admin   # SUPER_ADMIN_PASSWORD env or prompt
+docker compose exec backend pytest      # 455 tests on MySQL
+docker compose logs -f backend frontend
+docker compose down                     # keep data;  down -v also deletes the DB volume
+```
+- **backend** (`backend/Dockerfile.dev`): Python 3.12 + `requirements/dev.txt`, runs `migrate` then `runserver 0.0.0.0:8010`,
+  which is **Daphne/ASGI** (HTTP + WebSockets) because `daphne` is first in `INSTALLED_APPS`. The repo is bind-mounted at
+  `/app`, so code changes reload and `config/settings/base.py` still reads `/app/.env`; compose overrides `DATABASE_URL` and
+  `REDIS_URL` to the `mysql` / `redis` service names. Runs as uid 1000 (`UID`/`GID` build args) so files it writes stay
+  editable on the host. Healthcheck: `GET /api/v1/health/`.
+- **frontend** (`frontend/Dockerfile.dev`): Node 24, `npm ci` at build time as the `node` user; `./frontend` bind-mounted,
+  `node_modules` in a named volume (`frontend_node_modules`) so Linux builds never mix with the host's. Vite proxies `/api`
+  and `/ws` to `http://backend:8010` (`VITE_BACKEND_URL`); `VITE_USE_POLLING=true` because WSL/Windows bind mounts can miss
+  file events. After changing `package.json`: `docker compose build frontend && docker volume rm choir-eval_frontend_node_modules`
+  (with the frontend container removed), then `up -d frontend`.
+- Host ports: `BACKEND_HOST_PORT` (8010), `FRONTEND_HOST_PORT` (5280), bound to 127.0.0.1 only. Stop any host-run
+  `runserver`/`npm run dev` on those ports first.
+- The host still runs `pre-commit` (git hooks) from `backend/.venv`; the frontend hooks use the host's `node_modules`.
+
 ## Opening this vault in Obsidian
 Obsidian (Windows) → *Open folder as vault* →
 `\\wsl.localhost\Ubuntu-24.04\home\earlcao\evaluation-system\docs`

@@ -1,0 +1,12 @@
+# Development image for the SPA (Vite dev server with HMR). Source is bind-mounted.
+FROM node:24-bookworm-slim
+
+# Install as the unprivileged "node" user so the dev server can write its cache in node_modules.
+RUN mkdir -p /app/frontend && chown node:node /app/frontend
+USER node
+WORKDIR /app/frontend
+COPY --chown=node:node package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+
+EXPOSE 5280
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

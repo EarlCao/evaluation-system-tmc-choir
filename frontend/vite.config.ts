@@ -17,6 +17,8 @@ export default defineConfig({
   server: {
     port,
     strictPort: true,
+    // Docker on Windows/WSL bind mounts: file events may not arrive, so poll (docker-compose.yml).
+    watch: { usePolling: process.env.VITE_USE_POLLING === "true" },
     proxy: {
       // changeOrigin stays false: Django sees Host=localhost:<port>, matching the browser's
       // Origin header, so its CSRF origin check passes.

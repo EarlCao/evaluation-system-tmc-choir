@@ -66,7 +66,7 @@ evaluation-system/
 ├── .gitignore
 ├── .editorconfig
 ├── .pre-commit-config.yaml     # whitespace/yaml/json checks, gitleaks, ruff (eslint/prettier from 1.5)
-├── docker-compose.yml          # mysql, redis (+ backend/frontend later)
+├── docker-compose.yml          # dev stack: mysql, redis, backend (Daphne), frontend (Vite)
 ├── docker/
 │   └── mysql/
 │       ├── conf.d/choir.cnf    # utf8mb4, strict sql_mode, UTC
@@ -367,9 +367,16 @@ do not exist yet.
 # environment (once): copy and fill secrets, never commit .env
 cp .env.example .env
 
-# infrastructure: MySQL → 127.0.0.1:3307, Redis → 127.0.0.1:6380 (override via MYSQL_HOST_PORT / REDIS_HOST_PORT)
+# everything in Docker (ADR-019): http://localhost:5280 (SPA) · http://localhost:8010 (API)
+docker compose up -d --build
+docker compose ps                    # mysql, redis, backend "(healthy)"; frontend "Up"
+docker compose exec backend pytest   # backend tests on MySQL, inside the container
+docker compose exec backend ruff check . && docker compose exec backend ruff format --check .
+docker compose exec backend python manage.py createsuperuser   # or create_super_admin (below)
+docker compose logs -f backend frontend
+
+# or infrastructure only: MySQL → 127.0.0.1:3307, Redis → 127.0.0.1:6380 (override via MYSQL_HOST_PORT / REDIS_HOST_PORT)
 docker compose up -d mysql redis
-docker compose ps                    # both must be "(healthy)"
 
 # git hooks (once): pre-commit lives in backend/.venv
 backend/.venv/bin/pre-commit install

@@ -25,6 +25,7 @@ Format: [[ADR Template]]. Status: Proposed · Accepted · Superseded.
 | ADR-016 | Project dev ports: Django 8010, Vite 5280 | Accepted | 2026-10-17 |
 | ADR-017 | One open cycle enforced by a nullable-unique `is_current` column | Accepted | 2026-10-17 |
 | ADR-018 | Exports: stdlib csv, openpyxl, reportlab; formula-injection guard; synchronous audit | Accepted | 2026-10-17 |
+| ADR-019 | Containerised dev stack (backend + frontend services in docker-compose) | Accepted | 2026-10-18 |
 
 ---
 
@@ -107,3 +108,13 @@ written to the audit log **synchronously** before the response (no file without 
 (`member-summary-<8 hex of public_id>-<date>.pdf`). Exports are plain GET links (session cookie), throttled 60/hour.
 **Consequences:** no system packages; files are built in memory (fine at choir scale; stream if a choir ever has tens of
 thousands of evaluations). The evaluator-detail export is CSV/Excel only (too wide for a page).
+
+### ADR-019: Containerised development stack
+**Context:** the user asked to run the project in Docker (2026-10-18). The host lacks the MySQL client headers that
+`mysqlclient` needs, so backend checks had been running in a throwaway image; Phase 5 adds an ASGI server (Daphne) and Redis.
+**Decision:** `docker-compose.yml` gains `backend` (`backend/Dockerfile.dev`, Daphne via `runserver`, repo bind-mounted,
+migrations on start, healthcheck) and `frontend` (`frontend/Dockerfile.dev`, Vite dev server, `node_modules` in a named
+volume, polling file watch). DB/Redis URLs are overridden to service names; host ports stay 127.0.0.1-only. Running on the
+host (`docker compose up -d mysql redis` + local servers) still works. Production images are separate (`deploy/`, Phase 6).
+**Consequences:** one command starts the whole system; backend tests run with `docker compose exec backend pytest`
+(same MySQL as before). Dev images are not hardened and must not be deployed.

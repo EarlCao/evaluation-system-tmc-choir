@@ -1,5 +1,7 @@
-# Local development infrastructure. Usage:  docker compose up -d mysql redis
-# Values come from .env (copy .env.example). Backend/frontend services are added later.
+# Local development stack. Values come from .env (copy .env.example).
+#   Everything in Docker:      docker compose up -d --build     → http://localhost:5280
+#   Only the infrastructure:   docker compose up -d mysql redis (run backend/frontend on the host)
+# Backend tests in the container: docker compose exec backend pytest
 name: choir-eval
 
 services:
@@ -39,6 +41,54 @@ services:
       timeout: 3s
       retries: 20
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # Real environment variables override .env (read by config/settings/base.py from /app/.env).
+      DATABASE_URL: mysql://${MYSQL_USER:-choir}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-choir_eval}
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - .:/app
+    ports:
+      - "127.0.0.1:${BACKEND_HOST_PORT:-8010}:8010"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8010/api/v1/health/', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      VITE_BACKEND_URL: http://backend:8010
+      # Bind mounts from Windows/WSL often miss file events; poll so HMR works.
+      VITE_USE_POLLING: "true"
+    volumes:
+      - ./frontend:/app/frontend
+      # Keep the image's node_modules (Linux builds) instead of the host's.
+      - frontend_node_modules:/app/frontend/node_modules
+    ports:
+      - "127.0.0.1:${FRONTEND_HOST_PORT:-5280}:5280"
+
 volumes:
   mysql_data:
   redis_data:
+  frontend_node_modules:
