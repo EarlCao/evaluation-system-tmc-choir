@@ -79,3 +79,19 @@ export function useUpdateProfile() {
 export function useChangePassword() {
   return useMutation({ mutationFn: (input: ChangePasswordInput) => api.changePassword(input) });
 }
+
+export function useDownloadOwnData() {
+  return useMutation({ mutationFn: api.downloadOwnData });
+}
+
+export function useDeactivateOwnAccount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: api.deactivateOwnAccount,
+    onSuccess: () => {
+      queryClient.clear();
+      queryClient.setQueryData(authKeys.currentUser(), null);
+    },
+  });
+}
+

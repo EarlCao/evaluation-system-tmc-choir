@@ -81,4 +81,7 @@ class PrivateApiCacheMiddleware:
         response = self.get_response(request)
         if request.path.startswith("/api/") and not response.has_header("Cache-Control"):
             response["Cache-Control"] = "no-store"
+        csp = getattr(settings, "CONTENT_SECURITY_POLICY", "")
+        if csp and not response.has_header("Content-Security-Policy"):
+            response["Content-Security-Policy"] = csp
         return response

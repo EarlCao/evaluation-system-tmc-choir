@@ -7,10 +7,13 @@ the same transaction as the business change, or to log sensitive *read* access
 
 import json
 from collections.abc import Mapping
+from datetime import timedelta
 from typing import Any
 
 from django.contrib.auth import get_user_model
 from django.core.serializers.json import DjangoJSONEncoder
+from django.db import models
+from django.utils import timezone
 
 from apps.core.exceptions import ValidationError
 from apps.core.exports import CONTENT_TYPES, Document, Table, render
@@ -133,3 +136,17 @@ def export_logs(*, actor, file_type: str, filters: dict):
 
 def _json(value) -> str:
     return "" if value in (None, {}) else json.dumps(value, cls=DjangoJSONEncoder, sort_keys=True)
+
+
+def purge_expired_logs(*, retention_days: int | None, now=None) -> int:
+    """SET-03: purge audit log entries older than ``retention_days`` (NULL = keep forever).
+
+    Uses ``models.QuerySet.delete`` because ``AuditLog`` is append-only during normal use.
+    """
+    if retention_days is None or retention_days <= 0:
+        return 0
+    cutoff = (now or timezone.now()) - timedelta(days=int(retention_days))
+    qs = AuditLog.objects.filter(occurred_at__lt=cutoff)
+    deleted, _ = models.QuerySet.delete(qs)
+    return deleted
+

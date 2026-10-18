@@ -24,6 +24,7 @@ Perm: **P** public · **M** active member · **A** super admin
 | POST | `/api/v1/auth/password-reset/` | P | AUTH-02 | 1 | ✅ |
 | POST | `/api/v1/auth/password-reset/confirm/` | P | AUTH-02 | 1 | ✅ |
 | POST | `/api/v1/auth/verify-email/` | P | AUTH-03 | 1 | ✅ |
+| POST | `/api/v1/auth/deactivate/` (`{password, reason?}`) | M | AUTH-04, BR-06 | 6 | ✅ |
 | GET | `/api/v1/admin/members/` (`search`, `status`, `role`, `voice_section`) — all accounts incl. Super Admins | A | ADM-04, MEM-05 | 4 | ✅ |
 | GET | `/api/v1/admin/members/{public_id}/` | A | ADM-04 | 4 | ✅ |
 | POST | `/api/v1/admin/members/{public_id}/approve/` | A | AUTH-03 | 4 | ✅ |
@@ -78,6 +79,7 @@ Perm: **P** public · **M** active member · **A** super admin
 | Method | Path | Perm | Req | Phase | Status |
 |---|---|---|---|---|---|
 | GET | `/api/v1/dashboard/` | M | – | 2 | ✅ (grows in 2.3 / 3.2) |
+| GET | `/api/v1/me/export/` (own account, profile, evaluations given, anonymised feedback received; audited as `accounts.data_export.generated`) | M | AUTH-04 | 6 | ✅ |
 | GET | `/api/v1/admin/reports/dashboard/` (members, evaluations, cycles, participation) | A | ADM-01 | 4 | ✅ |
 | GET | `/api/v1/admin/reports/members/{public_id}/` | A | REP-01 | 4 | ✅ |
 | GET | `/api/v1/admin/reports/choir/` | A | REP-01 | 4 | ✅ |

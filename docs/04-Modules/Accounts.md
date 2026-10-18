@@ -103,3 +103,8 @@ Related: [[Security Model]] · [[Roles and Permissions]] · [[System Settings]]
 - `set_user_role(actor, user, role)`: you can't change your own role; the last active Super Admin can't be demoted; `is_staff`/`is_superuser` follow the role; publishes `accounts.user.role_changed` (before/after).
 - `send_password_reset(actor, user)`: ACTIVE only; reuses the normal reset email.
 - Q9: `evaluations.rules.eligibility` refuses Super Admins even if they have a choir profile (NOT_A_MEMBER); they also don't count as possible evaluators in participation.
+
+## Implementation notes (step 6.4): self-deactivation
+- `deactivate_own_account(*, request, user, password, reason="")`: verifies `user.check_password(password)`, refuses to deactivate the last active Super Admin, sets `status = DEACTIVATED`, publishes `accounts.user.status_changed`, and logs the session out. Historical evaluations remain intact (`BR-06`).
+- API: `POST /api/v1/auth/deactivate/` (`accounts:deactivate`), exposed on `/app/profile` alongside the member own-data download (`GET /api/v1/me/export/`).
+

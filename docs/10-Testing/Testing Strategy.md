@@ -47,18 +47,21 @@ stays strict without false positives. Integer PKs are additionally checked by ke
 `apps/feedback/tests/test_privacy_sweep.py`: register every new member endpoint in `_requests()` (or `WRITE_ONLY`), otherwise the completeness test fails. See [[Privacy Review 2026-10-17]].
 
 ## Must-have test list (minimum)
-- [ ] BR-01 … BR-18 each have at least one service test
-- [ ] Every `/admin/` endpoint returns 403 for members and 401 for anonymous users
-- [ ] Privacy test on: feedback list/summary/count, dashboard, notifications list + WS messages, member directory/profile, own data export
-- [ ] Append-only: AuditLog, EvaluationRevision, ModerationAction
-- [ ] Thresholds: suppression with n=0,1,2 and display at n=3
-- [ ] Averages exclude missing ratings
+- [x] BR-01 … BR-18 each have at least one service test
+- [x] Every `/admin/` endpoint returns 403 for members and 401 for anonymous users (`apps/core/tests/test_permission_matrix.py`)
+- [x] Privacy test on: feedback list/summary/count, dashboard, notifications list + WS messages, member directory/profile, own data export (`apps/feedback/tests/test_privacy_sweep.py`, `apps/core/tests/test_data_management.py`)
+- [x] Append-only: AuditLog, EvaluationRevision, ModerationAction (`apps/core/tests/test_models.py`, `apps/evaluations/tests/test_moderation.py`)
+- [x] Thresholds: suppression with n=0,1,2 and display at n=3 (`apps/feedback/tests/test_feedback.py`, `apps/reports/tests/test_reports.py`)
+- [x] Averages exclude missing ratings (`apps/feedback/tests/test_feedback.py`, `apps/reports/tests/test_reports.py`)
+- [x] Module boundary & dependency DAG enforcement (`apps/core/tests/test_module_boundaries.py`)
+- [x] Accessibility & 360px responsive layout (`frontend/src/app/__tests__/accessibility.test.tsx`, `frontend/e2e/05-accessibility-and-responsive.spec.ts`)
 
 ## Commands
 ```bash
-cd backend && pytest                     # all
+cd backend && pytest                     # all backend unit/API/permission/privacy/boundary/prod tests
 pytest apps/evaluations -k privacy       # subset
-cd frontend && npm run test
+cd frontend && npm run test              # Vitest + RTL component & accessibility tests
+./scripts/e2e.sh                         # Playwright end-to-end suite against the stack
 ```
 ## WebSockets
 - Backend: consumers are tested through `config.asgi.application` with `channels.testing.WebsocketCommunicator`, a real
@@ -67,3 +70,4 @@ cd frontend && npm run test
 - Frontend: every socket the app opens must have an MSW `ws.link` handler (`onUnhandledFrame: "error"`); link patterns
   have no trailing slash. Push frames with `link.broadcast(...)` or per-test `connection` listeners; keep REST stubs
   consistent with what the socket says, because invalidations refetch over REST.
+

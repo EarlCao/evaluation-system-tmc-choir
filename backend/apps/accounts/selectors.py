@@ -37,3 +37,7 @@ def get_active_user(*, pk: int) -> User | None:
 
 def get_user_by_pk(*, pk: int | str | None) -> User | None:
     return User.objects.filter(pk=pk).first() if pk else None
+
+
+def username_taken(username: str) -> bool:
+    return User.objects.filter(username__iexact=username).exists()

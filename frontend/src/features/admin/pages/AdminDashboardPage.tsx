@@ -81,9 +81,21 @@ export function AdminDashboardPage() {
   const dashboard = useAdminDashboard();
   return (
     <Stack spacing={3} sx={{ py: 4 }}>
-      <Typography variant="h4" component="h1">
-        Super Admin dashboard
-      </Typography>
+      <Card
+        variant="outlined"
+        sx={{
+          p: { xs: 2.5, sm: 3.5 },
+          background:
+            "linear-gradient(135deg, rgba(55, 48, 163, 0.06) 0%, rgba(15, 118, 110, 0.05) 100%)",
+        }}
+      >
+        <Typography variant="overline" color="secondary" sx={{ fontWeight: 700 }}>
+          TMC Choir Administration
+        </Typography>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 800 }}>
+          Super Admin dashboard
+        </Typography>
+      </Card>
       {dashboard.isError ? (
         <ErrorState
           message="We couldn't load the statistics."

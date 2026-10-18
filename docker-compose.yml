@@ -92,9 +92,10 @@ services:
     command:
       - sh
       - -c
-      - while true; do python manage.py close_expired_cycles; python manage.py deliver_notifications; sleep 60; done
+      - while true; do python manage.py close_expired_cycles; python manage.py deliver_notifications; python manage.py apply_retention; sleep 60; done
 
   frontend:
+    image: choir-eval-frontend
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev

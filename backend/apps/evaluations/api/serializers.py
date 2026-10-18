@@ -4,8 +4,6 @@
 
 from rest_framework import serializers
 
-from apps.members.api.serializers import VoiceSectionSerializer
-
 from .. import rules
 from ..constants import CommentKind
 from ..models import (
@@ -17,6 +15,13 @@ from ..models import (
 )
 
 _decimal = {"max_digits": 6, "decimal_places": 2, "coerce_to_string": False}
+
+
+class RecipientSectionSerializer(serializers.Serializer):
+    """Only what an author needs about the recipient's section (no import of members' API)."""
+
+    id = serializers.IntegerField()
+    name = serializers.CharField()
 
 
 class CycleSummarySerializer(serializers.ModelSerializer):
@@ -112,7 +117,9 @@ class RecipientSerializer(serializers.Serializer):
     first_name = serializers.CharField()
     last_name = serializers.CharField()
     display_name = serializers.CharField()
-    voice_section = VoiceSectionSerializer(source="member_profile.voice_section", allow_null=True)
+    voice_section = RecipientSectionSerializer(
+        source="member_profile.voice_section", allow_null=True
+    )
 
 
 class CriterionInfoSerializer(serializers.ModelSerializer):

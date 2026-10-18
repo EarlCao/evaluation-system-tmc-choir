@@ -17,4 +17,5 @@ urlpatterns = [
         name="password-reset-confirm",
     ),
     path("verify-email/", views.EmailVerificationView.as_view(), name="verify-email"),
+    path("deactivate/", views.DeactivateAccountView.as_view(), name="deactivate"),
 ]

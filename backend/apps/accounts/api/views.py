@@ -13,6 +13,7 @@ from .. import services
 from ..constants import PASSWORD_RESET_SENT_MESSAGE
 from ..throttles import LoginThrottle, PasswordResetThrottle
 from .serializers import (
+    DeactivateAccountSerializer,
     DetailSerializer,
     EmailVerificationSerializer,
     LoginSerializer,
@@ -129,3 +130,15 @@ class EmailVerificationView(PublicCsrfProtectedView):
         data = serializer.validated_data
         services.verify_email(uidb64=data["uid"], token=data["token"])
         return Response({"detail": "Your email address is confirmed. You can now log in."})
+
+
+class DeactivateAccountView(APIView):
+    @extend_schema(request=DeactivateAccountSerializer, responses=DetailSerializer)
+    def post(self, request):
+        serializer = DeactivateAccountSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        services.deactivate_own_account(
+            request=request._request, user=request.user, **serializer.validated_data
+        )
+        return Response({"detail": "Your account has been deactivated."})
+

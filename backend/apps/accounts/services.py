@@ -98,6 +98,40 @@ def create_user(
     return user
 
 
+def create_active_member_account(
+    *, actor, email: str, username: str, password: str, first_name: str, last_name: str
+) -> User:
+    """An ACTIVE member account created by a Super Admin or a dev seed (``actor`` None),
+    bypassing the registration mode. Same validation as registration; audited."""
+    email = User.objects.normalize_email(email).strip().lower()
+    username = User.normalize_username(username.strip())
+    if (
+        User.objects.filter(email__iexact=email).exists()
+        or User.objects.filter(username__iexact=username).exists()
+    ):
+        raise ValidationError(fields={"username": ["A user with this username or email exists."]})
+    candidate = User(email=email, username=username, first_name=first_name, last_name=last_name)
+    _check_password_strength(password, candidate)
+    user = User.objects.create_user(
+        email=email,
+        username=username,
+        password=password,
+        first_name=first_name.strip(),
+        last_name=last_name.strip(),
+        role=UserRole.MEMBER,
+        status=UserStatus.ACTIVE,
+    )
+    publish(
+        events.UserRegistered(
+            actor_id=getattr(actor, "pk", None),
+            target_id=user.pk,
+            status=UserStatus.ACTIVE,
+            registration_mode="ADMIN_CREATED",
+        )
+    )
+    return user
+
+
 def create_super_admin(
     *, email: str, username: str, password: str, first_name: str, last_name: str
 ) -> User:
@@ -236,6 +270,32 @@ def update_own_profile(*, user: User, **changes) -> User:
         raise ValidationError(fields={"first_name": ["First and last name are required."]})
     user.save(update_fields=[*changed, "updated_at"])
     publish(events.ProfileUpdated(actor_id=user.pk, target_id=user.pk, changed_fields=changed))
+    return user
+
+
+def deactivate_own_account(*, request, user: User, password: str, reason: str = "") -> User:
+    """AUTH-04 / step 6.4: allow an active member to deactivate their own account after
+    confirming their password. Historical evaluations are preserved (BR-06)."""
+    if not user.check_password(password):
+        raise ValidationError(fields={"password": ["Your current password is incorrect."]})
+    if (
+        user.role == UserRole.SUPER_ADMIN
+        and user.status == UserStatus.ACTIVE
+        and _active_super_admin_count() <= 1
+    ):
+        raise BusinessRuleViolation("The last active Super Admin cannot be deactivated.")
+    before = user.status
+    user.status = UserStatus.DEACTIVATED
+    user.save(update_fields=["status", "updated_at"])
+    publish(
+        events.UserStatusChanged(
+            actor_id=user.pk,
+            target_id=user.pk,
+            changes=(("status", before, UserStatus.DEACTIVATED),),
+            reason=reason.strip() or "self_deactivated",
+        )
+    )
+    auth.logout(request)
     return user
 
 

@@ -68,3 +68,9 @@ class EmailVerificationSerializer(serializers.Serializer):
 
 class DetailSerializer(serializers.Serializer):
     detail = serializers.CharField()
+
+
+class DeactivateAccountSerializer(serializers.Serializer):
+    password = serializers.CharField(max_length=128, trim_whitespace=False, write_only=True)
+    reason = serializers.CharField(max_length=200, required=False, allow_blank=True, default="")
+

@@ -89,24 +89,24 @@ class Command(BaseCommand):
         password = os.environ.get(DEMO_PASSWORD_ENV)
         if not password:
             raise CommandError(f"Set {DEMO_PASSWORD_ENV} to create demo members.")
-        from apps.accounts.constants import UserStatus
-        from apps.accounts.models import User
-        from apps.members.models import MemberProfile, VoiceSection
+        from apps.accounts import selectors as account_selectors
+        from apps.members import selectors as member_selectors
+        from apps.members import services as member_services
 
-        sections = list(VoiceSection.objects.filter(is_active=True))
+        sections = list(member_selectors.list_active_voice_sections())
         created = 0
         for i in range(1, count + 1):
             username = f"demo{i:02d}"
-            if User.objects.filter(username=username).exists():
+            if account_selectors.username_taken(username):
                 continue
-            user = User.objects.create_user(
+            member_services.create_active_member(
+                actor=None,
                 email=f"{username}@example.org",
                 username=username,
                 password=password,
                 first_name=f"Demo{i:02d}",
                 last_name="Singer",
-                status=UserStatus.ACTIVE,
+                voice_section_id=sections[i % len(sections)].pk,
             )
-            MemberProfile.objects.create(user=user, voice_section=sections[i % len(sections)])
             created += 1
         return created

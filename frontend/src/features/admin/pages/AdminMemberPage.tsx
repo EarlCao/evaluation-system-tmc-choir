@@ -294,7 +294,7 @@ export function AdminMemberPage() {
           >
             {m.role === "SUPER_ADMIN" ? "Change to member" : "Make Super Admin"}
           </Button>
-          {m.status === "ACTIVE" ? (
+          {m.status === "ACTIVE" && m.role !== "SUPER_ADMIN" ? (
             <Button
               disabled={busy}
               onClick={() => {

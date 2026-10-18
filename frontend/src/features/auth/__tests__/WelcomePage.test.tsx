@@ -10,9 +10,9 @@ describe("WelcomePage", () => {
   it("shows the product, entry points and a live API status", async () => {
     renderRoute("/");
     expect(
-      screen.getByRole("heading", { level: 1, name: /choir member evaluation system/i }),
+      screen.getByRole("heading", { level: 1, name: /tmc choir evaluation system/i }),
     ).toBeVisible();
-    expect(screen.getByRole("link", { name: /log in/i })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("link", { name: /^log in$/i })).toHaveAttribute("href", "/login");
     expect(screen.getByRole("link", { name: /create an account/i })).toHaveAttribute(
       "href",
       "/register",

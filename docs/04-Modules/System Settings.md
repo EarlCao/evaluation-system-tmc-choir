@@ -2,7 +2,7 @@
 tags: [module]
 module: system
 phase: 1 (model), 4 (UI), 6 (retention/backups)
-status: model + services (1.3), public API (2.3), admin API/UI + privacy page (4.6) implemented; retention jobs in 6.4
+status: implemented (1.3, 2.3, 4.6, 6.4)
 ---
 # Module: System Settings
 
@@ -24,9 +24,8 @@ settings through `system.selectors.get_settings()` (cached, invalidated on chang
 | `min_aggregate_group_size` | 3 (**minimum 3**, privacy floor, ADR-013) |
 | `feedback_notification_debounce_minutes` | 60 |
 | `privacy_notice` | default text from [[Privacy Model]] (plain text / limited markdown rendered safely) |
-| `retention_evaluations_days` | null (keep) |
-| `retention_revisions_days` | null (keep) |
-| `retention_audit_days` | 730 (minimum 30) |
+| `evaluation_retention_days` | null (keep) |
+| `audit_log_retention_days` | null (keep; when set, minimum 30) |
 | `updated_by`, `updated_at` | |
 
 Notification preferences per user (`NotificationPreference`) arrive in Phase 5 if needed.
@@ -50,15 +49,17 @@ instance raises, and so does `delete()`.
 - Constants: `RegistrationMode`, `MIN_AGGREGATE_GROUP_SIZE_FLOOR`, `DEFAULT_PRIVACY_NOTICE`.
 
 ## API
-Public: `GET /api/v1/system/public/` ✅ (2.3) · Admin: `GET/PATCH /api/v1/admin/settings/` (4.6)
+Public: `GET /api/v1/system/public/` ✅ (2.3) · Admin: `GET/PATCH /api/v1/admin/settings/` ✅ (4.6)
 
-## Data management (Phase 6)
-- `manage.py apply_retention` (scheduled): purges or anonymises per the retention fields,
-  and is itself audited.
-- `scripts/backup.sh` (mysqldump → compressed, encrypted, rotated) and
-  `scripts/restore.sh`, with a documented restore drill.
-- Account deactivation workflow (status `DEACTIVATED`, data retained) and member data
-  export (their own profile + submitted evaluations + anonymised received feedback).
+## Data management (Phase 6, step 6.4)
+- `manage.py apply_retention` (`evaluations.services.apply_retention` + `audit.services.purge_expired_logs`, scheduled in `worker`):
+  purges evaluations in `CLOSED`/`ARCHIVED` cycles older than `evaluation_retention_days` (never touches `OPEN` cycles) and audit
+  logs older than `audit_log_retention_days`, recording `system.retention.applied`.
+- `scripts/backup.sh` (`mysqldump --single-transaction --routines --triggers --events --set-gtid-purged=OFF` → compressed `.sql.gz` +
+  `.sha256` with `chmod 600` and old-backup rotation) and `scripts/restore.sh` (verifies SHA-256, takes a safety snapshot unless
+  `--no-pre-backup`, restores the dump, and runs `manage.py migrate --check`).
+- Account self-deactivation (`POST /api/v1/auth/deactivate/`, status `DEACTIVATED`, evaluations retained per `BR-06`) and member
+  own-data export (`GET /api/v1/me/export/`, own profile + submitted evaluations + anonymised received feedback).
 
 Related: [[Privacy Model]] · [[Accounts]]
 
@@ -72,3 +73,4 @@ Related: [[Privacy Model]] · [[Accounts]]
   public settings query so the new privacy notice shows everywhere at once. Retention values are stored now and applied in 6.4.
 - Public `/privacy` page (`features/auth`): the choir's notice plus a fixed "who sees what" table describing what the software
   guarantees; `components/SiteFooter` links to it from the member and admin layouts (removed from the public sign-in pages on request, 2026-10-18).
+

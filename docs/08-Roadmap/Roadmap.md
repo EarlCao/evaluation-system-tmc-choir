@@ -83,11 +83,12 @@ tags: [roadmap]
 ## Phase 6: Quality & Deployment
 - [x] **6.0 Follow-up fixes**: lazy-load the admin area (bundle size), warn when a comment contains the writer's own
   name, automatically close periods after their end date.
-- [ ] **6.1 Test & security sweep**: permission matrix tests, module import-boundary
+- [x] **6.1 Test & security sweep**: permission matrix tests, module import-boundary
   check, Playwright e2e for key flows.
-- [ ] **6.2 Accessibility pass**: keyboard, contrast, labels, responsive, axe checks.
-- [ ] **6.3 Production configuration**: Dockerfiles, prod compose, Nginx + HTTPS,
+- [x] **6.2 Accessibility pass**: keyboard, contrast, labels, responsive, axe checks.
+- [x] **6.3 Production configuration**: Dockerfiles, prod compose, Nginx + HTTPS,
   secure cookies, CSP, `check --deploy`.
-- [ ] **6.4 Data management**: backup/restore scripts + restore drill, retention job,
+- [x] **6.4 Data management**: backup/restore scripts + restore drill, retention job,
   member data export and deactivation workflow.
-- [ ] **6.5 Final acceptance**: walk through [[Acceptance Checklist]] with evidence.
+- [x] **6.5 Final acceptance**: walk through [[Acceptance Checklist]] with evidence.
+

@@ -283,3 +283,23 @@ def generate_export(*, actor, report: str, file_type: str, filters: dict) -> Exp
         content_type=CONTENT_TYPES[file_type],
         content=content,
     )
+
+
+OWN_DATA_EXPORT_EVENT = "accounts.data_export.generated"
+
+
+def export_own_data(*, user) -> dict:
+    """Step 6.4: export a member's own data and record the export in the audit log."""
+    data = selectors.own_data_export(user=user)
+    audit.record(
+        event_type=OWN_DATA_EXPORT_EVENT,
+        actor=user,
+        target_type="accounts.User",
+        target_id=user.pk,
+        metadata={
+            "evaluations_given": len(data["evaluations_given"]),
+            "feedback_items": len(data["feedback_received"]["items"]),
+        },
+    )
+    return data
+

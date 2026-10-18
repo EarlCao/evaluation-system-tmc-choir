@@ -1,7 +1,10 @@
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
 import Grid from "@mui/material/Grid";
+import Paper from "@mui/material/Paper";
 import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -15,12 +18,19 @@ import { useMemberDashboard } from "../queries";
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <Card variant="outlined">
-      <CardContent>
-        <Typography variant="body2" color="text.secondary">
+    <Card variant="outlined" sx={{ height: "100%", overflow: "hidden" }}>
+      <Box
+        aria-hidden="true"
+        sx={{
+          height: 4,
+          background: "linear-gradient(90deg, #3730a3 0%, #0f766e 100%)",
+        }}
+      />
+      <CardContent sx={{ p: 2.5 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mb: 0.5 }}>
           {label}
         </Typography>
-        <Typography variant="h4" component="p">
+        <Typography variant="h4" component="p" sx={{ fontWeight: 800 }}>
           {value}
         </Typography>
       </CardContent>
@@ -32,8 +42,8 @@ function CycleCard({ cycle }: { cycle: OpenCycleProgress | null }) {
   if (!cycle) {
     return (
       <Card variant="outlined">
-        <CardContent>
-          <Typography variant="h6" component="h2">
+        <CardContent sx={{ p: 3 }}>
+          <Typography variant="h6" component="h2" gutterBottom>
             No evaluation period is open
           </Typography>
           <Typography color="text.secondary">
@@ -44,12 +54,22 @@ function CycleCard({ cycle }: { cycle: OpenCycleProgress | null }) {
     );
   }
   return (
-    <Card variant="outlined" sx={{ borderColor: "primary.main" }}>
-      <CardContent>
-        <Stack spacing={1}>
-          <Typography variant="h6" component="h2">
-            {cycle.name} is open
-          </Typography>
+    <Card
+      variant="outlined"
+      sx={{
+        borderColor: "primary.main",
+        background:
+          "linear-gradient(135deg, rgba(55, 48, 163, 0.04) 0%, rgba(15, 118, 110, 0.04) 100%)",
+      }}
+    >
+      <CardContent sx={{ p: 3 }}>
+        <Stack spacing={1.5}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+            <Chip label="Active Period" color="primary" size="small" />
+            <Typography variant="h6" component="h2" sx={{ fontWeight: 700 }}>
+              {cycle.name} is open
+            </Typography>
+          </Box>
           <Typography color="text.secondary">
             Until {new Date(cycle.ends_at).toLocaleDateString()} · you have evaluated{" "}
             {cycle.evaluations_given} {cycle.evaluations_given === 1 ? "member" : "members"}
@@ -72,9 +92,21 @@ export function DashboardPage() {
 
   return (
     <Stack spacing={3} sx={{ py: 4 }}>
-      <Typography variant="h4" component="h1">
-        Welcome{user ? `, ${user.display_name || user.first_name}` : ""}
-      </Typography>
+      <Paper
+        variant="outlined"
+        sx={{
+          p: { xs: 2.5, sm: 3.5 },
+          background:
+            "linear-gradient(135deg, rgba(55, 48, 163, 0.06) 0%, rgba(15, 118, 110, 0.05) 100%)",
+        }}
+      >
+        <Typography variant="overline" color="primary" sx={{ fontWeight: 700 }}>
+          TMC Choir Member Portal
+        </Typography>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 800 }}>
+          Welcome{user ? `, ${user.display_name || user.first_name}` : ""}
+        </Typography>
+      </Paper>
 
       {dashboard.isError ? (
         <ErrorState
@@ -123,3 +155,4 @@ export function DashboardPage() {
     </Stack>
   );
 }
+

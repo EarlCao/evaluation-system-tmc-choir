@@ -1,16 +1,18 @@
 """Configuration services (step 2.2): categories, criteria + versions, forms, cycles."""
 
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, models, transaction
 from django.db.models import Max
 from django.utils import timezone
 from django.utils.text import slugify
 
+from apps.audit import services as audit_services
 from apps.core.events import publish
 from apps.core.exceptions import BusinessRuleViolation, ValidationError
+from apps.system.selectors import get_settings
 
 from .. import events
 from ..constants import (
@@ -25,9 +27,14 @@ from ..constants import (
 from ..models import (
     CriterionCategory,
     CriterionVersion,
+    Evaluation,
+    EvaluationComment,
     EvaluationCycle,
+    EvaluationRating,
+    EvaluationRevision,
     FormVersion,
     FormVersionItem,
+    ModerationAction,
     RatingCriterion,
 )
 from ..scales import normalize_labels, validate_scale
@@ -561,3 +568,81 @@ def archive_cycle(*, actor, cycle: EvaluationCycle) -> EvaluationCycle:
         events.CycleChanged(actor_id=_pk(actor), target_id=str(cycle.public_id), action="archived")
     )
     return cycle
+
+
+# ---------------------------------------------------------------------------
+# Data retention (SET-03, step 6.4)
+# ---------------------------------------------------------------------------
+def apply_retention(*, actor=None, now=None) -> dict[str, int]:
+    """SET-03: purge evaluations, revisions, and audit logs older than the configured windows.
+
+    - ``retention_evaluations_days = None`` keeps evaluations forever.
+    - Evaluations inside an OPEN cycle are never purged, even if ``submitted_at`` is older
+      than the window.
+    - ``retention_revisions_days = None`` keeps historical revisions (revision > 1) forever.
+    - ``retention_audit_days = None`` keeps audit logs forever.
+    """
+    moment = now or timezone.now()
+    cfg = get_settings()
+    purged_evaluations = 0
+    purged_revisions = 0
+
+    with transaction.atomic():
+        if cfg.retention_evaluations_days is not None and cfg.retention_evaluations_days > 0:
+            cutoff = moment - timedelta(days=int(cfg.retention_evaluations_days))
+            expired_ids = list(
+                Evaluation.objects.filter(
+                    submitted_at__lt=cutoff,
+                    cycle__status__in=[CycleStatus.CLOSED, CycleStatus.ARCHIVED],
+                ).values_list("id", flat=True)
+            )
+            if expired_ids:
+                models.QuerySet.delete(
+                    EvaluationRating.objects.filter(evaluation_id__in=expired_ids)
+                )
+                models.QuerySet.delete(
+                    EvaluationComment.objects.filter(evaluation_id__in=expired_ids)
+                )
+                models.QuerySet.delete(
+                    EvaluationRevision.objects.filter(evaluation_id__in=expired_ids)
+                )
+                models.QuerySet.delete(
+                    ModerationAction.objects.filter(evaluation_id__in=expired_ids)
+                )
+                purged_evaluations, _ = models.QuerySet.delete(
+                    Evaluation.objects.filter(id__in=expired_ids)
+                )
+
+        if cfg.retention_revisions_days is not None and cfg.retention_revisions_days > 0:
+            rev_cutoff = moment - timedelta(days=int(cfg.retention_revisions_days))
+            purged_revisions, _ = models.QuerySet.delete(
+                EvaluationRevision.objects.filter(created_at__lt=rev_cutoff)
+            )
+
+        purged_audit_logs = audit_services.purge_expired_logs(
+            retention_days=cfg.retention_audit_days, now=moment
+        )
+
+        if purged_evaluations or purged_revisions or purged_audit_logs or actor is not None:
+            audit_services.record(
+                event_type="system.retention.applied",
+                actor=actor,
+                target_type="system.SystemSettings",
+                target_id=1,
+                metadata={
+                    "retention_evaluations_days": cfg.retention_evaluations_days,
+                    "retention_revisions_days": cfg.retention_revisions_days,
+                    "retention_audit_days": cfg.retention_audit_days,
+                    "purged_evaluations": purged_evaluations,
+                    "purged_revisions": purged_revisions,
+                    "purged_audit_logs": purged_audit_logs,
+                },
+            )
+
+    return {
+        "purged_evaluations": purged_evaluations,
+        "purged_revisions": purged_revisions,
+        "purged_audit_logs": purged_audit_logs,
+    }
+
+

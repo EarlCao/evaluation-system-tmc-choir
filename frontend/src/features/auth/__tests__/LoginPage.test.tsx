@@ -108,4 +108,16 @@ describe("LoginPage", () => {
     await fillAndSubmit("member_q1", "anything");
     expect(await screen.findByRole("alert")).toHaveTextContent(/throttled/i);
   });
+
+  it("hides Forgot password and Create account in Super Admin sign-in mode", async () => {
+    const user = userEvent.setup();
+    renderRoute("/login");
+    expect(await screen.findByRole("link", { name: /forgot your password/i })).toBeVisible();
+    expect(screen.getByRole("link", { name: /create an account/i })).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: /super admin/i }));
+    expect(screen.queryByRole("link", { name: /forgot your password/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /create an account/i })).not.toBeInTheDocument();
+  });
 });
+

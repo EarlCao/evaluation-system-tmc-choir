@@ -1,0 +1,96 @@
+# Production Compose stack (step 6.3).
+# Usage:
+#   docker compose -f deploy/docker-compose.prod.yml --env-file .env up -d --build
+name: choir-eval-prod
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-choir_eval}
+      MYSQL_USER: ${MYSQL_USER:-choir}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      TZ: UTC
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ../docker/mysql/conf.d:/etc/mysql/conf.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  redis:
+    image: redis:7.4-alpine
+    restart: always
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build:
+      context: ..
+      dockerfile: deploy/backend.Dockerfile
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - ../.env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+      DJANGO_DEBUG: "False"
+      DATABASE_URL: mysql://${MYSQL_USER:-choir}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-choir_eval}
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - static_files:/app/backend/staticfiles
+
+  worker:
+    build:
+      context: ..
+      dockerfile: deploy/backend.Dockerfile
+    restart: always
+    depends_on:
+      backend:
+        condition: service_healthy
+    env_file:
+      - ../.env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+      DJANGO_DEBUG: "False"
+      DATABASE_URL: mysql://${MYSQL_USER:-choir}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-choir_eval}
+      REDIS_URL: redis://redis:6379/0
+    command:
+      - sh
+      - -c
+      - while true; do python manage.py close_expired_cycles; python manage.py deliver_notifications; python manage.py apply_retention; sleep 60; done
+
+  nginx:
+    build:
+      context: ..
+      dockerfile: deploy/frontend.Dockerfile
+    restart: always
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - static_files:/var/www/static:ro
+      - ${TLS_CERTS_DIR:-./certs}:/etc/nginx/certs:ro
+
+volumes:
+  mysql_data:
+  redis_data:
+  static_files:

@@ -40,6 +40,34 @@ def register_member(
     return user
 
 
+def create_active_member(
+    *,
+    actor,
+    email: str,
+    username: str,
+    password: str,
+    first_name: str,
+    last_name: str,
+    voice_section_id: int,
+):
+    """An ACTIVE member with a profile, without the registration/approval flow (Super Admin
+    or dev seed). Atomic like ``register_member``."""
+    voice_section = VoiceSection.objects.filter(pk=voice_section_id, is_active=True).first()
+    if voice_section is None:
+        raise ValidationError(fields={"voice_section": ["Choose a valid voice section."]})
+    with transaction.atomic():
+        user = account_services.create_active_member_account(
+            actor=actor,
+            email=email,
+            username=username,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+        )
+        MemberProfile.objects.create(user=user, voice_section=voice_section)
+    return user
+
+
 def update_own_profile(*, user, bio: str) -> MemberProfile:
     """AUTH-04: members edit their own bio. Voice section and evaluability are managed by
     the Super Admin (MEM-05, step 4.2)."""

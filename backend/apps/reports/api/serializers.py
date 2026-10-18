@@ -50,3 +50,11 @@ class AdminDashboardSerializer(serializers.Serializer):
     needs_moderation = serializers.IntegerField()
     cycles = CycleCountsSerializer()
     open_cycle = AdminOpenCycleSerializer(allow_null=True)
+
+
+class MyDataExportSerializer(serializers.Serializer):
+    account = serializers.DictField()
+    member_profile = serializers.DictField(allow_null=True)
+    evaluations_given = serializers.ListField(child=serializers.DictField())
+    feedback_received = serializers.DictField()
+

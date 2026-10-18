@@ -6,7 +6,8 @@ RUN mkdir -p /app/frontend && chown node:node /app/frontend
 USER node
 WORKDIR /app/frontend
 COPY --chown=node:node package.json package-lock.json ./
-RUN npm ci --no-audit --no-fund
+# Retries: the network on this machine drops connections occasionally (exit 152).
+RUN npm ci --no-audit --no-fund --fetch-retries=6 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
 
 EXPOSE 5280
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

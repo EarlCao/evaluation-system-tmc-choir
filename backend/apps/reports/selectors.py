@@ -296,3 +296,83 @@ def participation_report(*, cycle_public_id) -> dict:
         "totals": evaluation_selectors.cycle_participation(cycle=cycle),
         "members": members,
     }
+
+
+def own_data_export(*, user) -> dict:
+    """Step 6.4: complete export of a member's own data (account, choir profile, evaluations
+    written by this member, and anonymised feedback received)."""
+    profile = member_selectors.get_own_profile(user=user)
+    given = []
+    for ev in evaluation_selectors.list_my_evaluations(user=user):
+        comments = {c.kind: c.body for c in ev.comments.all()}
+        given.append(
+            {
+                "public_id": str(ev.public_id),
+                "cycle": {
+                    "public_id": str(ev.cycle.public_id),
+                    "name": ev.cycle.name,
+                },
+                "recipient": {
+                    "public_id": str(ev.recipient.public_id),
+                    "first_name": ev.recipient.first_name,
+                    "last_name": ev.recipient.last_name,
+                },
+                "submitted_at": ev.submitted_at.isoformat(),
+                "last_edited_at": ev.last_edited_at.isoformat() if ev.last_edited_at else None,
+                "is_edited": ev.is_edited,
+                "ratings": [
+                    {
+                        "criterion": r.criterion_version.name,
+                        "value": str(r.value) if r.value is not None else None,
+                        "label": r.label,
+                    }
+                    for r in ev.ratings.all()
+                ],
+                "comment": comments.get("COMMENT", ""),
+                "suggestion": comments.get("SUGGESTION", ""),
+            }
+        )
+    received_items = [
+        {
+            "feedback_id": item.feedback_id,
+            "cycle": {
+                "public_id": str(item.cycle["public_id"]),
+                "name": item.cycle["name"],
+            },
+            "date": item.date.isoformat(),
+            "is_edited": item.is_edited,
+            "comment": item.comment,
+            "suggestion": item.suggestion,
+        }
+        for item in feedback_selectors.list_received(recipient=user)
+    ]
+    return {
+        "account": {
+            "public_id": str(user.public_id),
+            "username": user.username,
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "display_name": user.display_name,
+            "role": user.role,
+            "status": user.status,
+            "date_joined": user.date_joined.isoformat(),
+        },
+        "member_profile": (
+            {
+                "voice_section": profile.voice_section.name if profile.voice_section else None,
+                "membership_status": profile.membership_status,
+                "joined_choir_on": (
+                    profile.joined_choir_on.isoformat() if profile.joined_choir_on else None
+                ),
+            }
+            if profile
+            else None
+        ),
+        "evaluations_given": given,
+        "feedback_received": {
+            "items": received_items,
+            "summary": feedback_selectors.summary(recipient=user),
+        },
+    }
+

@@ -1,14 +1,12 @@
 import Alert from "@mui/material/Alert";
 import Autocomplete from "@mui/material/Autocomplete";
 import Button from "@mui/material/Button";
-import Link from "@mui/material/Link";
 import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useState, type ReactNode, type SyntheticEvent } from "react";
-import { Link as RouterLink } from "react-router";
 
 import { ErrorState } from "@/components/ErrorState";
 import { FullPageSpinner } from "@/components/FullPageSpinner";
@@ -211,12 +209,9 @@ function SettingsForm({ settings }: { settings: AdminSettings }) {
           {...props("privacy_notice")}
           helperText={
             errors.privacy_notice ??
-            "Shown before every evaluation is submitted and on the public privacy page. Keep it accurate: the Super Admin can see who wrote each evaluation."
+            "Shown before every evaluation is submitted. Keep it accurate: the Super Admin can see who wrote each evaluation."
           }
         />
-        <Link component={RouterLink} to="/privacy" target="_blank" rel="noopener">
-          Open the privacy page
-        </Link>
       </Group>
 
       <Group title="Notifications">

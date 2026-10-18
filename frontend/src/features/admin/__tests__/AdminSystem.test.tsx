@@ -152,17 +152,16 @@ describe("Privacy page (SET-03)", () => {
     );
   });
 
-  it("is linked from the footer inside the app but not on the sign-in pages", async () => {
-    server.use(http.get(api("/auth/me/"), notAuthenticated)); // signed out: the login page shows
+  it("does not show the 'Privacy: who sees what' footer link on any page", async () => {
+    server.use(http.get(api("/auth/me/"), notAuthenticated));
     renderRoute("/login");
     expect(await screen.findByRole("heading", { name: /log in/i })).toBeVisible();
     expect(screen.queryByRole("link", { name: "Privacy: who sees what" })).not.toBeInTheDocument();
 
     server.use(loggedInAs(superAdminUser));
     renderRoute("/admin/settings");
-    expect(await screen.findByRole("link", { name: "Privacy: who sees what" })).toHaveAttribute(
-      "href",
-      "/privacy",
-    );
+    expect(await screen.findByRole("button", { name: "Save settings" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Privacy: who sees what" })).not.toBeInTheDocument();
   });
 });
+

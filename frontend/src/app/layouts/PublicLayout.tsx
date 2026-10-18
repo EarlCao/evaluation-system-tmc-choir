@@ -12,7 +12,7 @@ export function PublicLayout() {
     <>
       <SkipLink />
       <AppHeader home="/" />
-      <Container component="main" id="main" maxWidth="lg">
+      <Container component="main" id="main" tabIndex={-1} maxWidth="lg" sx={{ outline: "none" }}>
         <Outlet />
       </Container>
     </>

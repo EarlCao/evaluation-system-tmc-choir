@@ -1,7 +1,6 @@
+import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import { Outlet } from "react-router";
-
-import { SiteFooter } from "@/components/SiteFooter";
 
 import { SkipLink } from "@/components/SkipLink";
 import { useAdminLiveUpdates } from "@/features/admin";
@@ -14,16 +13,42 @@ import { AppHeader } from "./AppHeader";
 export function AdminLayout() {
   useAdminLiveUpdates();
   return (
-    <>
+    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <SkipLink />
-      <AppHeader home="/admin" badge="Super Admin" nav={<AdminNav />}>
+      <AppHeader home="/admin" badge="Super Admin">
         <NotificationBell base="/admin" />
         <AccountMenu />
       </AppHeader>
-      <Container component="main" id="main" maxWidth="xl">
-        <Outlet />
-      </Container>
-      <SiteFooter />
-    </>
+      <Box
+        sx={{
+          flexGrow: 1,
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+        }}
+      >
+        <Box
+          sx={{
+            width: { xs: "100%", md: 256 },
+            flexShrink: 0,
+            borderRight: { md: 1 },
+            borderBottom: { xs: 1, md: 0 },
+            borderColor: "divider",
+            bgcolor: "background.paper",
+          }}
+        >
+          <AdminNav />
+        </Box>
+        <Container
+          component="main"
+          id="main"
+          tabIndex={-1}
+          maxWidth="xl"
+          sx={{ outline: "none", flexGrow: 1, py: 1 }}
+        >
+          <Outlet />
+        </Container>
+      </Box>
+    </Box>
   );
 }
+

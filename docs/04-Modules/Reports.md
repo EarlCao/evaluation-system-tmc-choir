@@ -76,3 +76,10 @@ Step 2.3: the dashboard adds `open_cycle {public_id, name, ends_at, evaluations_
   period), `/admin/reports/members/:id`; tables with a `Meter` + the same value as text; "How these numbers work" panel (REP-04);
   `components/ExportButtons` + `lib/exports.exportUrl` (shared, also used by the evaluations browser for CSV/Excel with its filters).
   Links: member admin page → Report; participation row → member report → evaluations about them.
+
+## Implementation notes (step 6.4): member own-data export
+- `selectors.own_data_export(*, user)` and `services.export_own_data(*, user)` (`GET /api/v1/me/export/`, `reports:my-export`):
+  returns `{account, member_profile, evaluations_given, feedback_received}` for the authenticated member. `feedback_received`
+  comes exclusively from `feedback.selectors.{list_received, summary}` so evaluator identities of other members never appear
+  (verified by `test_privacy_sweep.py` and `test_data_management.py`). Records `accounts.data_export.generated` in the audit log.
+

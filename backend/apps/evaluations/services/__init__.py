@@ -1,6 +1,7 @@
 """Public write API of the evaluations module (import `apps.evaluations.services`)."""
 
 from .config import (
+    apply_retention,
     archive_criterion,
     archive_cycle,
     close_cycle,
@@ -21,6 +22,7 @@ from .moderation import moderate, record_identity_access
 from .submissions import edit_evaluation, submit_evaluation
 
 __all__ = [
+    "apply_retention",
     "archive_criterion",
     "archive_cycle",
     "close_cycle",

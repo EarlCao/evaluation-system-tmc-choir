@@ -1,0 +1,10 @@
+# Overrides for the throwaway end-to-end stack (used only by scripts/e2e.sh, project
+# "choir-eval-e2e", its own volumes and ports). The frontend serves the PRODUCTION build
+# through `vite preview`, which proxies /api and /ws like the dev server.
+services:
+  frontend:
+    command: ["sh", "-c", "npm run build && npx vite preview --host 0.0.0.0 --port 5280 --strictPort"]
+    environment:
+      VITE_USE_POLLING: "false"
+  worker:
+    profiles: ["not-in-e2e"]  # the specs drive every state change themselves

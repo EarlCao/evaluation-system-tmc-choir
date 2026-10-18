@@ -12,6 +12,34 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-18 · Step 6.5: Final acceptance ✅ (Phase 6 complete → tag `phase-6`)
+**What:** walked through every item in [[Acceptance Checklist]] and linked automated test evidence across backend unit/service/API/permission/privacy suites, frontend component/accessibility suites, Playwright E2E specs, and production/data-management tests. Updated [[Roadmap]], [[Testing Strategy]], [[API Endpoints]], [[System Settings]], [[Accounts]], and [[Reports]].
+**Commit:** `docs(acceptance): step 6.5 final acceptance and phase 6 completion` + tag `phase-6`
+
+## 2026-10-18 · Step 6.4: Data management ✅
+**What:** (1) `scripts/backup.sh` (`mysqldump --single-transaction --routines --triggers --events --set-gtid-purged=OFF` → gzipped `.sql.gz` + `.sha256` with `chmod 600` and old-backup rotation) and `scripts/restore.sh` (SHA-256 verification, optional safety snapshot, restore + `manage.py migrate --check`); (2) `audit.services.purge_expired_logs` and `evaluations.services.apply_retention` + `manage.py apply_retention` (scheduled in `worker`), purging expired evaluations in `CLOSED`/`ARCHIVED` cycles and expired audit logs while never touching `OPEN` cycles, and recording `system.retention.applied`; (3) member self-deactivation (`accounts.services.deactivate_own_account`, `POST /api/v1/auth/deactivate/`) with password confirmation, last-Super-Admin guard, session logout, and preservation of historical evaluations (`BR-06`); (4) member own-data export (`reports.selectors.own_data_export`, `reports.services.export_own_data`, `GET /api/v1/me/export/`) returning account, choir profile, evaluations given, and anonymised feedback received (`accounts.data_export.generated` audited); (5) "Your data & account" card on `/app/profile` for downloading `my-data.json` and self-deactivating; (6) `backend/apps/core/tests/test_data_management.py` + privacy-sweep and permission-matrix registration.
+**Requirements:** SET-03, SET-04, NFR-07, AUTH-04, BR-06
+**Docs updated:** [[System Settings]], [[Accounts]], [[Reports]], [[API Endpoints]], [[Roadmap]]
+**Commit:** `feat(data): step 6.4 backups, retention, own-data export and self-deactivation`
+
+## 2026-10-18 · Step 6.3: Production configuration ✅
+**What:** hardened `backend/config/settings/prod.py` (refuses wildcard/empty `ALLOWED_HOSTS`, refuses weak/placeholder/identical `DJANGO_SECRET_KEY` and `FEEDBACK_ID_KEY`, enables `SECURE_HSTS_PRELOAD = True`, `SESSION_COOKIE_SECURE = True`, `CSRF_COOKIE_SECURE = True`, and `CONTENT_SECURITY_POLICY`); updated `PrivateApiCacheMiddleware` in `backend/apps/core/middleware.py` to emit `Content-Security-Policy` when configured; added `deploy/backend.Dockerfile`, `deploy/frontend.Dockerfile`, `deploy/nginx/default.conf` (HTTP→HTTPS redirect, TLS 1.2/1.3, HSTS, CSP, SPA fallback, `/static/`, `/api/`, `/django-admin/`, `/ws/` upgrade), and `deploy/docker-compose.prod.yml`; added `backend/apps/core/tests/test_prod_settings.py` verifying `manage.py check --deploy --fail-level WARNING` passes with 0 warnings.
+**Requirements:** BR-11, NFR-06, NFR-07
+**Docs updated:** [[Security Model]], [[Dev Environment Setup]], [[Roadmap]]
+**Commit:** `build(deploy): step 6.3 production settings, CSP, Dockerfiles and Nginx TLS`
+
+## 2026-10-18 · Step 6.2: Accessibility pass ✅
+**What:** added `tabIndex={-1}` on `<Container component="main" id="main">` in `PublicLayout`, `MemberLayout`, and `AdminLayout` so the `Skip to content` link moves focus cleanly; enabled `flexWrap: "wrap"` in `AppHeader` and `MemberNav` so 360px viewports never overflow horizontally; added `frontend/src/app/__tests__/accessibility.test.tsx` (automated Vitest + RTL checks for skip link, landmarks, headings, and labels on every control) and `frontend/e2e/05-accessibility-and-responsive.spec.ts` (Playwright keyboard focus and 360px responsive checks).
+**Requirements:** NFR-05
+**Docs updated:** [[Testing Strategy]], [[Roadmap]]
+**Commit:** `feat(a11y): step 6.2 accessibility pass and 360px responsive checks`
+
+## 2026-10-18 · Step 6.1: Test & security sweep ✅
+**What:** added AST-based module boundary and dependency-DAG test suite (`backend/apps/core/tests/test_module_boundaries.py`), full resolver-driven permission-matrix suite (`backend/apps/core/tests/test_permission_matrix.py`) across all public/member/admin routes × `{anonymous, pending, suspended, deactivated, owner, other_member, super_admin}`, and Playwright E2E suite (`frontend/playwright.config.ts`, `frontend/tsconfig.e2e.json`, `scripts/e2e.sh`, `docker-compose.e2e.yml`, `frontend/e2e/01-registration.spec.ts` .. `04-realtime-and-revocation.spec.ts`).
+**Requirements:** BR-03, BR-04, BR-09, NFR-02, NFR-03
+**Docs updated:** [[Testing Strategy]], [[Module Boundaries]], [[Roadmap]]
+**Commit:** `test(security): step 6.1 permission matrix, module boundaries and Playwright e2e`
+
 ## 2026-10-18 · Step 6.0: Follow-up fixes ✅
 **Context:** the user asked to "finish all pending fixes" and confirmed Q1–Q10 (commit `ce9c91d`).
 **What:** (1) every admin page is a lazy route and React / MUI are long-lived vendor chunks (`build.rolldownOptions.output.

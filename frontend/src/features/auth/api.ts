@@ -78,3 +78,17 @@ export async function changePassword(input: ChangePasswordInput): Promise<Detail
   });
   return data;
 }
+
+export async function downloadOwnData(): Promise<Record<string, unknown>> {
+  const { data } = await apiClient.get<Record<string, unknown>>("/me/export/");
+  return data;
+}
+
+export async function deactivateOwnAccount(input: {
+  password: string;
+  reason?: string;
+}): Promise<Detail> {
+  const { data } = await apiClient.post<Detail>("/auth/deactivate/", input);
+  return data;
+}
+
