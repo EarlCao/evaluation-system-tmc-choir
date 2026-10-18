@@ -83,7 +83,7 @@ The full privacy notice is editable in [[System Settings]] and shown at `/privac
 ## Residual risks (accepted, documented)
 - **Self-identification:** an evaluator may sign or describe themselves in a comment. Follow-up: warn authors when a comment contains their own name.
 - **Small choirs and writing style:** comment wording can reveal an author. The UI
-  advises constructive, neutral wording. The threshold protects numeric aggregates only.
+  advises constructive, neutral wording and warns when a text contains the writer's own name (step 6.0). The threshold protects numeric aggregates only.
 - **Count timing:** a recipient who watches their count increase right after talking to
   someone may infer identity. Mitigations: debounced notifications, and an optional cycle
   setting `feedback_visibility = AFTER_CLOSE` that releases all feedback at once.

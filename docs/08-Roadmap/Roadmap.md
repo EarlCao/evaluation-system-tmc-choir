@@ -81,7 +81,7 @@ tags: [roadmap]
   polling fallback, live admin dashboard counts.
 
 ## Phase 6: Quality & Deployment
-- [ ] **6.0 Follow-up fixes**: lazy-load the admin area (bundle size), warn when a comment contains the writer's own
+- [x] **6.0 Follow-up fixes**: lazy-load the admin area (bundle size), warn when a comment contains the writer's own
   name, automatically close periods after their end date.
 - [ ] **6.1 Test & security sweep**: permission matrix tests, module import-boundary
   check, Playwright e2e for key flows.

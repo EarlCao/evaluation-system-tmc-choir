@@ -12,6 +12,19 @@ Newest entry first. Use [[Phase Log Template]] for each completed step.
 
 ---
 
+## 2026-10-18 · Step 6.0: Follow-up fixes ✅
+**Context:** the user asked to "finish all pending fixes" and confirmed Q1–Q10 (commit `ce9c91d`).
+**What:** (1) every admin page is a lazy route and React / MUI are long-lived vendor chunks (`build.rolldownOptions.output.
+codeSplitting`): main app chunk **620 → 205 kB**, no size warning; (2) the evaluation form warns when a text contains the
+writer's own name; (3) `close_expired_cycles` service + command, run every minute by the worker (with `deliver_notifications`);
+both commands are now quiet when there is nothing to do.
+**Verification:** backend **470 passed** (+2: only expired OPEN cycles close, idempotent, system actor in the audit row;
+command output); ruff, `check`, `makemigrations --check`, `spectacular` clean. Frontend **149 passed** (+8: 7 name-matching
+cases incl. accents/whole words/short names, form warning on edit and review without blocking), typecheck, ESLint, Prettier
+clean; build OK. Live: worker restarted with both jobs (`-v 2`: 0 closed, 0 delivered).
+**Docs updated:** [[Evaluations]], [[Privacy Model]], [[Dev Environment Setup]], [[Roadmap]]
+**Commit:** `fix: step 6.0 follow-up fixes (lazy admin, own-name warning, auto-close periods)`
+
 ## 2026-10-18 · Step 5.3: Frontend realtime ✅ (Phase 5 complete → tag `phase-5`)
 **What:** `lib/ws.ts` (reconnect with backoff + jitter, no retry on 4401/4403/4001, ping, resync hook);
 `features/notifications` (bell with live unread badge and popover, notification center at `/app/notifications` and

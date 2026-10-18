@@ -192,3 +192,10 @@ Related: [[Feedback]] · [[Data Model]] · [[Privacy Model]]
   "Evaluations about them / they wrote"), `/admin/evaluations/:id` (identities, ratings, texts with Flag/Hide/Restore or
   Clear flag, moderation history, revisions with editor and changes), `/admin/moderation`. Every page states that access is logged.
   Texts render as plain text (`pre-wrap`), never HTML.
+## Implementation notes (step 6.0): automatic closing & signed comments
+- `services.close_expired_cycles(now=None)` closes every OPEN cycle whose `ends_at` has passed (actor = system, so the
+  audit row has no actor); runs every minute from `manage.py close_expired_cycles` (compose `worker`; cron in production).
+  Closing triggers the usual notifications and releases AFTER_CLOSE feedback.
+- The evaluation form warns (never blocks) when the comment or suggestion contains the writer's own first name, last name,
+  display name or username as a whole word (case- and accent-insensitive, names of 3+ letters): `identity.ownNameMentions`.
+  Shown under the text fields and again on the review step (Privacy Model, residual risk "writing style").

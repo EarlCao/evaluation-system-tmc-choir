@@ -26,6 +26,23 @@ export default defineConfig({
       "/ws": { target: backendUrl.replace(/^http/, "ws"), ws: true },
     },
   },
+  build: {
+    rolldownOptions: {
+      output: {
+        // Long-lived vendor chunks (React, MUI) cache across releases and keep the app
+        // chunk small; admin, reports and feedback pages are lazy-loaded routes.
+        codeSplitting: {
+          groups: [
+            {
+              name: "react",
+              test: /node_modules[\\/](react|react-dom|react-router|scheduler)[\\/]/,
+            },
+            { name: "mui", test: /node_modules[\\/](@mui|@emotion)[\\/]/ },
+          ],
+        },
+      },
+    },
+  },
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],

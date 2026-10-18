@@ -538,6 +538,20 @@ def close_cycle(*, actor, cycle: EvaluationCycle) -> EvaluationCycle:
     return cycle
 
 
+def close_expired_cycles(*, now=None) -> list[EvaluationCycle]:
+    """Close every OPEN cycle whose ``ends_at`` has passed (run by the worker / cron).
+    Submissions already stop at ``ends_at`` (rules.py); closing also releases AFTER_CLOSE
+    feedback and sends the "period closed" notifications. Actor: the system (None)."""
+    now = now or timezone.now()
+    closed = []
+    for cycle in EvaluationCycle.objects.filter(status=CycleStatus.OPEN, ends_at__lte=now):
+        try:
+            closed.append(close_cycle(actor=None, cycle=cycle))
+        except BusinessRuleViolation:
+            continue  # closed meanwhile by an admin
+    return closed
+
+
 def archive_cycle(*, actor, cycle: EvaluationCycle) -> EvaluationCycle:
     if cycle.status != CycleStatus.CLOSED:
         raise BusinessRuleViolation("Only closed cycles can be archived.")

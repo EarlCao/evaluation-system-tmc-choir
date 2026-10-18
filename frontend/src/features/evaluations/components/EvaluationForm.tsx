@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
@@ -9,9 +10,11 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { FormAlert } from "@/components/form/FormAlert";
 import { PrivacyNotice } from "@/components/PrivacyNotice";
+import { useCurrentUser } from "@/features/auth";
 import { isApiError } from "@/lib/errors";
 import { applyServerErrors } from "@/lib/forms";
 
+import { ownNameMentions } from "../identity";
 import { buildDraftSchema, emptyDraft, type EvaluationDraft } from "../schema";
 import { pointKey, type CycleForm, type MyEvaluation } from "../types";
 import { EvaluationSummary } from "./EvaluationSummary";
@@ -52,6 +55,8 @@ export function EvaluationForm({
   });
   const comment = useWatch({ control, name: "comment" });
   const suggestion = useWatch({ control, name: "suggestion" });
+  const me = useCurrentUser().data;
+  const ownNames = ownNameMentions(`${comment}\n${suggestion}`, me);
   const reviewHeading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     if (step === "review") reviewHeading.current?.focus(); // move focus for keyboard/screen readers
@@ -108,6 +113,7 @@ export function EvaluationForm({
           />
         ) : null}
         <PrivacyNotice />
+        {ownNames.length > 0 ? <OwnNameWarning names={ownNames} /> : null}
         <FormAlert message={formState.errors.root?.server?.message} />
         <Stack direction={{ xs: "column-reverse", sm: "row" }} spacing={2}>
           <Button
@@ -190,6 +196,7 @@ export function EvaluationForm({
           />
         )}
       />
+      {ownNames.length > 0 ? <OwnNameWarning names={ownNames} /> : null}
       <Stack direction={{ xs: "column-reverse", sm: "row" }} spacing={2}>
         {onCancel ? <Button onClick={onCancel}>Cancel</Button> : null}
         <Button type="submit" variant="contained" size="large">
@@ -197,5 +204,14 @@ export function EvaluationForm({
         </Button>
       </Stack>
     </Stack>
+  );
+}
+
+function OwnNameWarning({ names }: { names: string[] }) {
+  return (
+    <Alert severity="warning" role="status">
+      Your text mentions your own name ({names.join(", ")}). Your name is hidden from the member,
+      but signing a comment tells them it&apos;s from you. Remove it if you want to stay anonymous.
+    </Alert>
   );
 }

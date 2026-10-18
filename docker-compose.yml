@@ -71,7 +71,8 @@ services:
       start_period: 20s
 
   worker:
-    # Delivers debounced "new feedback" notifications (Notifications, step 5.2).
+    # Scheduled jobs, every minute: close expired evaluation periods (step 6.0) and deliver
+    # debounced "new feedback" notifications (step 5.2). Production uses cron (deploy/).
     image: choir-eval-backend
     build:
       context: ./backend
@@ -88,7 +89,10 @@ services:
       REDIS_URL: redis://redis:6379/0
     volumes:
       - .:/app
-    command: ["python", "manage.py", "deliver_notifications", "--loop", "60"]
+    command:
+      - sh
+      - -c
+      - while true; do python manage.py close_expired_cycles; python manage.py deliver_notifications; sleep 60; done
 
   frontend:
     build:

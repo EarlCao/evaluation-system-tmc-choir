@@ -20,7 +20,7 @@ class Command(BaseCommand):
     def handle(self, *args, loop: int = 0, **options):
         while True:
             delivered = services.deliver_due()
-            if delivered or not loop:
+            if delivered or options["verbosity"] > 1:
                 self.stdout.write(f"Delivered {delivered} feedback notification(s).")
             if not loop:
                 return

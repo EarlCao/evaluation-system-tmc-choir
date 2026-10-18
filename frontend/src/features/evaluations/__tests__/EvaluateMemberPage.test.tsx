@@ -134,6 +134,7 @@ describe("EvaluateMemberPage", () => {
     expect(await screen.findByText(/super admin can see it/i)).toBeVisible();
     expect(screen.getByText("4 / 5")).toBeVisible();
     expect(screen.getByText("Not rated")).toBeVisible(); // optional criterion skipped
+    expect(screen.queryByText(/mentions your own name/i)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Submit evaluation" }));
     expect(await screen.findByText(/your evaluation of lena voss was submitted/i)).toBeVisible();
@@ -146,6 +147,18 @@ describe("EvaluateMemberPage", () => {
       comment: "Steady and reliable",
       suggestion: "Try the solo",
     });
+  });
+
+  it("warns, without blocking, when the comment is signed with the writer's own name", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderRoute(`/app/members/${RECIPIENT}/evaluate`);
+    await user.click(await screen.findByRole("button", { name: "4" }));
+    await user.type(screen.getByLabelText("Comment"), "Lovely tone. From Mira");
+    expect(await screen.findByText(/mentions your own name \(Mira\)/i)).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Review" }));
+    await screen.findByRole("heading", { name: /review your evaluation/i });
+    expect(screen.getByText(/mentions your own name/i)).toBeVisible();
+    expect(screen.getByRole("button", { name: "Submit evaluation" })).toBeEnabled();
   });
 
   it("returns to the form with server field errors (draft kept)", async () => {
