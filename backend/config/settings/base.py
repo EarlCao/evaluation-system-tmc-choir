@@ -176,22 +176,20 @@ CSRF_COOKIE_SAMESITE = env("CSRF_COOKIE_SAMESITE", default="Lax")
 # ---------------------------------------------------------------------------
 EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
 EMAIL_PORT = env.int("EMAIL_PORT", default=587)
-EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
-EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="").strip()
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="").strip()
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL", default=False)
 EMAIL_TIMEOUT = env.int("EMAIL_TIMEOUT", default=15)
-EMAIL_BACKEND = env(
-    "EMAIL_BACKEND",
-    default=(
-        "django.core.mail.backends.smtp.EmailBackend"
-        if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD
-        else "django.core.mail.backends.console.EmailBackend"
-    ),
-)
-DEFAULT_FROM_EMAIL = env(
-    "DEFAULT_FROM_EMAIL",
-    default=EMAIL_HOST_USER if EMAIL_HOST_USER else "no-reply@example.org",
+if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+else:
+    EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
+_default_from = env("DEFAULT_FROM_EMAIL", default="").strip()
+DEFAULT_FROM_EMAIL = (
+    EMAIL_HOST_USER
+    if EMAIL_HOST_USER and _default_from in {"", "no-reply@example.org"}
+    else (_default_from or "no-reply@example.org")
 )
 
 # ---------------------------------------------------------------------------
