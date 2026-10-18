@@ -5,12 +5,14 @@ import { Link as RouterLink, useNavigate } from "react-router";
 
 import { useCurrentUser, useLogout } from "../queries";
 
-/** Header controls for logged-in users: name, profile link, log out. */
+/** Header controls for logged-in users: name, profile link (members only), log out. */
 export function AccountMenu() {
   const { data: user } = useCurrentUser();
   const logout = useLogout();
   const navigate = useNavigate();
   if (!user) return null;
+
+  const isSuperAdmin = user.is_super_admin || user.role === "SUPER_ADMIN";
 
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
@@ -21,9 +23,11 @@ export function AccountMenu() {
       >
         {user.display_name || user.first_name}
       </Typography>
-      <Button component={RouterLink} to="/app/profile" size="small">
-        Profile
-      </Button>
+      {!isSuperAdmin ? (
+        <Button component={RouterLink} to="/app/profile" size="small">
+          Profile
+        </Button>
+      ) : null}
       <Button
         size="small"
         variant="outlined"
@@ -31,7 +35,7 @@ export function AccountMenu() {
         onClick={() => {
           logout.mutate(undefined, {
             onSettled: () => {
-              void navigate("/", { replace: true });
+              void navigate(isSuperAdmin ? "/admin" : "/", { replace: true });
             },
           });
         }}
@@ -41,3 +45,4 @@ export function AccountMenu() {
     </Stack>
   );
 }
+

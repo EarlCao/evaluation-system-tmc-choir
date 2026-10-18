@@ -31,11 +31,17 @@ describe("route guards (UX only, the API enforces access)", () => {
     expect(router.state.location.pathname).toBe("/app");
   });
 
-  it("lets super admins into the admin area", async () => {
+  it("lets super admins into the admin area without a profile button and keeps them out of /app", async () => {
     server.use(loggedInAs(superAdminUser));
-    renderRoute("/admin");
+    const view = renderRoute("/admin");
     expect(await heading(/super admin dashboard/i)).toBeVisible();
     expect(screen.getByText("Super Admin")).toBeVisible();
+    expect(screen.queryByRole("link", { name: /^profile$/i })).not.toBeInTheDocument();
+    view.unmount();
+
+    const { router } = renderRoute("/app/profile");
+    expect(await heading(/super admin dashboard/i)).toBeVisible();
+    expect(router.state.location.pathname).toBe("/admin");
   });
 
   it.each([

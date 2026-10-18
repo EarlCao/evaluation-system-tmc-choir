@@ -16,9 +16,10 @@ describe("postLoginPath", () => {
     expect(postLoginPath(memberUser, from)).toBe(expected);
   });
 
-  it("super admins default to /admin and may return there", () => {
+  it("super admins default to /admin, may return to /admin/*, and never go to /app/*", () => {
     expect(postLoginPath(superAdminUser, undefined)).toBe("/admin");
     expect(postLoginPath(superAdminUser, "/admin/settings")).toBe("/admin/settings");
+    expect(postLoginPath(superAdminUser, "/app/profile")).toBe("/admin");
   });
 
   it("reads `from` from router state safely", () => {

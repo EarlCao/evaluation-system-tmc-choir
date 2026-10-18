@@ -159,7 +159,9 @@ def create_super_admin(
 # ---------------------------------------------------------------------------
 # Sessions
 # ---------------------------------------------------------------------------
-def authenticate_and_login(*, request, identifier: str, password: str) -> User:
+def authenticate_and_login(
+    *, request, identifier: str, password: str, portal: str | None = None
+) -> User:
     """AUTH-02. Every failure (unknown account, wrong password, not ACTIVE) raises the same
     ``InvalidCredentials`` error. Django's ``login`` rotates the session key."""
     user = auth.authenticate(request, username=identifier, password=password)
@@ -174,6 +176,11 @@ def authenticate_and_login(*, request, identifier: str, password: str) -> User:
             )
         )
         raise InvalidCredentials()
+
+    if portal == "member" and user.role == UserRole.SUPER_ADMIN:
+        raise InvalidCredentials("Super Admin accounts must sign in at /admin.")
+    if portal == "admin" and user.role != UserRole.SUPER_ADMIN:
+        raise InvalidCredentials("Only Super Admin accounts can sign in here.")
 
     auth.login(request, user)
     publish(events.LoggedIn(actor_id=user.pk, target_id=user.pk))

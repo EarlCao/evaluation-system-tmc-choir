@@ -44,6 +44,7 @@ class MeSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     identifier = serializers.CharField(max_length=254, help_text="Username or email")
     password = serializers.CharField(max_length=128, trim_whitespace=False, write_only=True)
+    portal = serializers.ChoiceField(choices=["member", "admin"], required=False)
 
 
 class PasswordChangeSerializer(serializers.Serializer):

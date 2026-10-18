@@ -307,35 +307,41 @@ export function AdminMemberPage() {
         </Stack>
       </Paper>
 
-      <Paper variant="outlined" sx={{ p: 3 }}>
-        <Typography variant="h6" component="h2" gutterBottom>
-          Choir profile
-        </Typography>
-        <ProfileForm key={m.public_id} member={m} />
-      </Paper>
+      {m.role !== "SUPER_ADMIN" ? (
+        <Paper variant="outlined" sx={{ p: 3 }}>
+          <Typography variant="h6" component="h2" gutterBottom>
+            Choir profile
+          </Typography>
+          <ProfileForm key={m.public_id} member={m} />
+        </Paper>
+      ) : null}
 
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-        <Button
-          component={RouterLink}
-          to={`/admin/evaluations?recipient=${m.public_id}`}
-          variant="outlined"
-        >
-          Evaluations about them
-        </Button>
-        <Button
-          component={RouterLink}
-          to={`/admin/evaluations?evaluator=${m.public_id}`}
-          variant="outlined"
-        >
-          Evaluations they wrote
-        </Button>
-        <Button
-          component={RouterLink}
-          to={`/admin/reports/members/${m.public_id}`}
-          variant="outlined"
-        >
-          Report
-        </Button>
+        {m.role !== "SUPER_ADMIN" ? (
+          <>
+            <Button
+              component={RouterLink}
+              to={`/admin/evaluations?recipient=${m.public_id}`}
+              variant="outlined"
+            >
+              Evaluations about them
+            </Button>
+            <Button
+              component={RouterLink}
+              to={`/admin/evaluations?evaluator=${m.public_id}`}
+              variant="outlined"
+            >
+              Evaluations they wrote
+            </Button>
+            <Button
+              component={RouterLink}
+              to={`/admin/reports/members/${m.public_id}`}
+              variant="outlined"
+            >
+              Report
+            </Button>
+          </>
+        ) : null}
         <Button component={RouterLink} to={`/admin/audit?actor=${m.public_id}`} variant="outlined">
           Activity in the audit log
         </Button>

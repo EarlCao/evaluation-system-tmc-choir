@@ -9,12 +9,12 @@ import { FormTextField } from "@/components/form/FormTextField";
 import { PasswordField } from "@/components/form/PasswordField";
 import { applyServerErrors } from "@/lib/forms";
 
-import { useLogin } from "../queries";
+import { useAdminLogin } from "../queries";
 import { loginSchema, type LoginInput } from "../schemas";
 
 /** Dedicated Super Admin sign-in page rendered at /admin when unauthenticated (no Forgot password, no Create account). */
 export function AdminLoginPage() {
-  const login = useLogin();
+  const login = useAdminLogin();
   const { control, handleSubmit, setError, formState } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
     defaultValues: { identifier: "", password: "" },

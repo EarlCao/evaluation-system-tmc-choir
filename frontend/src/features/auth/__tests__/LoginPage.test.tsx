@@ -63,13 +63,23 @@ describe("LoginPage", () => {
     expect(await screen.findByRole("button", { name: /log out/i })).toBeVisible();
   });
 
-  it("sends super admins to the admin area", async () => {
+  it("refuses Super Admin credentials on the member login page and logs them in only on /admin", async () => {
     sessionServer(superAdminUser);
-    const { router } = renderRoute("/login");
+    const memberLogin = renderRoute("/login");
+    await fillAndSubmit("admin_q1", "Correct-Horse-1");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Super Admin accounts must sign in at /admin.",
+    );
+    expect(memberLogin.router.state.location.pathname).toBe("/login");
+    memberLogin.unmount();
+
+    const adminLogin = renderRoute("/admin");
     await fillAndSubmit("admin_q1", "Correct-Horse-1");
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/admin");
+      expect(adminLogin.router.state.location.pathname).toBe("/admin");
     });
+    expect(await screen.findByRole("button", { name: /log out/i })).toBeVisible();
+    expect(screen.queryByRole("link", { name: /^profile$/i })).not.toBeInTheDocument();
   });
 
   it("returns to the page the visitor originally asked for", async () => {

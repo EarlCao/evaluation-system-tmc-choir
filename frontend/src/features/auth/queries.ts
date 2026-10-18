@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { ApiError } from "@/lib/errors";
+
 import * as api from "./api";
-import type { ChangePasswordInput, ConfirmResetInput } from "./schemas";
+import type { ChangePasswordInput, ConfirmResetInput, LoginInput } from "./schemas";
 
 export const authKeys = {
   all: ["auth"] as const,
@@ -26,15 +28,54 @@ export function useVoiceSections() {
   });
 }
 
-export function useLogin() {
+/** Member-only login mutation: refuses Super Admin accounts on the member login page. */
+export function useMemberLogin() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: api.login,
+    mutationFn: async (input: LoginInput) => {
+      const user = await api.login(input);
+      if (user.is_super_admin || user.role === "SUPER_ADMIN") {
+        await api.logout().catch(() => undefined);
+        queryClient.setQueryData(authKeys.currentUser(), null);
+        throw new ApiError({
+          status: 400,
+          code: "invalid_credentials",
+          message: "Super Admin accounts must sign in at /admin.",
+        });
+      }
+      return user;
+    },
     onSuccess: (user) => {
       queryClient.setQueryData(authKeys.currentUser(), user);
     },
   });
 }
+
+/** Super Admin-only login mutation: refuses regular Member accounts on /admin. */
+export function useAdminLogin() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: LoginInput) => {
+      const user = await api.login(input);
+      if (!user.is_super_admin && user.role !== "SUPER_ADMIN") {
+        await api.logout().catch(() => undefined);
+        queryClient.setQueryData(authKeys.currentUser(), null);
+        throw new ApiError({
+          status: 400,
+          code: "invalid_credentials",
+          message: "Only Super Admin accounts can sign in here.",
+        });
+      }
+      return user;
+    },
+    onSuccess: (user) => {
+      queryClient.setQueryData(authKeys.currentUser(), user);
+    },
+  });
+}
+
+export const useLogin = useMemberLogin;
+
 
 export function useLogout() {
   const queryClient = useQueryClient();

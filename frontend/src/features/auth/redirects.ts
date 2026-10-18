@@ -15,6 +15,7 @@ function isSafeInternalPath(value: unknown): value is string {
 export function postLoginPath(user: CurrentUser, from: unknown): string {
   if (isSafeInternalPath(from)) {
     if (from.startsWith("/admin") && !user.is_super_admin) return "/app";
+    if (!from.startsWith("/admin") && user.is_super_admin) return "/admin";
     return from;
   }
   return user.is_super_admin ? "/admin" : "/app";
