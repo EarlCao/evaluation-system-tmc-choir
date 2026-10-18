@@ -86,10 +86,10 @@ export function AdminDashboardPage() {
         sx={{
           p: { xs: 2.5, sm: 3.5 },
           background:
-            "linear-gradient(135deg, rgba(55, 48, 163, 0.06) 0%, rgba(15, 118, 110, 0.05) 100%)",
+            "linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(30, 27, 75, 0.06) 100%)",
         }}
       >
-        <Typography variant="overline" color="secondary" sx={{ fontWeight: 700 }}>
+        <Typography variant="overline" color="primary" sx={{ fontWeight: 800 }}>
           TMC Choir Administration
         </Typography>
         <Typography variant="h4" component="h1" sx={{ fontWeight: 800 }}>

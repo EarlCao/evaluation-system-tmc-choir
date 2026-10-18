@@ -1,20 +1,27 @@
 import Container from "@mui/material/Container";
+import type { ReactNode } from "react";
 import { Outlet } from "react-router";
 
 import { SkipLink } from "@/components/SkipLink";
 
 import { AppHeader } from "./AppHeader";
 
-/** Welcome and sign-in pages. No footer here (user request 2026-10-18); the privacy link
- * lives in the member and admin layouts, and /privacy itself stays public. */
-export function PublicLayout() {
+interface PublicLayoutProps {
+  home?: string;
+  badge?: string;
+  children?: ReactNode;
+}
+
+/** Sign-in and public pages. */
+export function PublicLayout({ home = "/", badge, children }: PublicLayoutProps = {}) {
   return (
     <>
       <SkipLink />
-      <AppHeader home="/" />
+      <AppHeader home={home} badge={badge} />
       <Container component="main" id="main" tabIndex={-1} maxWidth="lg" sx={{ outline: "none" }}>
-        <Outlet />
+        {children ?? <Outlet />}
       </Container>
     </>
   );
 }
+

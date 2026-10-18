@@ -73,10 +73,11 @@ describe("AdminDashboardPage (ADM-01)", () => {
     ).toBeVisible();
   });
 
-  it("is a Super Admin page (members are redirected)", async () => {
+  it("shows the dedicated Super Admin login at /admin when unauthenticated", async () => {
     server.use(http.get(api("/admin/reports/dashboard/"), () => HttpResponse.json(base)));
     const { router } = renderRoute("/admin"); // default handler: anonymous
-    await screen.findByRole("heading", { name: /log in/i });
-    expect(router.state.location.pathname).toBe("/login");
+    await screen.findByRole("heading", { name: /super admin log in/i });
+    expect(router.state.location.pathname).toBe("/admin");
   });
 });
+

@@ -55,8 +55,8 @@ export function StatTile({ label, value, hint, to }: StatTileProps) {
         sx={{
           height: 4,
           background: to
-            ? "linear-gradient(90deg, #3730a3 0%, #0f766e 100%)"
-            : "rgba(55, 48, 163, 0.25)",
+            ? "linear-gradient(90deg, #1e1b4b 0%, #d4af37 50%, #0f766e 100%)"
+            : "linear-gradient(90deg, rgba(212, 175, 55, 0.65) 0%, rgba(30, 27, 75, 0.45) 100%)",
         }}
       />
       {to ? (

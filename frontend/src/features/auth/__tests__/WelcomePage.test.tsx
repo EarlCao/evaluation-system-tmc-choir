@@ -6,13 +6,14 @@ import { api } from "@/test/handlers";
 import { renderRoute } from "@/test/render";
 import { server } from "@/test/server";
 
-describe("WelcomePage", () => {
-  it("shows the product, entry points and a live API status", async () => {
+describe("WelcomePage (root / Member Login)", () => {
+  it("renders the Member Login form at / with Forgot password, Create account, and live API status", async () => {
     renderRoute("/");
-    expect(
-      screen.getByRole("heading", { level: 1, name: /tmc choir evaluation system/i }),
-    ).toBeVisible();
-    expect(screen.getByRole("link", { name: /^log in$/i })).toHaveAttribute("href", "/login");
+    expect(await screen.findByRole("heading", { level: 1, name: /^log in$/i })).toBeVisible();
+    expect(screen.getByRole("link", { name: /forgot your password/i })).toHaveAttribute(
+      "href",
+      "/forgot-password",
+    );
     expect(screen.getByRole("link", { name: /create an account/i })).toHaveAttribute(
       "href",
       "/register",
@@ -30,3 +31,4 @@ describe("WelcomePage", () => {
     expect(await screen.findByText("API unavailable")).toBeVisible();
   });
 });
+

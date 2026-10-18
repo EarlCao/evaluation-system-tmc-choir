@@ -109,15 +109,29 @@ describe("LoginPage", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(/throttled/i);
   });
 
-  it("hides Forgot password and Create account in Super Admin sign-in mode", async () => {
-    const user = userEvent.setup();
-    renderRoute("/login");
-    expect(await screen.findByRole("link", { name: /forgot your password/i })).toBeVisible();
+  it("separates Member login (/) and Super Admin login (/admin), hiding Forgot password and Create account on /admin", async () => {
+    const memberView = renderRoute("/");
+    expect(await screen.findByRole("heading", { level: 1, name: /^log in$/i })).toBeVisible();
+    expect(screen.getByRole("link", { name: /forgot your password/i })).toBeVisible();
     expect(screen.getByRole("link", { name: /create an account/i })).toBeVisible();
+    memberView.unmount();
 
-    await user.click(screen.getByRole("button", { name: /super admin/i }));
+    renderRoute("/admin");
+    expect(
+      await screen.findByRole("heading", { level: 1, name: /super admin log in/i }),
+    ).toBeVisible();
     expect(screen.queryByRole("link", { name: /forgot your password/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /create an account/i })).not.toBeInTheDocument();
   });
+
+  it("toggles between light mode and dark mode from the header", async () => {
+    const user = userEvent.setup();
+    renderRoute("/");
+    const toggle = await screen.findByRole("button", { name: /switch to dark mode/i });
+    await user.click(toggle);
+    expect(document.documentElement.dataset.theme).toBe("dark");
+    expect(screen.getByRole("button", { name: /switch to light mode/i })).toBeVisible();
+  });
 });
+
 

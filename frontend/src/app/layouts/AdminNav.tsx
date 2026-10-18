@@ -102,8 +102,8 @@ export function AdminNav() {
           display: { xs: "none", md: "block" },
           px: 1.5,
           pb: 1,
-          fontWeight: 700,
-          letterSpacing: "0.08em",
+          fontWeight: 800,
+          letterSpacing: "0.1em",
         }}
       >
         Super Admin Console
@@ -125,17 +125,19 @@ export function AdminNav() {
               justifyContent: { xs: "center", md: "flex-start" },
               px: { xs: 1.25, md: 1.75 },
               py: { xs: 0.75, md: 1.05 },
-              borderRadius: 2,
-              fontWeight: 500,
+              borderRadius: 2.5,
+              fontWeight: 600,
               color: "text.secondary",
+              border: "1px solid transparent",
               "&:hover": {
                 bgcolor: "action.hover",
                 color: "text.primary",
               },
               "&.active": {
                 color: "primary.main",
-                bgcolor: "rgba(55, 48, 163, 0.09)",
-                fontWeight: 700,
+                bgcolor: "rgba(212, 175, 55, 0.12)",
+                borderColor: "rgba(212, 175, 55, 0.35)",
+                fontWeight: 800,
               },
             }}
           >
@@ -147,4 +149,5 @@ export function AdminNav() {
     </Box>
   );
 }
+
 

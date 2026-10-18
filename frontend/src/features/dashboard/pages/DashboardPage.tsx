@@ -23,7 +23,7 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
         aria-hidden="true"
         sx={{
           height: 4,
-          background: "linear-gradient(90deg, #3730a3 0%, #0f766e 100%)",
+          background: "linear-gradient(90deg, #1e1b4b 0%, #d4af37 50%, #0f766e 100%)",
         }}
       />
       <CardContent sx={{ p: 2.5 }}>
@@ -59,7 +59,7 @@ function CycleCard({ cycle }: { cycle: OpenCycleProgress | null }) {
       sx={{
         borderColor: "primary.main",
         background:
-          "linear-gradient(135deg, rgba(55, 48, 163, 0.04) 0%, rgba(15, 118, 110, 0.04) 100%)",
+          "linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(30, 27, 75, 0.06) 100%)",
       }}
     >
       <CardContent sx={{ p: 3 }}>
@@ -97,10 +97,10 @@ export function DashboardPage() {
         sx={{
           p: { xs: 2.5, sm: 3.5 },
           background:
-            "linear-gradient(135deg, rgba(55, 48, 163, 0.06) 0%, rgba(15, 118, 110, 0.05) 100%)",
+            "linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(30, 27, 75, 0.06) 100%)",
         }}
       >
-        <Typography variant="overline" color="primary" sx={{ fontWeight: 700 }}>
+        <Typography variant="overline" color="primary" sx={{ fontWeight: 800 }}>
           TMC Choir Member Portal
         </Typography>
         <Typography variant="h4" component="h1" sx={{ fontWeight: 800 }}>

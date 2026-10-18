@@ -42,15 +42,15 @@ export const routes: RouteObject[] = [
               ...notificationRoutes,
             ],
           },
+        ],
+      },
+      {
+        element: <RequireSuperAdmin />,
+        children: [
           {
-            element: <RequireSuperAdmin />,
-            children: [
-              {
-                path: "admin",
-                element: <AdminLayout />,
-                children: [...adminRoutes, ...adminReportRoutes, ...notificationRoutes],
-              },
-            ],
+            path: "admin",
+            element: <AdminLayout />,
+            children: [...adminRoutes, ...adminReportRoutes, ...notificationRoutes],
           },
         ],
       },
@@ -58,3 +58,4 @@ export const routes: RouteObject[] = [
     ],
   },
 ];
+
