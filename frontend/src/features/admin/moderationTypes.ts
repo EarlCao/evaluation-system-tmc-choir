@@ -30,6 +30,13 @@ export interface AdminText {
   moderation_status: ModerationStatus;
 }
 
+export interface AdminCommentEntry {
+  key: string;
+  label: string;
+  body: string;
+  moderation_status: ModerationStatus;
+}
+
 /** GET /api/v1/admin/evaluations/ entry (ADM-02). Reveals who wrote it, so it is audited. */
 export interface AdminEvaluation {
   public_id: string;
@@ -42,9 +49,11 @@ export interface AdminEvaluation {
   current_revision_number: number;
   moderation_status: ModerationStatus;
   needs_attention: boolean;
+  is_self?: boolean;
   ratings: AdminRating[];
   comment: AdminText | null;
   suggestion: AdminText | null;
+  comments?: AdminCommentEntry[];
 }
 
 export interface ModerationEntry {
@@ -78,6 +87,7 @@ export interface AdminEvaluationFilters {
   submitted_to?: string;
   moderation?: ModerationStatus | "attention" | "";
   edited?: "true" | "false" | "";
+  evaluation_type?: "self" | "peer" | "all" | "";
   page?: number;
 }
 

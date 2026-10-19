@@ -174,3 +174,43 @@ def test_directory_marks_already_evaluated_members_for_viewer(member_client, mem
     assert results[str(target.public_id)]["evaluation_id"] == str(evaluation.public_id)
     assert results[str(not_evaluated.public_id)]["is_evaluated"] is False
     assert results[str(not_evaluated.public_id)]["evaluation_id"] is None
+
+
+def test_directory_filter_by_evaluation_status(member_client, member):
+    target = make_member("Jane", "Doe")
+    not_evaluated = make_member("John", "Smith")
+    from django.utils import timezone
+    from apps.evaluations.models import Evaluation
+    from apps.evaluations.tests.factories import make_cycle
+
+    cycle = make_cycle(open=True)
+    Evaluation.objects.create(
+        evaluator=member,
+        recipient=target,
+        cycle=cycle,
+        form_version=cycle.form_version,
+        status="SUBMITTED",
+        submitted_at=timezone.now(),
+    )
+
+    # Filter completed
+    res_completed = member_client.get(DIRECTORY, {"evaluation_status": "completed"})
+    assert res_completed.status_code == 200
+    completed_ids = [m["public_id"] for m in res_completed.json()["results"]]
+    assert str(target.public_id) in completed_ids
+    assert str(not_evaluated.public_id) not in completed_ids
+
+    # Filter pending
+    res_pending = member_client.get(DIRECTORY, {"evaluation_status": "pending"})
+    assert res_pending.status_code == 200
+    pending_ids = [m["public_id"] for m in res_pending.json()["results"]]
+    assert str(not_evaluated.public_id) in pending_ids
+    assert str(target.public_id) not in pending_ids
+
+    # Filter all
+    res_all = member_client.get(DIRECTORY, {"evaluation_status": "all"})
+    assert res_all.status_code == 200
+    all_ids = [m["public_id"] for m in res_all.json()["results"]]
+    assert str(target.public_id) in all_ids
+    assert str(not_evaluated.public_id) in all_ids
+

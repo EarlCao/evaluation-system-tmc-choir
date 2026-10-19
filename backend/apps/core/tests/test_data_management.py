@@ -63,12 +63,15 @@ def test_apply_retention_keeps_everything_when_retention_is_null(super_admin):
     assert Evaluation.objects.filter(pk=ev.pk).exists()
 
 
-def test_apply_retention_purges_expired_closed_evaluations_and_audit_logs(super_admin):
-    system_services.update_settings(
-        actor=super_admin,
-        retention_evaluations_days=30,
-        retention_audit_days=60,
-    )
+def test_apply_retention_purges_expired_closed_evaluations_and_audit_logs(
+    super_admin, django_capture_on_commit_callbacks
+):
+    with django_capture_on_commit_callbacks(execute=True):
+        system_services.update_settings(
+            actor=super_admin,
+            retention_evaluations_days=30,
+            retention_audit_days=60,
+        )
     form = make_form(super_admin, criteria=[make_criterion(super_admin)])
     closed_cycle = make_cycle(super_admin, form=form, open=True, name="Closed Period")
     evaluator = MemberProfileFactory().user
@@ -99,9 +102,13 @@ def test_apply_retention_purges_expired_closed_evaluations_and_audit_logs(super_
 
     old_log = AuditLog.objects.first()
     assert old_log is not None
-    AuditLog.objects.filter(pk=old_log.pk).update(
-        occurred_at=timezone.now() - timedelta(days=90)
-    )
+    from django.db import connection
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "UPDATE audit_auditlog SET occurred_at = %s WHERE id = %s",
+            [timezone.now() - timedelta(days=90), old_log.pk],
+        )
 
     call_command("apply_retention")
 
@@ -114,7 +121,9 @@ def test_apply_retention_purges_expired_closed_evaluations_and_audit_logs(super_
     assert AuditLog.objects.filter(event_type="system.retention.applied").exists()
 
 
-def test_self_deactivation_preserves_evaluations_and_logs_out(super_admin):
+def test_self_deactivation_preserves_evaluations_and_logs_out(
+    super_admin, django_capture_on_commit_callbacks
+):
     form = make_form(super_admin, criteria=[make_criterion(super_admin)])
     make_cycle(super_admin, form=form, open=True)
     member = MemberProfileFactory().user
@@ -137,11 +146,12 @@ def test_self_deactivation_preserves_evaluations_and_logs_out(super_admin):
     assert wrong.status_code == 400
     assert "password" in wrong.json()["error"]["fields"]
 
-    ok = client.post(
-        reverse("accounts:deactivate"),
-        {"password": DEFAULT_PASSWORD, "reason": "Graduated"},
-        format="json",
-    )
+    with django_capture_on_commit_callbacks(execute=True):
+        ok = client.post(
+            reverse("accounts:deactivate"),
+            {"password": DEFAULT_PASSWORD, "reason": "Graduated"},
+            format="json",
+        )
     assert ok.status_code == 200
     member.refresh_from_db()
     assert member.status == UserStatus.DEACTIVATED

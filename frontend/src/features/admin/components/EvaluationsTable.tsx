@@ -43,45 +43,89 @@ export function EvaluationsTable({
           </TableRow>
         </TableHead>
         <TableBody>
-          {rows.map((e) => (
-            <TableRow key={e.public_id} hover>
-              <TableCell>
-                <Link
-                  component={RouterLink}
-                  to={`/admin/evaluations/${e.public_id}`}
-                  aria-label={`Open the evaluation of ${personName(e.recipient)} by ${personName(e.evaluator)}`}
-                >
-                  {new Date(e.submitted_at).toLocaleDateString()}
-                </Link>
-                {e.is_edited ? (
-                  <Typography variant="caption" color="text.secondary" component="div">
-                    edited
-                  </Typography>
-                ) : null}
-              </TableCell>
-              <TableCell>{personName(e.recipient)}</TableCell>
-              <TableCell>{personName(e.evaluator)}</TableCell>
-              <TableCell>{e.cycle.name}</TableCell>
-              <TableCell>
-                {e.ratings.map((r) => (
-                  <Typography variant="body2" key={r.criterion_public_id} noWrap>
-                    {r.criterion_name}: {formatRating(r)}
-                  </Typography>
-                ))}
-              </TableCell>
-              <TableCell sx={{ maxWidth: 260 }}>
-                {e.comment ? excerpt(e.comment.body) : "—"}
-              </TableCell>
-              <TableCell>
-                <Stack spacing={0.5} sx={{ alignItems: "flex-start" }}>
-                  <ModerationChip status={e.moderation_status} />
-                  {e.needs_attention ? (
-                    <Chip size="small" color="warning" label="Needs review" />
+          {rows.map((e) => {
+            const isSelf = e.is_self ?? (e.evaluator.public_id === e.recipient.public_id);
+            return (
+              <TableRow key={e.public_id} hover>
+                <TableCell>
+                  <Link
+                    component={RouterLink}
+                    to={`/admin/evaluations/${e.public_id}`}
+                    aria-label={`Open the evaluation of ${personName(e.recipient)} by ${personName(e.evaluator)}`}
+                  >
+                    {new Date(e.submitted_at).toLocaleDateString()}
+                  </Link>
+                  {e.is_edited ? (
+                    <Typography variant="caption" color="text.secondary" component="div">
+                      edited
+                    </Typography>
                   ) : null}
-                </Stack>
-              </TableCell>
-            </TableRow>
-          ))}
+                </TableCell>
+                <TableCell>
+                  <Stack spacing={0.5} sx={{ alignItems: "flex-start" }}>
+                    <span>{personName(e.recipient)}</span>
+                    {isSelf ? (
+                      <Chip
+                        size="small"
+                        label="Self-evaluation"
+                        color="info"
+                        variant="outlined"
+                        sx={{ fontWeight: 600, height: 20, fontSize: "0.75rem" }}
+                      />
+                    ) : null}
+                  </Stack>
+                </TableCell>
+                <TableCell>
+                  {personName(e.evaluator)}
+                  {isSelf ? (
+                    <Typography variant="caption" color="text.secondary" component="div">
+                      (self)
+                    </Typography>
+                  ) : null}
+                </TableCell>
+                <TableCell>{e.cycle.name}</TableCell>
+                <TableCell>
+                  {e.ratings.map((r) => (
+                    <Typography variant="body2" key={r.criterion_public_id} noWrap>
+                      {r.criterion_name}: {formatRating(r)}
+                    </Typography>
+                  ))}
+                </TableCell>
+                <TableCell sx={{ maxWidth: 280 }}>
+                  {e.comments && e.comments.length > 0 ? (
+                    <Stack spacing={0.5}>
+                      {e.comments.map((c) => (
+                        <Typography variant="body2" key={c.key} sx={{ overflowWrap: "anywhere" }}>
+                          <strong>
+                            {c.label ||
+                              (c.key === "comment"
+                                ? "Comment"
+                                : c.key === "suggestion"
+                                  ? "Suggestion"
+                                  : c.key)}
+                            :
+                          </strong>{" "}
+                          {excerpt(c.body, 70)}
+                        </Typography>
+                      ))}
+                    </Stack>
+                  ) : e.comment ? (
+                    excerpt(e.comment.body)
+                  ) : (
+                    "—"
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Stack spacing={0.5} sx={{ alignItems: "flex-start" }}>
+                    <ModerationChip status={e.moderation_status} />
+                    {e.needs_attention ? (
+                      <Chip size="small" color="warning" label="Needs review" />
+                    ) : null}
+                  </Stack>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </TableContainer>

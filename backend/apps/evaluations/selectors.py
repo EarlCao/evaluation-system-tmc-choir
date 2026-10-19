@@ -463,11 +463,12 @@ def admin_list_evaluations(
     submitted_to=None,
     moderation: str = "",
     edited: bool | None = None,
+    evaluation_type: str = "",
 ) -> QuerySet[Evaluation]:
     """All submitted evaluations, newest first. ``recipient``/``evaluator``/``cycle``/
     ``criterion`` are public ids. Rating bounds apply to ``criterion`` when given, otherwise
     to any rating. ``moderation``: VISIBLE / FLAGGED / HIDDEN, or ``attention`` for anything
-    flagged (the evaluation or one of its texts)."""
+    flagged (the evaluation or one of its texts). ``evaluation_type``: 'self', 'peer', or ''."""
     qs = _admin_evaluations()
     if recipient:
         qs = qs.filter(recipient__public_id=recipient)
@@ -475,6 +476,10 @@ def admin_list_evaluations(
         qs = qs.filter(evaluator__public_id=evaluator)
     if cycle:
         qs = qs.filter(cycle__public_id=cycle)
+    if evaluation_type == "self":
+        qs = qs.filter(evaluator_id=F("recipient_id"))
+    elif evaluation_type in ("peer", "evaluations", "member"):
+        qs = qs.exclude(evaluator_id=F("recipient_id"))
     if submitted_from:
         qs = qs.filter(submitted_at__date__gte=submitted_from)
     if submitted_to:

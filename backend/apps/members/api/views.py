@@ -81,6 +81,11 @@ class DirectoryView(ListAPIView):
         parameters=[
             OpenApiParameter("search", str, description="Name search"),
             OpenApiParameter("voice_section", int, description="Voice section id"),
+            OpenApiParameter(
+                "evaluation_status",
+                str,
+                description="Evaluation status filter: all, pending, completed",
+            ),
         ]
     )
     def get(self, request, *args, **kwargs):

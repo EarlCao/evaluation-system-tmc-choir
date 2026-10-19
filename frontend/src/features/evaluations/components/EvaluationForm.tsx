@@ -383,7 +383,7 @@ export function EvaluationForm({
             const words = countWords(textValue);
             const numberedLabel = `${String(idx + 1)}. ${prompt.label}${prompt.is_required ? "" : " (optional)"}`;
             return (
-              <Box key={prompt.key} sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              <Box key={prompt.key} sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
                 {isExtraPrompt ? (
                   <Box
                     sx={{
@@ -413,12 +413,25 @@ export function EvaluationForm({
                     </Button>
                   </Box>
                 ) : null}
+                <Typography
+                  component="label"
+                  htmlFor={`comment-field-${prompt.key}`}
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: "0.95rem",
+                    color: "text.primary",
+                    display: "block",
+                  }}
+                >
+                  {numberedLabel}
+                </Typography>
                 <Controller
                   control={control}
                   name={`comments.${prompt.key}`}
                   render={({ field, fieldState }) => (
                     <TextField
                       {...field}
+                      id={`comment-field-${prompt.key}`}
                       value={field.value ?? ""}
                       onChange={(e) => {
                         field.onChange(e.target.value);
@@ -428,7 +441,7 @@ export function EvaluationForm({
                           setValue("suggestion", e.target.value);
                         }
                       }}
-                      label={numberedLabel}
+                      placeholder="Write your comments or suggestions here..."
                       multiline
                       minRows={3}
                       error={Boolean(fieldState.error)}

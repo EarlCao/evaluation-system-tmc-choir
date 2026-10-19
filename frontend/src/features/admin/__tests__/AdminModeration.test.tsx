@@ -149,6 +149,28 @@ describe("All evaluations browser (ADM-02/03)", () => {
     expect(screen.getByText("Check the filters above.")).toBeVisible();
   });
 
+  it("filters evaluations by evaluation type (all, member, self)", async () => {
+    const { router } = renderRoute("/admin/evaluations");
+    await screen.findByRole("table", { name: "Evaluations" });
+    const user = userEvent.setup({ delay: null });
+
+    const quickFilters = screen.getByLabelText("Evaluation type quick filters");
+    await user.click(within(quickFilters).getByRole("button", { name: "Self-evaluations" }));
+    await waitFor(() => {
+      expect(router.state.location.search).toContain("evaluation_type=self");
+    });
+
+    await user.click(within(quickFilters).getByRole("button", { name: "Member evaluations" }));
+    await waitFor(() => {
+      expect(router.state.location.search).toContain("evaluation_type=peer");
+    });
+
+    await user.click(within(quickFilters).getByRole("button", { name: "All evaluations" }));
+    await waitFor(() => {
+      expect(router.state.location.search).not.toContain("evaluation_type");
+    });
+  });
+
   it("has an empty moderation queue state", async () => {
     renderRoute("/admin/moderation");
     expect(await screen.findByText("Nothing is waiting for review.")).toBeVisible();
@@ -166,11 +188,39 @@ describe("Evaluation detail and moderation (ADM-05)", () => {
     const revs = await screen.findByRole("list", { name: "Revisions" });
     expect(within(revs).getByText(/Revision 2 .* by Ernesto Cruz/)).toBeVisible();
     expect(within(revs).getByText("Attendance: 3 → 4")).toBeVisible();
+    // Revision content is directly visible without details arrow button
+    expect(within(revs).getByText(/Revision 2 Content/i)).toBeVisible();
+    expect(within(revs).getByText(/Always on time/i)).toBeVisible();
+    expect(document.querySelector("details")).toBeNull();
+
     expect(screen.getByRole("list", { name: "Moderation history" })).toHaveTextContent(
       "Flagged the suggestion by Ana Admin — “Check tone”",
     );
     // A flagged text can be hidden or have its flag cleared.
     expect(screen.getByRole("button", { name: "Clear flag suggestion" })).toBeVisible();
+  });
+
+  it("displays self-evaluation header and all dynamic comments", async () => {
+    const selfDetail: AdminEvaluationDetail = {
+      ...detail,
+      evaluator: recipient,
+      is_self: true,
+      comments: [
+        {
+          key: "prompt_1",
+          label: "How did you do?",
+          body: "I gave my best effort.",
+          moderation_status: "VISIBLE",
+        },
+      ],
+    };
+    server.use(http.get(api("/admin/evaluations/ev-self/"), () => HttpResponse.json(selfDetail)));
+    renderRoute("/admin/evaluations/ev-self");
+    expect(
+      await screen.findByRole("heading", { name: "Self-evaluation of Rosa Reyes" }),
+    ).toBeVisible();
+    expect(screen.getByText("How did you do?")).toBeVisible();
+    expect(screen.getByText("I gave my best effort.")).toBeVisible();
   });
 
   it("requires a reason to hide, then hides the comment", async () => {

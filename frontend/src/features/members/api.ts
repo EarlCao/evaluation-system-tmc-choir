@@ -8,6 +8,10 @@ export async function fetchDirectory(params: DirectoryParams): Promise<Paginated
     params: {
       search: params.search || undefined,
       voice_section: params.voice_section,
+      evaluation_status:
+        params.evaluation_status && params.evaluation_status !== "all"
+          ? params.evaluation_status
+          : undefined,
       page: params.page && params.page > 1 ? params.page : undefined,
     },
   });

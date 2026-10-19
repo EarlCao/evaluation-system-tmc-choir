@@ -196,7 +196,7 @@ export interface RevisionSnapshot {
   }[];
   comment: string;
   suggestion: string;
-  comments?: MyCommentEntry[];
+  comments?: MyCommentEntry[] | Record<string, string>;
 }
 
 export interface Revision {

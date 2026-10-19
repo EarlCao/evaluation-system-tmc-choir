@@ -32,6 +32,9 @@ const moderation = page(
   async () => (await import("./pages/AdminModerationPage")).AdminModerationPage,
 );
 const audit = page(async () => (await import("./pages/AdminAuditPage")).AdminAuditPage);
+const dataManagement = page(
+  async () => (await import("./pages/AdminDataManagementPage")).AdminDataManagementPage,
+);
 const settings = page(async () => (await import("./pages/AdminSettingsPage")).AdminSettingsPage);
 
 export const adminRoutes: RouteObject[] = [
@@ -50,5 +53,6 @@ export const adminRoutes: RouteObject[] = [
   { path: "evaluations/:publicId", ...evaluation },
   { path: "moderation", ...moderation },
   { path: "audit", ...audit },
+  { path: "data-management", ...dataManagement },
   { path: "settings", ...settings },
 ];

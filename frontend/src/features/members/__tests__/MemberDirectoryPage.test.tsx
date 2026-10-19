@@ -159,4 +159,34 @@ describe("MemberDirectoryPage", () => {
     expect(bobBtn).toBeVisible();
     expect(bobBtn).toHaveAttribute("href", "/app/members/member-2/evaluate");
   });
+
+  it("filters by evaluation status (haven't evaluated yet vs completed)", async () => {
+    const { router } = renderRoute("/app/members");
+    await screen.findByText("Nick (First0 Last0)");
+    const user = userEvent.setup();
+
+    const quickFilters = screen.getByLabelText("Evaluation status quick filters");
+
+    // Click "Haven't evaluated / comments yet" chip
+    await user.click(
+      within(quickFilters).getByRole("button", { name: "Haven't evaluated / comments yet" }),
+    );
+    await waitFor(() => {
+      expect(requests.at(-1)?.get("evaluation_status")).toBe("pending");
+    });
+    expect(router.state.location.search).toContain("evaluation_status=pending");
+
+    // Click "Completed" chip
+    await user.click(within(quickFilters).getByRole("button", { name: "Completed" }));
+    await waitFor(() => {
+      expect(requests.at(-1)?.get("evaluation_status")).toBe("completed");
+    });
+    expect(router.state.location.search).toContain("evaluation_status=completed");
+
+    // Click "All" chip
+    await user.click(within(quickFilters).getByRole("button", { name: "All" }));
+    await waitFor(() => {
+      expect(router.state.location.search).not.toContain("evaluation_status");
+    });
+  });
 });

@@ -1,3 +1,4 @@
+import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Link from "@mui/material/Link";
 import Paper from "@mui/material/Paper";
@@ -18,7 +19,7 @@ import { formatDateTime } from "@/lib/datetime";
 import { isApiError } from "@/lib/errors";
 
 import { IdentityAccessNotice } from "../components/EvaluationsTable";
-import { ModerationControls } from "../components/ModerationControls";
+import { ModerationChip, ModerationControls } from "../components/ModerationControls";
 import { useAdminEvaluation, useAdminRevisions } from "../moderationQueries";
 import {
   ACTION_LABEL,
@@ -92,13 +93,35 @@ function Revisions({ publicId }: { publicId: string }) {
       </Typography>
       <Stack
         component="ol"
-        spacing={1}
-        sx={{ listStyle: "none", p: 0, m: 0 }}
+        spacing={2}
+        sx={{
+          listStyle: "none",
+          p: 0,
+          m: 0,
+          maxHeight: 560,
+          overflowY: "auto",
+          pr: 1,
+        }}
         aria-label="Revisions"
       >
         {[...all].reverse().map((r) => {
           const previous = all.find((p) => p.revision_number === r.revision_number - 1);
           const changes = previous ? describeChanges(previous.snapshot, r.snapshot) : [];
+
+          // Normalize snapshot comments whether object or array
+          const rawComments = r.snapshot.comments;
+          const commentsList: { key: string; label: string; body: string }[] = Array.isArray(
+            rawComments,
+          )
+            ? rawComments
+            : rawComments && typeof rawComments === "object"
+              ? Object.entries(rawComments).map(([k, v]) => ({
+                  key: k,
+                  label: k === "comment" ? "Comment" : k === "suggestion" ? "Suggestion" : k,
+                  body: String(v),
+                }))
+              : [];
+
           return (
             <Paper component="li" variant="outlined" sx={{ p: 2 }} key={r.revision_number}>
               <Typography variant="subtitle2" component="h3">
@@ -106,29 +129,60 @@ function Revisions({ publicId }: { publicId: string }) {
                 {personName(r.editor)}
               </Typography>
               {r.change_summary ? (
-                <Typography variant="body2">“{r.change_summary}”</Typography>
-              ) : null}
-              {changes.map((c) => (
-                <Typography variant="body2" key={c.key}>
-                  {c.text}
+                <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5 }}>
+                  “{r.change_summary}”
                 </Typography>
-              ))}
-              <details>
-                <summary>Show the content of revision {r.revision_number}</summary>
+              ) : null}
+              {changes.length > 0 ? (
                 <Stack spacing={0.5} sx={{ mt: 1 }}>
-                  {r.snapshot.ratings.map((x) => (
-                    <Typography variant="body2" key={x.criterion_version_id}>
-                      {x.criterion}: {x.value ?? "not rated"}
+                  {changes.map((c) => (
+                    <Typography variant="body2" color="text.secondary" key={c.key}>
+                      {c.text}
                     </Typography>
                   ))}
-                  <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                    Comment: {r.snapshot.comment || "—"}
-                  </Typography>
-                  <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                    Suggestion: {r.snapshot.suggestion || "—"}
-                  </Typography>
                 </Stack>
-              </details>
+              ) : null}
+
+              {/* Open revision content without accordion / arrow button: scroll to see full history */}
+              <Box sx={{ mt: 1.5, pt: 1.5, borderTop: 1, borderColor: "divider" }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                    color: "text.secondary",
+                    display: "block",
+                    mb: 1,
+                  }}
+                >
+                  Revision {r.revision_number} Content
+                </Typography>
+                <Stack spacing={0.75}>
+                  {r.snapshot.ratings.map((x) => (
+                    <Typography variant="body2" key={x.criterion_version_id}>
+                      <strong>{x.criterion}:</strong> {x.value ?? "not rated"}
+                      {x.label ? ` (${x.label})` : ""}
+                    </Typography>
+                  ))}
+                  {commentsList.length > 0 ? (
+                    commentsList.map((c) => (
+                      <Typography variant="body2" key={c.key} sx={{ whiteSpace: "pre-wrap" }}>
+                        <strong>{c.label || c.key}:</strong> {c.body || "—"}
+                      </Typography>
+                    ))
+                  ) : (
+                    <>
+                      <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                        <strong>Comment:</strong> {r.snapshot.comment || "—"}
+                      </Typography>
+                      <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                        <strong>Suggestion:</strong> {r.snapshot.suggestion || "—"}
+                      </Typography>
+                    </>
+                  )}
+                </Stack>
+              </Box>
             </Paper>
           );
         })}
@@ -179,20 +233,41 @@ export function AdminEvaluationPage() {
     );
   }
   const e = evaluation.data;
+  const isSelf = e.is_self ?? (e.evaluator.public_id === e.recipient.public_id);
+
   return (
     <Stack spacing={3} sx={{ py: 4, maxWidth: 900 }}>
       <Link component={RouterLink} to="/admin/evaluations">
         ← All evaluations
       </Link>
-      <Typography variant="h4" component="h1">
-        Evaluation of {personName(e.recipient)}
-      </Typography>
+      <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", flexWrap: "wrap" }}>
+        <Typography variant="h4" component="h1">
+          {isSelf ? "Self-evaluation of " : "Evaluation of "}{personName(e.recipient)}
+        </Typography>
+        {isSelf ? (
+          <Chip
+            size="small"
+            color="info"
+            variant="outlined"
+            label="Self-evaluation"
+            sx={{ fontWeight: 700 }}
+          />
+        ) : null}
+      </Stack>
       <IdentityAccessNotice />
       <Paper variant="outlined" sx={{ p: 2 }}>
         <Stack spacing={1}>
           <Typography>
-            About <PersonLink person={e.recipient} /> · written by{" "}
-            <PersonLink person={e.evaluator} />
+            {isSelf ? (
+              <>
+                Self-evaluation by <PersonLink person={e.evaluator} />
+              </>
+            ) : (
+              <>
+                About <PersonLink person={e.recipient} /> · written by{" "}
+                <PersonLink person={e.evaluator} />
+              </>
+            )}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {e.cycle.name} · submitted {formatDateTime(e.submitted_at)}
@@ -236,13 +311,53 @@ export function AdminEvaluationPage() {
         </Table>
       </Paper>
 
-      <TextSection title="Comment" text={e.comment} evaluationId={e.public_id} target="COMMENT" />
-      <TextSection
-        title="Suggestion"
-        text={e.suggestion}
-        evaluationId={e.public_id}
-        target="SUGGESTION"
-      />
+      {/* Render all evaluation/comments (including self-evaluation comments) */}
+      {e.comments && e.comments.length > 0 ? (
+        e.comments.map((c) => (
+          <Paper variant="outlined" sx={{ p: 2 }} key={c.key}>
+            <Stack spacing={1}>
+              <Typography variant="h6" component="h2">
+                {c.label ||
+                  (c.key === "comment"
+                    ? "Comment"
+                    : c.key === "suggestion"
+                      ? "Suggestion"
+                      : c.key)}
+              </Typography>
+              <Typography sx={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+                {c.body || <span style={{ color: "#888" }}>None written.</span>}
+              </Typography>
+              {c.key === "comment" || c.key === "suggestion" ? (
+                <ModerationControls
+                  evaluationId={e.public_id}
+                  target={c.key === "comment" ? "COMMENT" : "SUGGESTION"}
+                  status={c.moderation_status}
+                />
+              ) : (
+                <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                  <ModerationChip status={c.moderation_status} />
+                </Stack>
+              )}
+            </Stack>
+          </Paper>
+        ))
+      ) : (
+        <>
+          <TextSection
+            title="Comment"
+            text={e.comment}
+            evaluationId={e.public_id}
+            target="COMMENT"
+          />
+          <TextSection
+            title="Suggestion"
+            text={e.suggestion}
+            evaluationId={e.public_id}
+            target="SUGGESTION"
+          />
+        </>
+      )}
+
       <History evaluation={e} />
       <Revisions publicId={e.public_id} />
     </Stack>

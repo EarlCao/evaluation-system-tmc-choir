@@ -52,3 +52,28 @@ class SettingsUpdateSerializer(serializers.Serializer):
         min_value=1, required=False, allow_null=True
     )
     retention_audit_days = serializers.IntegerField(min_value=30, required=False, allow_null=True)
+
+
+class BackupMetadataSerializer(serializers.Serializer):
+    filename = serializers.CharField()
+    created_at = serializers.CharField()
+    created_by = serializers.CharField(allow_blank=True)
+    size_bytes = serializers.IntegerField()
+    sha256 = serializers.CharField(allow_blank=True)
+    note = serializers.CharField(allow_blank=True, default="")
+
+
+class BackupCreateSerializer(serializers.Serializer):
+    note = serializers.CharField(max_length=500, required=False, allow_blank=True, default="")
+
+
+class RestoreRequestSerializer(serializers.Serializer):
+    filename = serializers.CharField(required=False, allow_blank=True)
+    file = serializers.FileField(required=False)
+
+
+class RetentionCleanupResponseSerializer(serializers.Serializer):
+    purged_evaluations = serializers.IntegerField()
+    purged_revisions = serializers.IntegerField()
+    purged_audit_logs = serializers.IntegerField()
+

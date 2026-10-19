@@ -351,6 +351,7 @@ class AdminEvaluationSerializer(serializers.ModelSerializer):
     evaluator = PersonSerializer()
     recipient = PersonSerializer()
     ratings = AdminRatingSerializer(many=True)
+    is_self = serializers.SerializerMethodField()
     comment = serializers.SerializerMethodField()
     suggestion = serializers.SerializerMethodField()
     comments = serializers.SerializerMethodField()
@@ -369,11 +370,16 @@ class AdminEvaluationSerializer(serializers.ModelSerializer):
             "current_revision_number",
             "moderation_status",
             "needs_attention",
+            "is_self",
             "ratings",
             "comment",
             "suggestion",
             "comments",
         ]
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_is_self(self, obj) -> bool:
+        return obj.evaluator_id == obj.recipient_id
 
     @extend_schema_field(AdminTextSerializer(allow_null=True))
     def get_comment(self, obj):
@@ -455,6 +461,7 @@ class AdminEvaluationFilterSerializer(serializers.Serializer):
         choices=[*ModerationStatus.values, "attention"], required=False, default=""
     )
     edited = serializers.BooleanField(required=False, allow_null=True, default=None)
+    evaluation_type = serializers.CharField(required=False, allow_blank=True, default="")
 
     def validate(self, attrs):
         lo, hi = attrs.get("rating_min"), attrs.get("rating_max")

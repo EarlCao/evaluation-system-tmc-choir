@@ -8,6 +8,7 @@ export const systemKeys = {
   settings: () => [...adminKeys.all, "settings"] as const,
   audit: (f: AuditFilters) => [...adminKeys.all, "audit", f] as const,
   eventTypes: () => [...adminKeys.all, "audit-event-types"] as const,
+  backups: () => [...adminKeys.all, "backups"] as const,
 };
 
 export const useAdminSettings = () =>
@@ -58,3 +59,52 @@ export function useClearAuditLogs() {
     },
   });
 }
+
+export const useBackups = () =>
+  useQuery({
+    queryKey: systemKeys.backups(),
+    queryFn: api.fetchBackups,
+  });
+
+export function useCreateBackup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: api.createBackup,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: systemKeys.backups() });
+      void queryClient.invalidateQueries({ queryKey: [...adminKeys.all, "audit"] });
+    },
+  });
+}
+
+export function useDeleteBackup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: api.deleteBackup,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: systemKeys.backups() });
+      void queryClient.invalidateQueries({ queryKey: [...adminKeys.all, "audit"] });
+    },
+  });
+}
+
+export function useRestoreBackup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: api.restoreBackup,
+    onSuccess: () => {
+      void queryClient.invalidateQueries();
+    },
+  });
+}
+
+export function useRunRetentionCleanup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: api.runRetentionCleanup,
+    onSuccess: () => {
+      void queryClient.invalidateQueries();
+    },
+  });
+}
+

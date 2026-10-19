@@ -67,3 +67,7 @@ stream_sql | run_mysql "$TARGET_DB"
 USERS_COUNT="$(run_mysql -N -B "$TARGET_DB" -e "SELECT COUNT(*) FROM accounts_user;")"
 CYCLES_COUNT="$(run_mysql -N -B "$TARGET_DB" -e "SELECT COUNT(*) FROM evaluations_evaluationcycle;")"
 echo "✔ Restore complete into '${TARGET_DB}' (users=${USERS_COUNT}, cycles=${CYCLES_COUNT})."
+
+if command -v python >/dev/null 2>&1; then
+  python manage.py migrate --check || true
+fi

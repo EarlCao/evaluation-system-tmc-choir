@@ -51,3 +51,30 @@ export interface AuditFilters {
   occurred_to?: string;
   page?: number;
 }
+
+export interface BackupItem {
+  filename: string;
+  created_at: string;
+  created_by: string;
+  size_bytes: number;
+  sha256: string;
+  note: string;
+}
+
+export interface BackupCreateInput {
+  note?: string;
+}
+
+export interface RestoreResult {
+  status: string;
+  message: string;
+  records_count?: number;
+  sha256?: string;
+}
+
+export interface RetentionCleanupResult {
+  purged_evaluations: number;
+  purged_revisions: number;
+  purged_audit_logs: number;
+}
+

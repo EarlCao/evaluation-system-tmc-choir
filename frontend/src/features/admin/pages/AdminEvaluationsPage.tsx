@@ -1,7 +1,9 @@
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
+import Grid from "@mui/material/Grid";
 import MenuItem from "@mui/material/MenuItem";
 import Pagination from "@mui/material/Pagination";
+import Paper from "@mui/material/Paper";
 import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
@@ -34,6 +36,7 @@ const TEXT_FILTERS = [
   "submitted_to",
   "moderation",
   "edited",
+  "evaluation_type",
 ] as const;
 
 /** ADM-02 / ADM-03: every evaluation with its author, filterable; access is audited. */
@@ -81,138 +84,252 @@ export function AdminEvaluationsPage() {
       </Stack>
       <IdentityAccessNotice />
 
-      <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
-        {filters.recipient ? (
-          <Chip
-            label={`About ${first ? personName(first.recipient) : "one member"}`}
-            onDelete={() => {
-              update("recipient", "");
-            }}
-          />
-        ) : null}
-        {filters.evaluator ? (
-          <Chip
-            label={`Written by ${first ? personName(first.evaluator) : "one member"}`}
-            onDelete={() => {
-              update("evaluator", "");
-            }}
-          />
-        ) : null}
-      </Stack>
-
-      <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ flexWrap: "wrap" }}>
-        <TextField
-          select
-          label="Period"
-          value={filters.cycle ?? ""}
-          onChange={(e) => {
-            update("cycle", e.target.value);
-          }}
-          sx={{ minWidth: 180 }}
-        >
-          <MenuItem value="">All periods</MenuItem>
-          {(cycles.data ?? []).map((c) => (
-            <MenuItem key={c.public_id} value={c.public_id}>
-              {c.name}
-            </MenuItem>
-          ))}
-        </TextField>
-        <TextField
-          select
-          label="Criterion"
-          value={filters.criterion ?? ""}
-          onChange={(e) => {
-            update("criterion", e.target.value);
-          }}
-          sx={{ minWidth: 180 }}
-        >
-          <MenuItem value="">Any criterion</MenuItem>
-          {(criteria.data ?? []).map((c) => (
-            <MenuItem key={c.public_id} value={c.public_id}>
-              {c.current_version.name}
-            </MenuItem>
-          ))}
-        </TextField>
-        <TextField
-          label="Rating from"
-          type="number"
-          value={filters.rating_min ?? ""}
-          onChange={(e) => {
-            update("rating_min", e.target.value);
-          }}
-          sx={{ width: 130 }}
-        />
-        <TextField
-          label="Rating to"
-          type="number"
-          value={filters.rating_max ?? ""}
-          error={Boolean(fieldError("rating_max"))}
-          helperText={fieldError("rating_max")}
-          onChange={(e) => {
-            update("rating_max", e.target.value);
-          }}
-          sx={{ width: 130 }}
-        />
-        <TextField
-          label="Submitted from"
-          type="date"
-          value={filters.submitted_from ?? ""}
-          onChange={(e) => {
-            update("submitted_from", e.target.value);
-          }}
-          slotProps={{ inputLabel: { shrink: true } }}
-        />
-        <TextField
-          label="Submitted to"
-          type="date"
-          value={filters.submitted_to ?? ""}
-          error={Boolean(fieldError("submitted_to"))}
-          helperText={fieldError("submitted_to")}
-          onChange={(e) => {
-            update("submitted_to", e.target.value);
-          }}
-          slotProps={{ inputLabel: { shrink: true } }}
-        />
-        <TextField
-          select
-          label="Moderation"
-          value={filters.moderation ?? ""}
-          onChange={(e) => {
-            update("moderation", e.target.value);
-          }}
-          sx={{ minWidth: 170 }}
-        >
-          <MenuItem value="">Any status</MenuItem>
-          <MenuItem value="attention">Needs review</MenuItem>
-          {(Object.keys(MODERATION_LABEL) as ModerationStatus[]).map((s) => (
-            <MenuItem key={s} value={s}>
-              {MODERATION_LABEL[s]}
-            </MenuItem>
-          ))}
-        </TextField>
-        <TextField
-          select
-          label="Edited"
-          value={filters.edited ?? ""}
-          onChange={(e) => {
-            update("edited", e.target.value);
-          }}
-          sx={{ minWidth: 130 }}
-        >
-          <MenuItem value="">Either</MenuItem>
-          <MenuItem value="true">Edited</MenuItem>
-          <MenuItem value="false">Not edited</MenuItem>
-        </TextField>
-        {hasFilters ? (
-          <Button
-            onClick={() => {
-              setParams(new URLSearchParams(), { replace: true });
+      <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+        <Stack spacing={2.5}>
+          {/* Header: Title, quick type filters, and Clear all filters */}
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            sx={{
+              justifyContent: "space-between",
+              alignItems: { xs: "flex-start", sm: "center" },
+              gap: 1.5,
             }}
           >
-            Clear filters
-          </Button>
-        ) : null}
-      </Stack>
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+              <Typography variant="subtitle1" component="h2" sx={{ fontWeight: 700 }}>
+                Filter Evaluations
+              </Typography>
+              <Stack
+                direction="row"
+                spacing={0.75}
+                sx={{ flexWrap: "wrap", gap: 0.75 }}
+                aria-label="Evaluation type quick filters"
+              >
+                <Chip
+                  size="small"
+                  label="All evaluations"
+                  clickable
+                  color={!filters.evaluation_type ? "primary" : "default"}
+                  variant={!filters.evaluation_type ? "filled" : "outlined"}
+                  onClick={() => update("evaluation_type", "")}
+                />
+                <Chip
+                  size="small"
+                  label="Member evaluations"
+                  clickable
+                  color={filters.evaluation_type === "peer" ? "primary" : "default"}
+                  variant={filters.evaluation_type === "peer" ? "filled" : "outlined"}
+                  onClick={() => update("evaluation_type", "peer")}
+                />
+                <Chip
+                  size="small"
+                  label="Self-evaluations"
+                  clickable
+                  color={filters.evaluation_type === "self" ? "primary" : "default"}
+                  variant={filters.evaluation_type === "self" ? "filled" : "outlined"}
+                  onClick={() => update("evaluation_type", "self")}
+                />
+              </Stack>
+            </Stack>
+
+            {hasFilters ? (
+              <Button
+                size="small"
+                color="inherit"
+                onClick={() => {
+                  setParams(new URLSearchParams(), { replace: true });
+                }}
+              >
+                Clear all filters
+              </Button>
+            ) : null}
+          </Stack>
+
+          {/* Active member filter tags if filtered by recipient or evaluator */}
+          {filters.recipient || filters.evaluator ? (
+            <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
+              {filters.recipient ? (
+                <Chip
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  label={`About ${first ? personName(first.recipient) : "one member"}`}
+                  onDelete={() => {
+                    update("recipient", "");
+                  }}
+                />
+              ) : null}
+              {filters.evaluator ? (
+                <Chip
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  label={`Written by ${first ? personName(first.evaluator) : "one member"}`}
+                  onDelete={() => {
+                    update("evaluator", "");
+                  }}
+                />
+              ) : null}
+            </Stack>
+          ) : null}
+
+          {/* Organized grid of filter controls */}
+          <Grid container spacing={2}>
+            {/* Primary categorical filters */}
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <TextField
+                select
+                fullWidth
+                size="small"
+                label="Evaluation type"
+                value={filters.evaluation_type ?? ""}
+                onChange={(e) => {
+                  update("evaluation_type", e.target.value);
+                }}
+              >
+                <MenuItem value="">All evaluations</MenuItem>
+                <MenuItem value="peer">Member evaluations</MenuItem>
+                <MenuItem value="self">Self-evaluations</MenuItem>
+              </TextField>
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <TextField
+                select
+                fullWidth
+                size="small"
+                label="Period"
+                value={filters.cycle ?? ""}
+                onChange={(e) => {
+                  update("cycle", e.target.value);
+                }}
+              >
+                <MenuItem value="">All periods</MenuItem>
+                {(cycles.data ?? []).map((c) => (
+                  <MenuItem key={c.public_id} value={c.public_id}>
+                    {c.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <TextField
+                select
+                fullWidth
+                size="small"
+                label="Moderation"
+                value={filters.moderation ?? ""}
+                onChange={(e) => {
+                  update("moderation", e.target.value);
+                }}
+              >
+                <MenuItem value="">Any status</MenuItem>
+                <MenuItem value="attention">Needs review</MenuItem>
+                {(Object.keys(MODERATION_LABEL) as ModerationStatus[]).map((s) => (
+                  <MenuItem key={s} value={s}>
+                    {MODERATION_LABEL[s]}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <TextField
+                select
+                fullWidth
+                size="small"
+                label="Edited"
+                value={filters.edited ?? ""}
+                onChange={(e) => {
+                  update("edited", e.target.value);
+                }}
+              >
+                <MenuItem value="">Either</MenuItem>
+                <MenuItem value="true">Edited</MenuItem>
+                <MenuItem value="false">Not edited</MenuItem>
+              </TextField>
+            </Grid>
+
+            {/* Criteria, rating range, and date range */}
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                select
+                fullWidth
+                size="small"
+                label="Criterion"
+                value={filters.criterion ?? ""}
+                onChange={(e) => {
+                  update("criterion", e.target.value);
+                }}
+              >
+                <MenuItem value="">Any criterion</MenuItem>
+                {(criteria.data ?? []).map((c) => (
+                  <MenuItem key={c.public_id} value={c.public_id}>
+                    {c.current_version.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <Stack direction="row" spacing={1}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Rating from"
+                  type="number"
+                  value={filters.rating_min ?? ""}
+                  onChange={(e) => {
+                    update("rating_min", e.target.value);
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Rating to"
+                  type="number"
+                  value={filters.rating_max ?? ""}
+                  error={Boolean(fieldError("rating_max"))}
+                  helperText={fieldError("rating_max")}
+                  onChange={(e) => {
+                    update("rating_max", e.target.value);
+                  }}
+                />
+              </Stack>
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <Stack direction="row" spacing={1}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Submitted from"
+                  type="date"
+                  value={filters.submitted_from ?? ""}
+                  onChange={(e) => {
+                    update("submitted_from", e.target.value);
+                  }}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                />
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Submitted to"
+                  type="date"
+                  value={filters.submitted_to ?? ""}
+                  error={Boolean(fieldError("submitted_to"))}
+                  helperText={fieldError("submitted_to")}
+                  onChange={(e) => {
+                    update("submitted_to", e.target.value);
+                  }}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                />
+              </Stack>
+            </Grid>
+          </Grid>
+        </Stack>
+      </Paper>
 
       <ExportButtons
         report="evaluations"

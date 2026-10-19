@@ -340,6 +340,7 @@ _FILTER_PARAMS = [
     OpenApiParameter("submitted_to", str),
     OpenApiParameter("moderation", str, description="VISIBLE, FLAGGED, HIDDEN or attention"),
     OpenApiParameter("edited", bool),
+    OpenApiParameter("evaluation_type", str, description="all, self, or peer"),
 ]
 
 
@@ -377,7 +378,7 @@ class AdminEvaluationListView(_AuditedListView):
         filters.is_valid(raise_exception=True)
         values = dict(filters.validated_data)
         self.audit_filters = _jsonable(values)
-        for key in ("recipient", "evaluator", "cycle", "criterion"):
+        for key in ("recipient", "evaluator", "cycle", "criterion", "evaluation_type"):
             values[key] = str(values.get(key) or "")
         return selectors.admin_list_evaluations(**values)
 

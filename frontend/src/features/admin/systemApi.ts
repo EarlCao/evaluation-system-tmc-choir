@@ -43,3 +43,55 @@ export function auditExportUrl(fileType: "csv" | "xlsx", f: AuditFilters): strin
   const params = new URLSearchParams({ file_type: fileType, ...auditParams(f) });
   return `/api/v1/admin/audit-logs/export/?${params.toString()}`;
 }
+
+export async function fetchBackups(): Promise<import("./systemTypes").BackupItem[]> {
+  return (await apiClient.get<import("./systemTypes").BackupItem[]>("/admin/backups/")).data;
+}
+
+export async function createBackup(
+  input?: import("./systemTypes").BackupCreateInput,
+): Promise<import("./systemTypes").BackupItem> {
+  return (
+    await apiClient.post<import("./systemTypes").BackupItem>("/admin/backups/", input ?? {})
+  ).data;
+}
+
+export async function deleteBackup(filename: string): Promise<void> {
+  await apiClient.delete(`/admin/backups/${encodeURIComponent(filename)}/`);
+}
+
+export function backupDownloadUrl(filename: string): string {
+  return `/api/v1/admin/backups/${encodeURIComponent(filename)}/download/`;
+}
+
+export async function restoreBackup(params: {
+  filename?: string;
+  file?: File;
+}): Promise<import("./systemTypes").RestoreResult> {
+  if (params.file) {
+    const formData = new FormData();
+    formData.append("file", params.file);
+    return (
+      await apiClient.post<import("./systemTypes").RestoreResult>("/admin/backups/restore/", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+    ).data;
+  }
+  return (
+    await apiClient.post<import("./systemTypes").RestoreResult>("/admin/backups/restore/", {
+      filename: params.filename,
+    })
+  ).data;
+}
+
+export async function runRetentionCleanup(): Promise<
+  import("./systemTypes").RetentionCleanupResult
+> {
+  return (
+    await apiClient.post<import("./systemTypes").RetentionCleanupResult>(
+      "/admin/data-management/cleanup/",
+      {},
+    )
+  ).data;
+}
+

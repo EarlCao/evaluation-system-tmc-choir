@@ -166,12 +166,20 @@ export function MemberDirectoryPage() {
   const [searchInput, setSearchInput] = useState(searchParams.get("search") ?? "");
   const search = useDebouncedValue(searchInput.trim());
   const voiceSection = positiveInt(searchParams.get("voice_section"));
+  const rawStatus = searchParams.get("evaluation_status");
+  const evaluationStatus: "all" | "pending" | "completed" =
+    rawStatus === "pending" || rawStatus === "completed" ? rawStatus : "all";
   const page = positiveInt(searchParams.get("page")) ?? 1;
 
   const me = useCurrentUser().data;
   const openCycle = useCurrentCycle().data;
   const sections = useVoiceSections();
-  const directory = useDirectory({ search, voice_section: voiceSection, page });
+  const directory = useDirectory({
+    search,
+    voice_section: voiceSection,
+    evaluation_status: evaluationStatus,
+    page,
+  });
 
   function updateParams(changes: Record<string, string | undefined>) {
     const next = new URLSearchParams(searchParams);
@@ -236,7 +244,7 @@ export function MemberDirectoryPage() {
           onChange={(event) => {
             setSearchInput(event.target.value);
           }}
-          sx={{ flex: 2 }}
+          sx={{ flex: 2, minWidth: { sm: 200 } }}
         />
         <TextField
           select
@@ -245,7 +253,7 @@ export function MemberDirectoryPage() {
           onChange={(event) => {
             updateParams({ voice_section: event.target.value || undefined, page: undefined });
           }}
-          sx={{ flex: 1, minWidth: 180 }}
+          sx={{ flex: 1, minWidth: 160 }}
         >
           <MenuItem value="">All sections</MenuItem>
           {(sections.data ?? []).map((section) => (
@@ -254,6 +262,51 @@ export function MemberDirectoryPage() {
             </MenuItem>
           ))}
         </TextField>
+        <TextField
+          select
+          label="Evaluation status"
+          value={evaluationStatus}
+          onChange={(event) => {
+            updateParams({
+              evaluation_status: event.target.value === "all" ? undefined : event.target.value,
+              page: undefined,
+            });
+          }}
+          sx={{ flex: 1, minWidth: 200 }}
+        >
+          <MenuItem value="all">All members</MenuItem>
+          <MenuItem value="pending">Haven&apos;t evaluated yet</MenuItem>
+          <MenuItem value="completed">Completed evaluations</MenuItem>
+        </TextField>
+      </Stack>
+
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{ flexWrap: "wrap", gap: 1 }}
+        aria-label="Evaluation status quick filters"
+      >
+        <Chip
+          label="All"
+          clickable
+          color={evaluationStatus === "all" ? "primary" : "default"}
+          variant={evaluationStatus === "all" ? "filled" : "outlined"}
+          onClick={() => updateParams({ evaluation_status: undefined, page: undefined })}
+        />
+        <Chip
+          label="Haven't evaluated / comments yet"
+          clickable
+          color={evaluationStatus === "pending" ? "primary" : "default"}
+          variant={evaluationStatus === "pending" ? "filled" : "outlined"}
+          onClick={() => updateParams({ evaluation_status: "pending", page: undefined })}
+        />
+        <Chip
+          label="Completed"
+          clickable
+          color={evaluationStatus === "completed" ? "success" : "default"}
+          variant={evaluationStatus === "completed" ? "filled" : "outlined"}
+          onClick={() => updateParams({ evaluation_status: "completed", page: undefined })}
+        />
       </Stack>
 
       {directory.isError ? (

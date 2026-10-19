@@ -77,6 +77,14 @@ const ADMIN_LINKS: { to: string; label: string; end: boolean; icon: ReactNode }[
     icon: <NavIcon d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />,
   },
   {
+    to: "/admin/data-management",
+    label: "Data Management",
+    end: false,
+    icon: (
+      <NavIcon d="M12 2C6.48 2 2 4.02 2 6.5v11C2 19.98 6.48 22 12 22s10-2.02 10-4.5v-11C22 4.02 17.52 2 12 2zm0 2c4.42 0 8 1.43 8 2.5S16.42 9 12 9s-8-1.43-8-2.5S7.58 4 12 4zm8 13.5c0 1.07-3.58 2.5-8 2.5s-8-1.43-8-2.5V15c1.94 1.25 5.02 2 8 2s6.06-.75 8-2v2.5zm0-4.5c0 1.07-3.58 2.5-8 2.5s-8-1.43-8-2.5V10.5c1.94 1.25 5.02 2 8 2s6.06-.75 8-2V13z" />
+    ),
+  },
+  {
     to: "/admin/settings",
     label: "Settings",
     end: false,

@@ -55,6 +55,7 @@ export interface MemberDetail extends DirectoryMember {
 export interface DirectoryParams {
   search?: string;
   voice_section?: number;
+  evaluation_status?: "all" | "pending" | "completed";
   page?: number;
 }
 

@@ -361,7 +361,9 @@ def own_data_export(*, user) -> dict:
         "member_profile": (
             {
                 "voice_section": profile.voice_section.name if profile.voice_section else None,
-                "membership_status": profile.membership_status,
+                "membership_status": getattr(
+                    profile, "membership_status", getattr(profile.user, "status", None)
+                ),
                 "joined_choir_on": (
                     profile.joined_choir_on.isoformat() if profile.joined_choir_on else None
                 ),
