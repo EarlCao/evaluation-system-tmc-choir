@@ -20,7 +20,16 @@ export function AdminLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <Box
+      sx={{
+        height: "100dvh",
+        minHeight: "100vh",
+        maxHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
       <SkipLink />
       <AppHeader
         home="/admin"
@@ -37,17 +46,23 @@ export function AdminLayout() {
         open={mobileNavOpen}
         onClose={() => setMobileNavOpen(false)}
         ModalProps={{ keepMounted: true }}
-        PaperProps={{
-          sx: {
-            width: 280,
-            bgcolor: "background.paper",
-            boxSizing: "border-box",
+        slotProps={{
+          paper: {
+            sx: {
+              width: 280,
+              bgcolor: "background.paper",
+              boxSizing: "border-box",
+              display: "flex",
+              flexDirection: "column",
+              height: "100%",
+            },
           },
         }}
       >
         <Box
           sx={{
             p: 2,
+            flexShrink: 0,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -76,22 +91,29 @@ export function AdminLayout() {
             </SvgIcon>
           </IconButton>
         </Box>
-        <AdminNav onNavigate={() => setMobileNavOpen(false)} />
+        <Box sx={{ flexGrow: 1, overflowY: "auto", overscrollBehavior: "contain" }}>
+          <AdminNav onNavigate={() => setMobileNavOpen(false)} />
+        </Box>
       </Drawer>
 
       <Box
         sx={{
           flexGrow: 1,
+          minHeight: 0,
           display: "flex",
           flexDirection: "row",
+          overflow: "hidden",
         }}
       >
-        {/* Desktop Sidebar (hidden on mobile) */}
+        {/* Desktop Sidebar (fixed in place, scrolls independently if needed) */}
         <Box
           sx={{
             display: { xs: "none", md: "block" },
             width: 256,
             flexShrink: 0,
+            height: "100%",
+            overflowY: "auto",
+            overscrollBehavior: "contain",
             borderRight: 1,
             borderColor: "divider",
             bgcolor: "background.paper",
@@ -99,15 +121,22 @@ export function AdminLayout() {
         >
           <AdminNav />
         </Box>
-        <Container
+        <Box
           component="main"
           id="main"
           tabIndex={-1}
-          maxWidth="xl"
-          sx={{ outline: "none", flexGrow: 1, py: { xs: 2, md: 3 } }}
+          sx={{
+            outline: "none",
+            flexGrow: 1,
+            minWidth: 0,
+            height: "100%",
+            overflowY: "auto",
+          }}
         >
-          <Outlet />
-        </Container>
+          <Container maxWidth="xl" sx={{ py: { xs: 2, md: 3 } }}>
+            <Outlet />
+          </Container>
+        </Box>
       </Box>
     </Box>
   );
