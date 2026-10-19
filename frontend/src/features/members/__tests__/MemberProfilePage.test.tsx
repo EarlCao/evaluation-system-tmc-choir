@@ -52,9 +52,9 @@ describe("MemberProfilePage", () => {
     renderRoute(`/app/members/${self.public_id}`);
     await userEvent.type(await screen.findByLabelText(/about you/i), "Second alto.");
     await userEvent.click(screen.getByRole("button", { name: /save bio/i }));
-    expect(await screen.findByText("Your bio was saved.")).toBeVisible();
+    expect(await screen.findByText("Your profile was saved.")).toBeVisible();
     expect(screen.getAllByRole("link", { name: /evaluate yourself/i }).length).toBeGreaterThan(0);
-    expect(body).toEqual({ bio: "Second alto." });
+    expect(body).toEqual({ bio: "Second alto.", is_officer: false, officer_position: "" });
   });
 
   it("displays another member's public self-evaluation ratings and comments", async () => {

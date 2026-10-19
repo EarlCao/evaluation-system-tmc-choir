@@ -45,6 +45,7 @@ describe("Accessibility pass (NFR-05)", () => {
     renderRoute("/login");
 
     await screen.findByRole("heading", { name: /log in/i });
+    (document.activeElement as HTMLElement | null)?.blur();
     await user.tab();
 
     const skip = screen.getByRole("link", { name: "Skip to content" });
@@ -63,7 +64,7 @@ describe("Accessibility pass (NFR-05)", () => {
     loginView.unmount();
 
     const registerView = renderRoute("/register");
-    await screen.findByRole("heading", { level: 1, name: /create your account/i });
+    await screen.findByRole("heading", { level: 1, name: /create an account/i });
     assertAccessibleControls(registerView.container);
   });
 
@@ -75,7 +76,7 @@ describe("Accessibility pass (NFR-05)", () => {
       ),
     );
     const view = renderRoute("/app/members");
-    await screen.findByRole("heading", { level: 1, name: /choir directory/i });
+    await screen.findByRole("heading", { level: 1, name: /choir members/i });
 
     expect(screen.getByRole("navigation", { name: "Main" })).toBeInTheDocument();
     expect(screen.getByRole("main")).toHaveAttribute("id", "main");

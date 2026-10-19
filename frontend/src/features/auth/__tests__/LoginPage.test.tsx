@@ -15,6 +15,10 @@ function sessionServer(user: CurrentUser, password = "Correct-Horse-1") {
   const bodies: unknown[] = [];
   server.use(
     http.get(api("/auth/me/"), () => (current ? HttpResponse.json(current) : notAuthenticated())),
+    http.post(api("/auth/logout/"), () => {
+      current = null;
+      return HttpResponse.json({ ok: true });
+    }),
     http.post(api("/auth/login/"), async ({ request }) => {
       const body = (await request.json()) as { identifier: string; password: string };
       bodies.push(body);

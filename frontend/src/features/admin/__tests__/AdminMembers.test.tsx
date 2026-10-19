@@ -187,6 +187,8 @@ describe("Admin members", () => {
       voice_section: 4,
       is_evaluable: false,
       joined_choir_on: null,
+      is_officer: false,
+      officer_position: "",
     });
   });
 });

@@ -73,6 +73,8 @@ describe("RegisterPage", () => {
       username: "nova_q1",
       email: "nova@example.org",
       voice_section: 2,
+      is_officer: false,
+      officer_position: "",
       password: "Sing-Loud-And-Clear-1", // gitleaks:allow (fake test password)
     });
   });
