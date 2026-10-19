@@ -31,12 +31,14 @@ import {
   useCreateCommentPrompt,
   useCriteria,
   useDeleteCategory,
+  useDeleteCommentPrompt,
+  useDeleteCriterion,
   useReorderCommentPrompts,
   useReorderCriteria,
   useUpdateCommentPrompt,
   useUpdateCriterion,
 } from "../configQueries";
-import type { Category, Criterion } from "../configTypes";
+import type { Category, CommentPrompt, Criterion } from "../configTypes";
 
 const fmt = (n: number) => String(Number(n.toFixed(2)));
 
@@ -59,16 +61,19 @@ function CommentPromptsSection({ parentShowArchived }: { parentShowArchived: boo
   const create = useCreateCommentPrompt();
   const update = useUpdateCommentPrompt();
   const archive = useArchiveCommentPrompt();
+  const remove = useDeleteCommentPrompt();
   const reorder = useReorderCommentPrompts();
   const [newLabel, setNewLabel] = useState("");
   const [newRequired, setNewRequired] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingLabel, setEditingLabel] = useState("");
+  const [deletingPrompt, setDeletingPrompt] = useState<CommentPrompt | null>(null);
 
   const list = prompts.data ?? [];
   const active = list.filter((p) => !p.is_archived);
   const visibleRows = includeArchived ? list : active;
-  const mutationError = create.error ?? update.error ?? archive.error ?? reorder.error;
+  const mutationError =
+    create.error ?? update.error ?? archive.error ?? remove.error ?? reorder.error;
 
   function movePrompt(index: number, delta: -1 | 1) {
     const order = active.map((p) => p.public_id);
@@ -255,7 +260,7 @@ function CommentPromptsSection({ parentShowArchived }: { parentShowArchived: boo
                           </Button>
                           <Button
                             size="small"
-                            color="error"
+                            color="warning"
                             disabled={archive.isPending}
                             onClick={() => {
                               archive.mutate(p.public_id);
@@ -265,6 +270,16 @@ function CommentPromptsSection({ parentShowArchived }: { parentShowArchived: boo
                           </Button>
                         </>
                       )}
+                      <Button
+                        size="small"
+                        color="error"
+                        disabled={remove.isPending}
+                        onClick={() => {
+                          setDeletingPrompt(p);
+                        }}
+                      >
+                        Delete
+                      </Button>
                     </TableCell>
                   </TableRow>
                 );
@@ -317,6 +332,30 @@ function CommentPromptsSection({ parentShowArchived }: { parentShowArchived: boo
           Add prompt
         </Button>
       </Stack>
+      <ConfirmDialog
+        open={deletingPrompt !== null}
+        title={
+          deletingPrompt
+            ? `Delete prompt “${deletingPrompt.label}”?`
+            : "Delete this comment prompt?"
+        }
+        description="This permanently removes this comment prompt from the configuration."
+        confirmLabel="Delete prompt"
+        destructive
+        pending={remove.isPending}
+        onClose={() => {
+          setDeletingPrompt(null);
+        }}
+        onConfirm={() => {
+          if (deletingPrompt) {
+            remove.mutate(deletingPrompt.public_id, {
+              onSettled: () => {
+                setDeletingPrompt(null);
+              },
+            });
+          }
+        }}
+      />
     </Paper>
   );
 }
@@ -407,15 +446,17 @@ function Categories() {
   );
 }
 
-/** EVAL-02 / CFG-01..03: create, rename, reorder, enable/disable and archive criteria. */
+/** EVAL-02 / CFG-01..03: create, rename, reorder, enable/disable, archive, and delete criteria. */
 export function AdminCriteriaPage() {
   const [showArchived, setShowArchived] = useState(false);
   const criteria = useCriteria(showArchived);
   const update = useUpdateCriterion();
   const archive = useArchiveCriterion();
+  const remove = useDeleteCriterion();
   const reorder = useReorderCriteria();
   const [editing, setEditing] = useState<Criterion | "new" | null>(null);
   const [archiving, setArchiving] = useState<Criterion | null>(null);
+  const [deleting, setDeleting] = useState<Criterion | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   if (criteria.isPending) return <FullPageSpinner label="Loading criteria" />;
@@ -428,7 +469,7 @@ export function AdminCriteriaPage() {
     );
   }
   const active = criteria.data.filter((c) => !c.is_archived);
-  const error = update.error ?? archive.error ?? reorder.error;
+  const error = update.error ?? archive.error ?? remove.error ?? reorder.error;
 
   function move(index: number, delta: -1 | 1) {
     const order = active.map((c) => c.public_id);
@@ -589,7 +630,7 @@ export function AdminCriteriaPage() {
                         </Button>
                         <Button
                           size="small"
-                          color="error"
+                          color="warning"
                           onClick={() => {
                             setArchiving(c);
                           }}
@@ -598,6 +639,16 @@ export function AdminCriteriaPage() {
                         </Button>
                       </>
                     )}
+                    <Button
+                      size="small"
+                      color="error"
+                      disabled={remove.isPending}
+                      onClick={() => {
+                        setDeleting(c);
+                      }}
+                    >
+                      Delete
+                    </Button>
                   </TableCell>
                 </TableRow>
               );
@@ -636,6 +687,33 @@ export function AdminCriteriaPage() {
               },
               onSettled: () => {
                 setArchiving(null);
+              },
+            });
+          }
+        }}
+      />
+      <ConfirmDialog
+        open={deleting !== null}
+        title={
+          deleting
+            ? `Delete criterion “${deleting.current_version.name}”?`
+            : "Delete this criterion?"
+        }
+        description="This permanently removes this criterion. If you only want to hide it from new forms, use Archive instead."
+        confirmLabel="Delete criterion"
+        destructive
+        pending={remove.isPending}
+        onClose={() => {
+          setDeleting(null);
+        }}
+        onConfirm={() => {
+          if (deleting) {
+            remove.mutate(deleting.public_id, {
+              onSuccess: () => {
+                setNotice("Criterion deleted.");
+              },
+              onSettled: () => {
+                setDeleting(null);
               },
             });
           }

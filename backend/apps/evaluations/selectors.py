@@ -54,8 +54,7 @@ def get_category(*, pk: int) -> CriterionCategory:
 
 # Comment prompts -------------------------------------------------------------
 def ensure_default_comment_prompts() -> None:
-    existing_keys = set(CommentPrompt.objects.values_list("key", flat=True))
-    if not existing_keys or existing_keys <= {"comment", "suggestion"}:
+    if not CommentPrompt.objects.exists():
         for i, p in enumerate(DEFAULT_COMMENT_PROMPTS, start=1):
             CommentPrompt.objects.get_or_create(
                 key=p["key"],

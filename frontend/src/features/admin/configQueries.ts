@@ -66,6 +66,7 @@ export const useUpdateCriterion = () =>
     api.updateCriterion(a.id, a.changes),
   );
 export const useArchiveCriterion = () => useConfigMutation(api.archiveCriterion);
+export const useDeleteCriterion = () => useConfigMutation(api.deleteCriterion);
 export const useReorderCriteria = () => useConfigMutation(api.reorderCriteria);
 export const useCreateCommentPrompt = () => useConfigMutation(api.createCommentPrompt);
 export const useUpdateCommentPrompt = () =>
@@ -73,6 +74,7 @@ export const useUpdateCommentPrompt = () =>
     api.updateCommentPrompt(a.id, a.changes),
   );
 export const useArchiveCommentPrompt = () => useConfigMutation(api.archiveCommentPrompt);
+export const useDeleteCommentPrompt = () => useConfigMutation(api.deleteCommentPrompt);
 export const useReorderCommentPrompts = () => useConfigMutation(api.reorderCommentPrompts);
 export const useCreateForm = () => useConfigMutation(api.createForm);
 export const useUpdateForm = () =>

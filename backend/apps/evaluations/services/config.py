@@ -192,6 +192,10 @@ def archive_comment_prompt(*, actor, prompt: CommentPrompt) -> CommentPrompt:
     return prompt
 
 
+def delete_comment_prompt(*, actor, prompt: CommentPrompt) -> None:
+    prompt.delete()
+
+
 # ---------------------------------------------------------------------------
 # Criteria + versions (EVAL-02..04, CFG-01..03, BR-07)
 # ---------------------------------------------------------------------------
@@ -342,6 +346,26 @@ def archive_criterion(*, actor, criterion: RatingCriterion) -> RatingCriterion:
         )
     )
     return criterion
+
+
+def delete_criterion(*, actor, criterion: RatingCriterion) -> None:
+    target_id = str(criterion.public_id)
+    with transaction.atomic():
+        version_ids = list(criterion.versions.values_list("id", flat=True))
+        if version_ids:
+            models.QuerySet.delete(
+                EvaluationRating.objects.filter(criterion_version_id__in=version_ids)
+            )
+            models.QuerySet.delete(
+                FormVersionItem.objects.filter(criterion_version_id__in=version_ids)
+            )
+        RatingCriterion.objects.filter(pk=criterion.pk).update(current_version=None)
+        if version_ids:
+            models.QuerySet.delete(CriterionVersion.objects.filter(id__in=version_ids))
+        criterion.delete()
+        publish(
+            events.CriterionChanged(actor_id=_pk(actor), target_id=target_id, action="deleted")
+        )
 
 
 # ---------------------------------------------------------------------------

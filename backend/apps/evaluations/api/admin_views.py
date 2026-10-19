@@ -104,6 +104,13 @@ class CriterionDetailView(AdminView):
             s.CriterionSerializer(selectors.get_criterion(public_id=criterion.public_id)).data
         )
 
+    @extend_schema(request=None, responses={204: None})
+    def delete(self, request, public_id):
+        services.delete_criterion(
+            actor=request.user, criterion=selectors.get_criterion(public_id=public_id)
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class CriterionArchiveView(AdminView):
     @extend_schema(request=None, responses=s.CriterionSerializer)
@@ -177,6 +184,13 @@ class CommentPromptDetailView(AdminView):
                 selectors.get_comment_prompt(public_id=prompt.public_id)
             ).data
         )
+
+    @extend_schema(request=None, responses={204: None})
+    def delete(self, request, public_id):
+        services.delete_comment_prompt(
+            actor=request.user, prompt=selectors.get_comment_prompt(public_id=public_id)
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class CommentPromptArchiveView(AdminView):

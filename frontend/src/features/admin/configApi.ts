@@ -40,6 +40,9 @@ export const updateCriterion = async (
 ) => (await apiClient.patch<Criterion>(`/admin/criteria/${id}/`, changes)).data;
 export const archiveCriterion = async (id: string) =>
   (await apiClient.post<Criterion>(`/admin/criteria/${id}/archive/`)).data;
+export const deleteCriterion = async (id: string) => {
+  await apiClient.delete(`/admin/criteria/${id}/`);
+};
 export const reorderCriteria = async (order: string[]) =>
   (await apiClient.post<Criterion[]>("/admin/criteria/reorder/", { order })).data;
 export const fetchCriterionVersions = async (id: string) =>
@@ -60,6 +63,9 @@ export const updateCommentPrompt = async (
 ) => (await apiClient.patch<CommentPrompt>(`/admin/comment-prompts/${id}/`, changes)).data;
 export const archiveCommentPrompt = async (id: string) =>
   (await apiClient.post<CommentPrompt>(`/admin/comment-prompts/${id}/archive/`)).data;
+export const deleteCommentPrompt = async (id: string) => {
+  await apiClient.delete(`/admin/comment-prompts/${id}/`);
+};
 export const reorderCommentPrompts = async (order: string[]) =>
   (await apiClient.post<CommentPrompt[]>("/admin/comment-prompts/reorder/", { order })).data;
 
