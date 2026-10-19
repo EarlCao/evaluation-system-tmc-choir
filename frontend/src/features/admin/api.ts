@@ -36,7 +36,13 @@ export async function fetchAdminMember(id: string): Promise<AdminMember> {
 
 export async function updateAdminProfile(
   id: string,
-  changes: { voice_section?: number; is_evaluable?: boolean; joined_choir_on?: string | null },
+  changes: {
+    voice_section?: number;
+    is_evaluable?: boolean;
+    is_officer?: boolean;
+    officer_position?: string;
+    joined_choir_on?: string | null;
+  },
 ): Promise<AdminMember> {
   return (await apiClient.patch<AdminMember>(member(id), changes)).data;
 }

@@ -1,6 +1,8 @@
 import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import Link from "@mui/material/Link";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
@@ -23,7 +25,10 @@ const BIO_MAX = 500;
 function BioEditor({ member }: { member: MemberDetail }) {
   const update = useUpdateOwnBio();
   const [bio, setBio] = useState(member.bio);
+  const [isOfficer, setIsOfficer] = useState(Boolean(member.is_officer));
+  const [officerPosition, setOfficerPosition] = useState(member.officer_position ?? "");
   const tooLong = bio.length > BIO_MAX;
+  const missingPosition = isOfficer && !officerPosition.trim();
 
   return (
     <Stack
@@ -32,14 +37,50 @@ function BioEditor({ member }: { member: MemberDetail }) {
       aria-label="Edit your bio"
       onSubmit={(event) => {
         event.preventDefault();
-        if (!tooLong) update.mutate(bio);
+        if (!tooLong && !missingPosition) {
+          update.mutate({
+            bio,
+            is_officer: isOfficer,
+            officer_position: isOfficer ? officerPosition.trim() : "",
+          });
+        }
       }}
     >
       <FormAlert message={update.isError ? update.error.message : undefined} />
       <FormAlert
         severity="success"
-        message={update.isSuccess ? "Your bio was saved." : undefined}
+        message={update.isSuccess ? "Your profile was saved." : undefined}
       />
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={isOfficer}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              setIsOfficer(checked);
+              if (!checked) setOfficerPosition("");
+            }}
+          />
+        }
+        label="I am an officer of the choir"
+      />
+      {isOfficer ? (
+        <TextField
+          label="Officer position"
+          placeholder="e.g. President, Vice President, Secretary, Section Leader"
+          value={officerPosition}
+          onChange={(e) => {
+            setOfficerPosition(e.target.value);
+          }}
+          error={missingPosition}
+          helperText={
+            missingPosition
+              ? "Enter the position you handle in the choir."
+              : "Your position in the choir."
+          }
+          slotProps={{ htmlInput: { maxLength: 100 } }}
+        />
+      ) : null}
       <TextField
         label="About you"
         multiline
@@ -52,7 +93,11 @@ function BioEditor({ member }: { member: MemberDetail }) {
         helperText={`${String(bio.length)}/${String(BIO_MAX)}${tooLong ? " (too long)" : ""}`}
       />
       <div>
-        <Button type="submit" variant="contained" disabled={update.isPending || tooLong}>
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={update.isPending || tooLong || missingPosition}
+        >
           Save bio
         </Button>
       </div>
@@ -76,8 +121,7 @@ function PublicSelfEvaluationCard({
       <Stack spacing={2}>
         <Stack
           direction={{ xs: "column", sm: "row" }}
-          justifyContent="space-between"
-          alignItems={{ sm: "center" }}
+          sx={{ justifyContent: "space-between", alignItems: { sm: "center" } }}
           spacing={1}
         >
           <div>
@@ -124,8 +168,7 @@ function PublicSelfEvaluationCard({
                   <Stack
                     key={r.criterion_version}
                     direction="row"
-                    justifyContent="space-between"
-                    sx={{ gap: 2 }}
+                    sx={{ justifyContent: "space-between", gap: 2 }}
                   >
                     <Typography component="dt" sx={{ fontWeight: 500 }}>
                       {r.criterion_name}
@@ -186,8 +229,14 @@ export function MemberProfilePage() {
             <Typography variant="h4" component="h1">
               {memberName(data)}
             </Typography>
-            <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+            <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: "wrap", gap: 0.5 }}>
               <Chip label={data.voice_section.name} />
+              {data.is_officer ? (
+                <Chip
+                  color="secondary"
+                  label={data.officer_position ? `Officer: ${data.officer_position}` : "Choir Officer"}
+                />
+              ) : null}
               {data.is_self ? <Chip label="You" color="primary" variant="outlined" /> : null}
             </Stack>
           </div>

@@ -1,5 +1,6 @@
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Link from "@mui/material/Link";
@@ -48,6 +49,8 @@ function ProfileForm({ member }: { member: AdminMember }) {
   const profile = member.profile;
   const [section, setSection] = useState(String(profile?.voice_section.id ?? ""));
   const [evaluable, setEvaluable] = useState(profile?.is_evaluable ?? true);
+  const [isOfficer, setIsOfficer] = useState(Boolean(profile?.is_officer));
+  const [officerPosition, setOfficerPosition] = useState(profile?.officer_position ?? "");
   const [joined, setJoined] = useState(profile?.joined_choir_on ?? "");
   if (!profile) {
     return (
@@ -56,6 +59,8 @@ function ProfileForm({ member }: { member: AdminMember }) {
       </Typography>
     );
   }
+  const missingPosition = isOfficer && !officerPosition.trim();
+
   return (
     <Stack
       component="form"
@@ -63,9 +68,12 @@ function ProfileForm({ member }: { member: AdminMember }) {
       aria-label="Choir profile"
       onSubmit={(e) => {
         e.preventDefault();
+        if (missingPosition) return;
         update.mutate({
           voice_section: Number(section),
           is_evaluable: evaluable,
+          is_officer: isOfficer,
+          officer_position: isOfficer ? officerPosition.trim() : "",
           joined_choir_on: joined || null,
         });
       }}
@@ -91,6 +99,37 @@ function ProfileForm({ member }: { member: AdminMember }) {
       </TextField>
       <FormControlLabel
         control={
+          <Checkbox
+            checked={isOfficer}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              setIsOfficer(checked);
+              if (!checked) setOfficerPosition("");
+            }}
+          />
+        }
+        label="Officer of the choir"
+      />
+      {isOfficer ? (
+        <TextField
+          label="Officer position"
+          placeholder="e.g. President, Vice President, Secretary, Section Leader"
+          value={officerPosition}
+          onChange={(e) => {
+            setOfficerPosition(e.target.value);
+          }}
+          error={missingPosition}
+          helperText={
+            missingPosition
+              ? "Enter the position this officer handles."
+              : "Specify the member's officer position in the choir."
+          }
+          slotProps={{ htmlInput: { maxLength: 100 } }}
+          sx={{ maxWidth: 420 }}
+        />
+      ) : null}
+      <FormControlLabel
+        control={
           <Switch
             checked={evaluable}
             onChange={(e) => {
@@ -111,7 +150,7 @@ function ProfileForm({ member }: { member: AdminMember }) {
         sx={{ maxWidth: 280 }}
       />
       <div>
-        <Button type="submit" variant="contained" disabled={update.isPending}>
+        <Button type="submit" variant="contained" disabled={update.isPending || missingPosition}>
           Save profile
         </Button>
       </div>
@@ -183,6 +222,17 @@ export function AdminMemberPage() {
         <Stack direction="row" spacing={1} sx={{ mt: 1, alignItems: "center", flexWrap: "wrap" }}>
           <StatusChip status={m.status} />
           <Chip size="small" label={m.role === "SUPER_ADMIN" ? "Super Admin" : "Member"} />
+          {m.profile?.is_officer ? (
+            <Chip
+              size="small"
+              color="secondary"
+              label={
+                m.profile.officer_position
+                  ? `Officer: ${m.profile.officer_position}`
+                  : "Choir Officer"
+              }
+            />
+          ) : null}
           <Typography variant="body2" color="text.secondary">
             {m.username} · {m.email}
             {m.email_verified ? " (verified)" : ""}

@@ -19,7 +19,10 @@ export async function fetchMember(publicId: string): Promise<MemberDetail> {
   return data;
 }
 
-export async function updateOwnBio(bio: string): Promise<MemberDetail> {
-  const { data } = await apiClient.patch<MemberDetail>("/members/me/", { bio });
+export async function updateOwnBio(
+  input: string | { bio?: string; is_officer?: boolean; officer_position?: string },
+): Promise<MemberDetail> {
+  const payload = typeof input === "string" ? { bio: input } : input;
+  const { data } = await apiClient.patch<MemberDetail>("/members/me/", payload);
   return data;
 }

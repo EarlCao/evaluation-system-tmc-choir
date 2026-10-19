@@ -34,8 +34,14 @@ export const registerSchema = z
       ),
     email: z.string().trim().pipe(z.email("Enter a valid email address.")),
     voice_section: z.string().min(1, "Choose your voice section."),
+    is_officer: z.boolean(),
+    officer_position: z.string().trim().max(100, "Position is too long."),
     password: newPassword,
     confirm_password: z.string(),
+  })
+  .refine((data) => !data.is_officer || data.officer_position.trim().length > 0, {
+    message: "Enter the officer position you handle.",
+    path: ["officer_position"],
   })
   .refine((data) => data.password === data.confirm_password, {
     message: "The passwords don't match.",
@@ -50,6 +56,8 @@ export interface RegisterPayload {
   username: string;
   email: string;
   voice_section: number;
+  is_officer?: boolean;
+  officer_position?: string;
   password: string;
 }
 

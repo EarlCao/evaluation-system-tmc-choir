@@ -1,12 +1,14 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
 import Divider from "@mui/material/Divider";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import Link from "@mui/material/Link";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { Link as RouterLink } from "react-router";
 
 import { AuthCard } from "@/components/AuthCard";
@@ -31,6 +33,7 @@ const SERVER_FIELDS = [
   "username",
   "email",
   "voice_section",
+  "officer_position",
   "password",
 ] as const;
 
@@ -43,7 +46,7 @@ export function RegisterPage() {
   const [registeredEmail, setRegisteredEmail] = useState("");
   const [otpVerified, setOtpVerified] = useState<string | null>(null);
 
-  const { control, handleSubmit, setError, formState } = useForm<RegisterInput>({
+  const { control, handleSubmit, setError, setValue, formState } = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       first_name: "",
@@ -51,25 +54,36 @@ export function RegisterPage() {
       username: "",
       email: "",
       voice_section: "",
+      is_officer: false,
+      officer_position: "",
       password: "",
       confirm_password: "",
     },
   });
+
+  const isOfficer = useWatch({ control, name: "is_officer" });
 
   const otpForm = useForm<VerifyOtpInput>({
     resolver: zodResolver(verifyOtpSchema),
     defaultValues: { otp: "" },
   });
 
-  const onSubmit = handleSubmit(async ({ confirm_password: _confirm, voice_section, ...rest }) => {
-    try {
-      const response = await register.mutateAsync({ ...rest, voice_section: Number(voice_section) });
-      setRegisteredEmail(rest.email.trim());
-      setResult(response);
-    } catch (error) {
-      applyServerErrors(error, setError, SERVER_FIELDS);
-    }
-  });
+  const onSubmit = handleSubmit(
+    async ({ confirm_password: _confirm, voice_section, is_officer, officer_position, ...rest }) => {
+      try {
+        const response = await register.mutateAsync({
+          ...rest,
+          voice_section: Number(voice_section),
+          is_officer,
+          officer_position: is_officer ? officer_position.trim() : "",
+        });
+        setRegisteredEmail(rest.email.trim());
+        setResult(response);
+      } catch (error) {
+        applyServerErrors(error, setError, SERVER_FIELDS);
+      }
+    },
+  );
 
   const onVerifyOtp = otpForm.handleSubmit(async ({ otp }) => {
     try {
@@ -196,6 +210,36 @@ export function RegisterPage() {
             </MenuItem>
           ))}
         </FormTextField>
+        <Controller
+          name="is_officer"
+          control={control}
+          render={({ field }) => (
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={Boolean(field.value)}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    field.onChange(checked);
+                    if (!checked) {
+                      setValue("officer_position", "", { shouldValidate: false });
+                    }
+                  }}
+                />
+              }
+              label="I am an officer of the choir"
+            />
+          )}
+        />
+        {isOfficer ? (
+          <FormTextField
+            name="officer_position"
+            control={control}
+            label="Officer position"
+            placeholder="e.g. President, Vice President, Secretary, Section Leader"
+            helperText="Enter the position you handle in the choir."
+          />
+        ) : null}
         <PasswordField
           name="password"
           control={control}

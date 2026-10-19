@@ -30,6 +30,8 @@ class MemberProfile(TimeStampedModel):
     voice_section = models.ForeignKey(
         VoiceSection, on_delete=models.PROTECT, related_name="members"
     )
+    is_officer = models.BooleanField(default=False)
+    officer_position = models.CharField(max_length=100, blank=True, default="")
     joined_choir_on = models.DateField(null=True, blank=True)
     bio = models.TextField(blank=True, max_length=500)
     is_evaluable = models.BooleanField(

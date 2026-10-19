@@ -148,6 +148,7 @@ export function AdminMembersPage() {
                   <TableCell>Name</TableCell>
                   <TableCell>Email</TableCell>
                   <TableCell>Voice section</TableCell>
+                  <TableCell>Officer position</TableCell>
                   <TableCell>Role</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Joined</TableCell>
@@ -163,6 +164,17 @@ export function AdminMembersPage() {
                     </TableCell>
                     <TableCell>{m.email}</TableCell>
                     <TableCell>{m.profile?.voice_section.name ?? "—"}</TableCell>
+                    <TableCell>
+                      {m.profile?.is_officer ? (
+                        <Chip
+                          size="small"
+                          color="secondary"
+                          label={m.profile.officer_position || "Officer"}
+                        />
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
                     <TableCell>{m.role === "SUPER_ADMIN" ? "Super Admin" : "Member"}</TableCell>
                     <TableCell>
                       <StatusChip status={m.status} />

@@ -59,6 +59,15 @@ function MemberCard({
           </Typography>
           <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: "wrap", gap: 0.5 }}>
             <Chip size="small" label={member.voice_section.name} />
+            {member.is_officer ? (
+              <Chip
+                size="small"
+                color="secondary"
+                label={
+                  member.officer_position ? `Officer: ${member.officer_position}` : "Choir Officer"
+                }
+              />
+            ) : null}
             {isSelf ? <Chip size="small" label="You" color="primary" variant="outlined" /> : null}
             {member.has_self_evaluation ? (
               <Chip

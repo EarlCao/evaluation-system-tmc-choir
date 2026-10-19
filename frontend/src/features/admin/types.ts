@@ -54,6 +54,8 @@ export interface AdminMember {
   profile: {
     voice_section: AdminVoiceSection;
     is_evaluable: boolean;
+    is_officer?: boolean;
+    officer_position?: string;
     joined_choir_on: string | null;
     bio: string;
   } | null;

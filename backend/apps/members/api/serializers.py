@@ -27,6 +27,10 @@ class RegisterSerializer(serializers.Serializer):
     first_name = serializers.CharField(max_length=150)
     last_name = serializers.CharField(max_length=150)
     voice_section = serializers.IntegerField(min_value=1)
+    is_officer = serializers.BooleanField(required=False, default=False)
+    officer_position = serializers.CharField(
+        max_length=100, required=False, allow_blank=True, default=""
+    )
 
     def validate(self, attrs):
         confirm = attrs.pop("confirm_password", None)
@@ -34,6 +38,14 @@ class RegisterSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 {"confirm_password": ["The passwords don't match."]}
             )
+        is_officer = bool(attrs.get("is_officer", False))
+        position = str(attrs.get("officer_position", "")).strip()
+        if is_officer and not position:
+            raise serializers.ValidationError(
+                {"officer_position": ["Enter the officer position you handle."]}
+            )
+        attrs["is_officer"] = is_officer
+        attrs["officer_position"] = position if is_officer else ""
         return attrs
 
 
@@ -61,6 +73,8 @@ class DirectoryEntrySerializer(serializers.ModelSerializer):
             "last_name",
             "display_name",
             "voice_section",
+            "is_officer",
+            "officer_position",
             "has_self_evaluation",
             "self_evaluation_summary",
         ]
@@ -90,4 +104,10 @@ class MemberDetailSerializer(DirectoryEntrySerializer):
 
 
 class OwnProfileUpdateSerializer(serializers.Serializer):
-    bio = serializers.CharField(max_length=500, allow_blank=True, trim_whitespace=True)
+    bio = serializers.CharField(
+        max_length=500, required=False, allow_blank=True, trim_whitespace=True
+    )
+    is_officer = serializers.BooleanField(required=False)
+    officer_position = serializers.CharField(
+        max_length=100, required=False, allow_blank=True, trim_whitespace=True
+    )

@@ -131,6 +131,8 @@ def stage_pending_registration(
     first_name: str,
     last_name: str,
     voice_section_id: int,
+    is_officer: bool = False,
+    officer_position: str = "",
 ) -> dict[str, str]:
     """Validate registration inputs and send a 6-digit OTP email WITHOUT creating the User row
     in the database until the OTP is verified."""
@@ -151,6 +153,8 @@ def stage_pending_registration(
         "first_name": first_name.strip(),
         "last_name": last_name.strip(),
         "voice_section_id": voice_section_id,
+        "is_officer": bool(is_officer),
+        "officer_position": officer_position.strip() if is_officer else "",
     }
     _PENDING_REGISTRATIONS[clean_email] = record
     try:
@@ -398,7 +402,12 @@ def verify_email(
                     last_name=pending["last_name"],
                 )
                 if _profile_creator_callback is not None:
-                    _profile_creator_callback(user, pending["voice_section_id"])
+                    _profile_creator_callback(
+                        user,
+                        pending["voice_section_id"],
+                        is_officer=bool(pending.get("is_officer", False)),
+                        officer_position=str(pending.get("officer_position", "")),
+                    )
                 user.email_verified_at = timezone.now()
                 if user.status == UserStatus.PENDING:
                     user.status = UserStatus.ACTIVE

@@ -18,6 +18,8 @@ class AdminVoiceSectionSerializer(serializers.ModelSerializer):
 class AdminProfileSerializer(serializers.Serializer):
     voice_section = AdminVoiceSectionSerializer()
     is_evaluable = serializers.BooleanField()
+    is_officer = serializers.BooleanField()
+    officer_position = serializers.CharField()
     joined_choir_on = serializers.DateField(allow_null=True)
     bio = serializers.CharField()
 
@@ -59,6 +61,10 @@ class AdminMemberFilterSerializer(serializers.Serializer):
 class AdminProfileUpdateSerializer(serializers.Serializer):
     voice_section = serializers.IntegerField(required=False, min_value=1)
     is_evaluable = serializers.BooleanField(required=False)
+    is_officer = serializers.BooleanField(required=False)
+    officer_position = serializers.CharField(
+        max_length=100, required=False, allow_blank=True, trim_whitespace=True
+    )
     joined_choir_on = serializers.DateField(required=False, allow_null=True)
 
 

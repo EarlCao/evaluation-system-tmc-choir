@@ -36,6 +36,8 @@ export interface DirectoryMember {
   last_name: string;
   display_name: string;
   voice_section: VoiceSection;
+  is_officer?: boolean;
+  officer_position?: string;
   has_self_evaluation?: boolean;
   self_evaluation_summary?: string;
 }
