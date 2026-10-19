@@ -31,7 +31,6 @@ import { StatusChip } from "./AdminMembersPage";
 
 type Pending =
   | { kind: "status"; status: UserStatus; title: string; confirm: string; destructive: boolean }
-  | { kind: "role"; role: UserRole }
   | { kind: "reset" }
   | null;
 
@@ -169,7 +168,6 @@ export function AdminMemberPage() {
   const status = useMemberAction(publicId, (args: { status: UserStatus; reason: string }) =>
     api.setMemberStatus(publicId, args.status, args.reason),
   );
-  const role = useMemberAction(publicId, (next: UserRole) => api.setMemberRole(publicId, next));
   const reset = useSendPasswordReset(publicId);
 
   if (member.isPending) return <FullPageSpinner label="Loading member" />;
@@ -180,8 +178,8 @@ export function AdminMemberPage() {
     );
   }
   const m = member.data;
-  const actionError = errorText(approve.error ?? status.error ?? role.error ?? reset.error);
-  const busy = approve.isPending || status.isPending || role.isPending || reset.isPending;
+  const actionError = errorText(approve.error ?? status.error ?? reset.error);
+  const busy = approve.isPending || status.isPending || reset.isPending;
 
   function close() {
     setPending(null);
@@ -194,11 +192,6 @@ export function AdminMemberPage() {
       if (pending.kind === "status") {
         await status.mutateAsync({ status: pending.status, reason: reason.trim() });
         setNotice(`Status changed to ${pending.status.toLowerCase()}.`);
-      } else if (pending.kind === "role") {
-        await role.mutateAsync(pending.role);
-        setNotice(
-          pending.role === "SUPER_ADMIN" ? "Promoted to Super Admin." : "Changed to member.",
-        );
       } else {
         await reset.mutateAsync();
         setNotice(`A password reset email was sent to ${m.email}.`);
@@ -333,19 +326,6 @@ export function AdminMemberPage() {
               Deactivate
             </Button>
           ) : null}
-          {m.role === "SUPER_ADMIN" ? (
-            <Button
-              disabled={busy}
-              onClick={() => {
-                setPending({
-                  kind: "role",
-                  role: "MEMBER",
-                });
-              }}
-            >
-              Change to member
-            </Button>
-          ) : null}
           {m.status === "ACTIVE" && m.role !== "SUPER_ADMIN" ? (
             <Button
               disabled={busy}
@@ -405,31 +385,17 @@ export function AdminMemberPage() {
         title={
           pending?.kind === "status"
             ? pending.title
-            : pending?.kind === "role"
-              ? pending.role === "SUPER_ADMIN"
-                ? "Make this member a Super Admin?"
-                : "Remove Super Admin rights?"
-              : "Send a password reset email?"
+            : "Send a password reset email?"
         }
         description={
           pending?.kind === "status"
             ? pending.status === "ACTIVE"
               ? "They will be able to log in and use the system again."
               : "They will be signed out everywhere and can no longer log in. Their evaluations are kept."
-            : pending?.kind === "role"
-              ? pending.role === "SUPER_ADMIN"
-                ? "Super Admins can see who wrote every evaluation and change all settings. They no longer submit evaluations themselves."
-                : "They will lose access to the admin area."
-              : `A reset link will be emailed to ${m.email}.`
+            : `A reset link will be emailed to ${m.email}.`
         }
-        confirmLabel={
-          pending?.kind === "status"
-            ? pending.confirm
-            : pending?.kind === "role"
-              ? "Change role"
-              : "Send email"
-        }
-        destructive={pending?.kind === "status" ? pending.destructive : pending?.kind === "role"}
+        confirmLabel={pending?.kind === "status" ? pending.confirm : "Send email"}
+        destructive={pending?.kind === "status" ? pending.destructive : false}
         onClose={close}
         onConfirm={() => void confirm()}
       >

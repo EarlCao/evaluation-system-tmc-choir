@@ -152,24 +152,36 @@ describe("Admin members", () => {
     expect(screen.queryByRole("button", { name: "Make Super Admin" })).not.toBeInTheDocument();
   });
 
-  it("shows server refusals", async () => {
+  it("does not allow changing a Super Admin account to member", async () => {
     current = { ...active, role: "SUPER_ADMIN", profile: null };
+    renderRoute(`/admin/members/${active.public_id}`);
+    await screen.findByRole("heading", { name: /aria lane/i });
+    expect(screen.queryByRole("button", { name: "Change to member" })).not.toBeInTheDocument();
+  });
+
+  it("shows server refusals", async () => {
+    current = active;
     server.use(
-      http.post(api("/admin/members/:id/role/"), () =>
+      http.post(api("/admin/members/:id/status/"), () =>
         HttpResponse.json(
           {
-            error: { code: "business_rule_violation", message: "You cannot change your own role." },
+            error: {
+              code: "business_rule_violation",
+              message: "You cannot change the status of your own account.",
+            },
           },
           { status: 409 },
         ),
       ),
     );
     renderRoute(`/admin/members/${active.public_id}`);
-    await userEvent.click(await screen.findByRole("button", { name: "Change to member" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Deactivate" }));
     await userEvent.click(
-      within(await screen.findByRole("dialog")).getByRole("button", { name: "Change role" }),
+      within(await screen.findByRole("dialog")).getByRole("button", { name: "Deactivate" }),
     );
-    expect(await screen.findByText("You cannot change your own role.")).toBeVisible();
+    expect(
+      await screen.findByText("You cannot change the status of your own account."),
+    ).toBeVisible();
   });
 
   it("edits the choir profile", async () => {

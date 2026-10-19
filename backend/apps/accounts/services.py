@@ -539,6 +539,8 @@ def set_user_role(*, actor: User, user: User, role: str) -> User:
         raise BusinessRuleViolation("You cannot change your own role.")
     if user.role == role:
         return user
+    if user.role == UserRole.SUPER_ADMIN and role == UserRole.MEMBER:
+        raise BusinessRuleViolation("Super Admin accounts cannot be changed to member.")
     if (
         user.role == UserRole.SUPER_ADMIN
         and user.status == UserStatus.ACTIVE

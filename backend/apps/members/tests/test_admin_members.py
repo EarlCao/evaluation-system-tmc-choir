@@ -103,7 +103,9 @@ def test_admin_cannot_change_own_status_or_role(admin_client_api, super_admin):
     )
 
 
-def test_promote_and_demote(admin_client_api, member, django_capture_on_commit_callbacks):
+def test_super_admin_cannot_be_changed_to_member(
+    admin_client_api, member, django_capture_on_commit_callbacks
+):
     with django_capture_on_commit_callbacks(execute=True):
         promoted = admin_client_api.post(url("role", member.public_id), {"role": "SUPER_ADMIN"})
     assert promoted.json()["role"] == "SUPER_ADMIN"
@@ -114,18 +116,18 @@ def test_promote_and_demote(admin_client_api, member, django_capture_on_commit_c
     assert (entry.before, entry.after) == ({"role": "MEMBER"}, {"role": "SUPER_ADMIN"})
 
     demoted = admin_client_api.post(url("role", member.public_id), {"role": "MEMBER"})
-    assert demoted.json()["role"] == "MEMBER"
+    assert demoted.status_code == 409
+    assert "Super Admin accounts cannot be changed to member" in demoted.json()["error"]["message"]
     member.refresh_from_db()
-    assert not member.is_staff
+    assert member.role == UserRole.SUPER_ADMIN
 
 
-def test_last_active_super_admin_cannot_be_demoted(super_admin):
+def test_super_admin_cannot_be_demoted_service(super_admin):
     from apps.accounts import services
 
     other = SuperAdminFactory()
-    services.set_user_role(actor=other, user=super_admin, role=UserRole.MEMBER)  # 2 → 1 admin
-    with pytest.raises(BusinessRuleViolation, match="last active Super Admin"):
-        services.set_user_role(actor=super_admin, user=other, role=UserRole.MEMBER)
+    with pytest.raises(BusinessRuleViolation, match="Super Admin accounts cannot be changed to member"):
+        services.set_user_role(actor=other, user=super_admin, role=UserRole.MEMBER)
 
 
 def test_promoted_member_with_profile_cannot_evaluate(super_admin, member):
