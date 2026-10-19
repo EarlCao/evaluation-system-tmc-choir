@@ -240,7 +240,7 @@ function CommentPromptsSection({ parentShowArchived }: { parentShowArchived: boo
                             });
                           }}
                         >
-                          Restore
+                          Unarchive
                         </Button>
                       ) : (
                         <>
@@ -557,7 +557,27 @@ export function AdminCriteriaPage() {
                     />
                   </TableCell>
                   <TableCell sx={{ whiteSpace: "nowrap" }}>
-                    {c.is_archived ? null : (
+                    {c.is_archived ? (
+                      <Button
+                        size="small"
+                        disabled={update.isPending}
+                        onClick={() => {
+                          update.mutate(
+                            {
+                              id: c.public_id,
+                              changes: { is_archived: false, is_active: true },
+                            },
+                            {
+                              onSuccess: () => {
+                                setNotice("Criterion unarchived.");
+                              },
+                            },
+                          );
+                        }}
+                      >
+                        Unarchive
+                      </Button>
+                    ) : (
                       <>
                         <Button
                           size="small"

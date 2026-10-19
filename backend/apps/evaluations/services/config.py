@@ -267,9 +267,9 @@ def create_criterion(*, actor, category_id: int | None = None, key: str = "", **
 def update_criterion(*, actor, criterion: RatingCriterion, **changes) -> RatingCriterion:
     """Wording/scale changes create a new immutable version (BR-07). ``category`` and
     ``is_active`` change in place."""
-    if criterion.is_archived:
+    if criterion.is_archived and changes.get("is_archived") is not False:
         raise BusinessRuleViolation("Archived criteria cannot be changed.")
-    allowed = set(VERSION_FIELDS) | {"category_id", "is_active"}
+    allowed = set(VERSION_FIELDS) | {"category_id", "is_active", "is_archived"}
     unknown = set(changes) - allowed
     if unknown:
         raise ValidationError(
@@ -295,9 +295,14 @@ def update_criterion(*, actor, criterion: RatingCriterion, **changes) -> RatingC
         if "category_id" in changes and changes["category_id"] != criterion.category_id:
             diff.append(("category_id", criterion.category_id, changes["category_id"]))
             criterion.category = _category(changes["category_id"])
+        if "is_archived" in changes and bool(changes["is_archived"]) != criterion.is_archived:
+            diff.append(("is_archived", criterion.is_archived, bool(changes["is_archived"])))
+            criterion.is_archived = bool(changes["is_archived"])
         if "is_active" in changes and bool(changes["is_active"]) != criterion.is_active:
             diff.append(("is_active", criterion.is_active, bool(changes["is_active"])))
             criterion.is_active = bool(changes["is_active"])
+        if criterion.is_archived:
+            criterion.is_active = False
         if diff:
             criterion.save()
             publish(

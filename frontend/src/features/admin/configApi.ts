@@ -36,7 +36,7 @@ export const createCriterion = async (input: CriterionInput) =>
   (await apiClient.post<Criterion>("/admin/criteria/", input)).data;
 export const updateCriterion = async (
   id: string,
-  changes: Partial<CriterionInput> & { is_active?: boolean },
+  changes: Partial<CriterionInput> & { is_active?: boolean; is_archived?: boolean },
 ) => (await apiClient.patch<Criterion>(`/admin/criteria/${id}/`, changes)).data;
 export const archiveCriterion = async (id: string) =>
   (await apiClient.post<Criterion>(`/admin/criteria/${id}/archive/`)).data;

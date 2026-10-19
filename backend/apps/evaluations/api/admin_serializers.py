@@ -130,6 +130,7 @@ class CriterionUpdateSerializer(serializers.Serializer):
     is_required = serializers.BooleanField(required=False)
     category = serializers.IntegerField(required=False, allow_null=True)
     is_active = serializers.BooleanField(required=False)
+    is_archived = serializers.BooleanField(required=False)
 
 
 class ReorderSerializer(serializers.Serializer):
