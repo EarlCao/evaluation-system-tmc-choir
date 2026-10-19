@@ -59,6 +59,7 @@ export const useCycle = (id: string) =>
   });
 
 export const useCreateCategory = () => useConfigMutation(api.createCategory);
+export const useDeleteCategory = () => useConfigMutation(api.deleteCategory);
 export const useCreateCriterion = () => useConfigMutation(api.createCriterion);
 export const useUpdateCriterion = () =>
   useConfigMutation((a: { id: string; changes: Parameters<typeof api.updateCriterion>[1] }) =>

@@ -21,6 +21,9 @@ export const fetchCategories = async () =>
   (await apiClient.get<Category[]>("/admin/criterion-categories/")).data;
 export const createCategory = async (name: string) =>
   (await apiClient.post<Category>("/admin/criterion-categories/", { name })).data;
+export const deleteCategory = async (id: number) => {
+  await apiClient.delete(`/admin/criterion-categories/${String(id)}/`);
+};
 
 // Criteria
 export const fetchCriteria = async (includeArchived: boolean) =>

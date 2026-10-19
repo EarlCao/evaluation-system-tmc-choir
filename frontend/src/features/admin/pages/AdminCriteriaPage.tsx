@@ -30,6 +30,7 @@ import {
   useCreateCategory,
   useCreateCommentPrompt,
   useCriteria,
+  useDeleteCategory,
   useReorderCommentPrompts,
   useReorderCriteria,
   useUpdateCommentPrompt,
@@ -323,15 +324,24 @@ function CommentPromptsSection({ parentShowArchived }: { parentShowArchived: boo
 function Categories() {
   const categories = useCategories();
   const create = useCreateCategory();
+  const remove = useDeleteCategory();
   const [name, setName] = useState("");
+  const mutationError = create.error ?? remove.error;
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
       <Typography variant="h6" component="h2" gutterBottom>
         Categories
       </Typography>
-      <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", mb: 2 }}>
+      <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1, mb: 2 }}>
         {(categories.data ?? []).map((c) => (
-          <Chip key={c.id} label={c.name} />
+          <Chip
+            key={c.id}
+            label={c.name}
+            disabled={remove.isPending}
+            onDelete={() => {
+              remove.mutate(c.id);
+            }}
+          />
         ))}
         {categories.data?.length === 0 ? (
           <Typography color="text.secondary">No categories yet.</Typography>
@@ -363,9 +373,9 @@ function Categories() {
           Add
         </Button>
       </Stack>
-      {create.isError ? (
+      {mutationError ? (
         <Alert severity="error" sx={{ mt: 1 }}>
-          {errorText(create.error)}
+          {errorText(mutationError)}
         </Alert>
       ) : null}
     </Paper>

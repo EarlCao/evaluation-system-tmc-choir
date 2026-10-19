@@ -57,6 +57,11 @@ class CategoryDetailView(AdminView):
         )
         return Response(s.CategorySerializer(category).data)
 
+    @extend_schema(request=None, responses={204: None})
+    def delete(self, request, pk: int):
+        services.delete_category(actor=request.user, category=selectors.get_category(pk=pk))
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 # Criteria --------------------------------------------------------------------
 class CriterionListView(AdminView):

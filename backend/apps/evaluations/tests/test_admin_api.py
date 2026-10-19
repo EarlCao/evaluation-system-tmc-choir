@@ -198,3 +198,18 @@ def test_comment_prompts_crud_and_reorder(admin_client_api):
     archived = admin_client_api.post(url("comment-prompt-archive", new_id))
     assert archived.status_code == 200
     assert archived.json()["is_archived"] is True
+
+
+def test_create_and_delete_category(admin_client_api, super_admin):
+    created = admin_client_api.post(url("categories"), {"name": "Stage Presence"})
+    assert created.status_code == 201
+    cat_id = created.json()["id"]
+    criterion = make_criterion(super_admin, category_id=cat_id)
+    assert criterion.category_id == cat_id
+
+    deleted = admin_client_api.delete(url("category", cat_id))
+    assert deleted.status_code == 204
+    criterion.refresh_from_db()
+    assert criterion.category_id is None
+    assert not any(c["id"] == cat_id for c in admin_client_api.get(url("categories")).json())
+

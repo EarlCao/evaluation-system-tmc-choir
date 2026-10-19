@@ -103,6 +103,16 @@ def update_category(*, actor, category: CriterionCategory, **changes) -> Criteri
     return category
 
 
+def delete_category(*, actor, category: CriterionCategory) -> None:
+    target_id = category.pk
+    with transaction.atomic():
+        category.criteria.update(category=None)
+        category.delete()
+        publish(
+            events.CategoryChanged(actor_id=_pk(actor), target_id=target_id, action="deleted")
+        )
+
+
 # ---------------------------------------------------------------------------
 # Comment prompts (EVAL-05, CFG-04)
 # ---------------------------------------------------------------------------
