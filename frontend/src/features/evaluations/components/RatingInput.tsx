@@ -46,6 +46,18 @@ export function RatingInput({ criterion, value, onChange, error }: RatingInputPr
           {criterion.description}
         </Typography>
       ) : null}
+      {Object.keys(criterion.labels).length > 0 ? (
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: "block", mt: 0.5, fontStyle: "italic" }}
+        >
+          Scale reference:{" "}
+          {Object.entries(criterion.labels)
+            .map(([k, v]) => `${k} = ${v}`)
+            .join(" · ")}
+        </Typography>
+      ) : null}
 
       <Stack
         direction={{ xs: "column", sm: "row" }}

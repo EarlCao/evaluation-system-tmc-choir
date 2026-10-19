@@ -45,57 +45,72 @@ export function AppHeader({ home, badge, nav, children, onOpenMobileNav }: AppHe
       />
       <Toolbar
         sx={{
-          gap: { xs: 1, sm: 2 },
-          flexWrap: "wrap",
+          gap: { xs: 0.5, sm: 1.5 },
+          flexWrap: "nowrap",
+          justifyContent: "space-between",
+          alignItems: "center",
+          px: { xs: 1, sm: 2 },
           py: { xs: 0.75, sm: 0.75 },
-          minHeight: { xs: 58, sm: 68 },
+          minHeight: { xs: 54, sm: 64 },
         }}
       >
-        {onOpenMobileNav ? (
-          <IconButton
-            type="button"
-            color="inherit"
-            onClick={onOpenMobileNav}
-            aria-label="Open navigation menu"
-            sx={{
-              display: { xs: "inline-flex", md: "none" },
-              mr: { xs: 0.5, sm: 1 },
-              p: 0.75,
-              border: "1px solid",
-              borderColor: "divider",
-              borderRadius: 2,
-            }}
-          >
-            <SvgIcon fontSize="small">
-              <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
-            </SvgIcon>
-          </IconButton>
-        ) : null}
         <Box
-          component={RouterLink}
-          to={home}
           sx={{
-            display: "inline-flex",
+            display: "flex",
             alignItems: "center",
-            gap: 1.5,
-            color: "inherit",
-            textDecoration: "none",
+            gap: { xs: 0.75, sm: 1.5 },
+            minWidth: 0,
+            flexShrink: 1,
+            mr: 1,
           }}
         >
+          {onOpenMobileNav ? (
+            <IconButton
+              type="button"
+              color="inherit"
+              onClick={onOpenMobileNav}
+              aria-label="Open navigation menu"
+              size="small"
+              sx={{
+                display: { xs: "inline-flex", md: "none" },
+                p: 0.75,
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 2,
+                flexShrink: 0,
+              }}
+            >
+              <SvgIcon fontSize="small">
+                <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+              </SvgIcon>
+            </IconButton>
+          ) : null}
           <Box
-            component="img"
-            src="/logo.png"
-            alt="Alon Himig Logo"
+            component={RouterLink}
+            to={home}
             sx={{
-              width: 38,
-              height: 38,
-              borderRadius: 2,
-              objectFit: "contain",
-              flexShrink: 0,
-              filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.2))",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: { xs: 1, sm: 1.5 },
+              color: "inherit",
+              textDecoration: "none",
+              minWidth: 0,
+              flexShrink: 1,
             }}
-          />
-          <Box sx={{ display: "flex", flexDirection: "column" }}>
+          >
+            <Box
+              component="img"
+              src="/logo.png"
+              alt="Alon Himig Logo"
+              sx={{
+                width: { xs: 32, sm: 38 },
+                height: { xs: 32, sm: 38 },
+                borderRadius: 2,
+                objectFit: "contain",
+                flexShrink: 0,
+                filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.2))",
+              }}
+            />
             <Typography
               variant="subtitle1"
               component="span"
@@ -103,55 +118,76 @@ export function AppHeader({ home, badge, nav, children, onOpenMobileNav }: AppHe
                 fontWeight: 800,
                 letterSpacing: "0.04em",
                 lineHeight: 1.15,
-                fontSize: { xs: "0.82rem", sm: "0.95rem" },
+                fontSize: { xs: "0.74rem", sm: "0.95rem" },
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
               }}
             >
               TMC CHOIR EVALUATION SYSTEM
             </Typography>
           </Box>
+          {badge ? (
+            <Chip
+              label={badge}
+              color="secondary"
+              size="small"
+              sx={{
+                fontWeight: 800,
+                letterSpacing: "0.04em",
+                border: "1px solid rgba(212, 175, 55, 0.35)",
+                display: { xs: "none", sm: "inline-flex" },
+                flexShrink: 0,
+              }}
+            />
+          ) : null}
+          {nav}
         </Box>
-        {badge ? (
-          <Chip
-            label={badge}
-            color="secondary"
-            size="small"
-            sx={{
-              fontWeight: 800,
-              letterSpacing: "0.04em",
-              border: "1px solid rgba(212, 175, 55, 0.35)",
-            }}
-          />
-        ) : null}
-        {nav}
-        <Box sx={{ flexGrow: 1 }} />
-        <Button
-          type="button"
-          size="small"
-          variant="outlined"
-          color="inherit"
-          onClick={toggleMode}
-          aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+
+        <Box
           sx={{
-            borderColor: "divider",
-            borderRadius: 999,
-            px: 1.5,
-            py: 0.5,
-            gap: 0.75,
-            minWidth: "auto",
-            fontSize: "0.78rem",
-            fontWeight: 700,
+            display: "flex",
+            alignItems: "center",
+            gap: { xs: 0.5, sm: 1 },
+            ml: "auto",
+            flexShrink: 0,
           }}
         >
-          <SvgIcon fontSize="small" sx={{ fontSize: 17, color: isDark ? "#f3d266" : "#9a7316" }}>
-            {isDark ? (
-              <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 0 0-1.41 0 .996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 0 0-1.41 0 .996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0a.996.996 0 0 0 0-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 0 0 0-1.41.996.996 0 0 0-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 0 0 0 1.41.996.996 0 0 0 1.41 0l1.06-1.06c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06z" />
-            ) : (
-              <path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z" />
-            )}
-          </SvgIcon>
-          {isDark ? "Light" : "Dark"}
-        </Button>
-        {children}
+          <Button
+            type="button"
+            size="small"
+            variant="outlined"
+            color="inherit"
+            onClick={toggleMode}
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            sx={{
+              borderColor: "divider",
+              borderRadius: { xs: 2, sm: 999 },
+              p: { xs: 0.75, sm: 0.5 },
+              px: { xs: 0.75, sm: 1.5 },
+              minWidth: { xs: 36, sm: "auto" },
+              gap: 0.75,
+              fontSize: "0.78rem",
+              fontWeight: 700,
+              "&:hover": {
+                bgcolor: "action.hover",
+                borderColor: "text.secondary",
+              },
+            }}
+          >
+            <SvgIcon fontSize="small" sx={{ fontSize: 17, color: isDark ? "#f3d266" : "#9a7316" }}>
+              {isDark ? (
+                <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 0 0-1.41 0 .996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 0 0-1.41 0 .996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0a.996.996 0 0 0 0-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 0 0 0-1.41.996.996 0 0 0-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 0 0 0 1.41.996.996 0 0 0 1.41 0l1.06-1.06c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06z" />
+              ) : (
+                <path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z" />
+              )}
+            </SvgIcon>
+            <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+              {isDark ? "Light" : "Dark"}
+            </Box>
+          </Button>
+          {children}
+        </Box>
       </Toolbar>
     </AppBar>
   );

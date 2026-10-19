@@ -15,7 +15,7 @@ import { NotificationList } from "./NotificationList";
 
 function BellIcon() {
   return (
-    <SvgIcon>
+    <SvgIcon fontSize="small">
       <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2m6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1z" />
     </SvgIcon>
   );
@@ -36,11 +36,22 @@ export function NotificationBell({ base }: { base: "/app" | "/admin" }) {
   return (
     <>
       <IconButton
+        size="small"
         color="inherit"
         aria-label={count ? `Notifications, ${String(count)} unread` : "Notifications"}
         aria-haspopup="dialog"
         onClick={(e) => {
           setAnchor(e.currentTarget);
+        }}
+        sx={{
+          p: 0.75,
+          border: "1px solid",
+          borderColor: "divider",
+          borderRadius: 2,
+          "&:hover": {
+            bgcolor: "action.hover",
+            borderColor: "text.secondary",
+          },
         }}
       >
         <Badge badgeContent={count} color="primary" max={99}>

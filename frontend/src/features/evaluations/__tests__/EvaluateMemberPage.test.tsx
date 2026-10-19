@@ -106,6 +106,10 @@ describe("EvaluateMemberPage", () => {
       await screen.findByRole("heading", { level: 1, name: "Evaluate Lena Voss" }),
     ).toBeVisible();
     const attendance = await screen.findByRole("group", { name: "Attendance" });
+    expect(screen.getByText("Rating Scale Guide & Explanations")).toBeVisible();
+    expect(screen.getByText("5 — Excellent")).toBeVisible();
+    expect(screen.getByText("1 — Needs Improvement")).toBeVisible();
+    expect(screen.getByText("Scale reference: 1 = Needs improvement · 5 = Excellent")).toBeVisible();
     expect(within(attendance).getByRole("button", { name: "5: Excellent" })).toBeVisible();
     expect(screen.getByRole("group", { name: "Solo work (optional)" })).toBeVisible();
     expect(screen.getByRole("slider")).toBeVisible();

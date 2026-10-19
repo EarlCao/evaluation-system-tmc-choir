@@ -1,9 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
+import SvgIcon from "@mui/material/SvgIcon";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -353,6 +355,7 @@ export function EvaluationForm({
           Rate {recipientName} on each criterion using the scale below, then continue to comments.
         </Typography>
       </div>
+      <RatingScaleGuide />
       <FormAlert message={formState.errors.root?.server?.message} />
       {form.criteria.map((criterion) => (
         <Controller
@@ -407,5 +410,177 @@ function OwnNameWarning({ names }: { names: string[] }) {
       Your text mentions your own name ({names.join(", ")}). Your name is hidden from the member,
       but signing a comment tells them it&apos;s from you. Remove it if you want to stay anonymous.
     </Alert>
+  );
+}
+
+const RATING_SCALE_EXPLANATIONS = [
+  {
+    score: 5,
+    title: "5 — Excellent",
+    short: "Outstanding",
+    desc: "Exemplary consistency, outstanding musicality, punctuality, and positive leadership.",
+    badgeBg: "rgba(212, 175, 55, 0.18)",
+    badgeColor: "#d4af37",
+  },
+  {
+    score: 4,
+    title: "4 — Good",
+    short: "Above Standard",
+    desc: "Frequently exceeds expectations, strong preparation, reliable readiness, and active contribution.",
+    badgeBg: "rgba(37, 99, 235, 0.15)",
+    badgeColor: "#2563eb",
+  },
+  {
+    score: 3,
+    title: "3 — Satisfactory",
+    short: "Meets Standard",
+    desc: "Consistently meets standard choir expectations and fulfills vocal and rehearsal responsibilities.",
+    badgeBg: "rgba(5, 150, 105, 0.15)",
+    badgeColor: "#059669",
+  },
+  {
+    score: 2,
+    title: "2 — Developing",
+    short: "Needs Practice",
+    desc: "Shows effort and progress, but requires more rehearsal practice, vocal consistency, or attendance.",
+    badgeBg: "rgba(217, 119, 6, 0.15)",
+    badgeColor: "#d97706",
+  },
+  {
+    score: 1,
+    title: "1 — Needs Improvement",
+    short: "Below Standard",
+    desc: "Inconsistent performance or below standard; requires focused guidance and dedicated effort.",
+    badgeBg: "rgba(220, 38, 38, 0.15)",
+    badgeColor: "#dc2626",
+  },
+];
+
+function RatingScaleGuide() {
+  const [open, setOpen] = useState(true);
+
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        p: { xs: 1.5, sm: 2 },
+        borderRadius: 2,
+        bgcolor: (theme) =>
+          theme.palette.mode === "dark" ? "rgba(30, 41, 59, 0.45)" : "rgba(248, 250, 252, 0.9)",
+        borderColor: "divider",
+      }}
+    >
+      <Stack spacing={1.5}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            cursor: "pointer",
+            userSelect: "none",
+          }}
+          onClick={() => setOpen((prev) => !prev)}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <SvgIcon fontSize="small" color="primary">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+            </SvgIcon>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, letterSpacing: "0.02em" }}>
+              Rating Scale Guide & Explanations
+            </Typography>
+          </Box>
+          <Button
+            size="small"
+            sx={{ fontSize: "0.75rem", p: 0.5, minWidth: "auto", textTransform: "none" }}
+            aria-expanded={open}
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpen((prev) => !prev);
+            }}
+          >
+            {open ? "Hide guide" : "Show guide"}
+          </Button>
+        </Box>
+        {open ? (
+          <>
+            <Typography variant="body2" color="text.secondary">
+              Use this standard 1 to 5 scale to evaluate fairly and constructively:
+            </Typography>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(5, 1fr)" },
+                gap: 1.25,
+                pt: 0.5,
+              }}
+            >
+              {RATING_SCALE_EXPLANATIONS.map((item) => (
+                <Paper
+                  key={item.score}
+                  variant="outlined"
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 1.5,
+                    bgcolor: "background.paper",
+                    borderColor: "divider",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 0.75,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 1,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontWeight: 800,
+                        fontSize: "0.8rem",
+                        bgcolor: item.badgeBg,
+                        color: item.badgeColor,
+                        border: `1px solid ${item.badgeColor}40`,
+                      }}
+                    >
+                      {item.score}
+                    </Box>
+                    <Chip
+                      label={item.short}
+                      size="small"
+                      sx={{
+                        height: 20,
+                        fontSize: "0.68rem",
+                        fontWeight: 700,
+                        bgcolor: item.badgeBg,
+                        color: item.badgeColor,
+                      }}
+                    />
+                  </Box>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: "text.primary" }}>
+                    {item.title}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ lineHeight: 1.35, fontSize: "0.72rem" }}
+                  >
+                    {item.desc}
+                  </Typography>
+                </Paper>
+              ))}
+            </Box>
+          </>
+        ) : null}
+      </Stack>
+    </Paper>
   );
 }

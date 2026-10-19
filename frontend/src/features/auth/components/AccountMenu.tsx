@@ -36,7 +36,7 @@ export function AccountMenu() {
 
   return (
     <>
-      <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+      <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} sx={{ alignItems: "center" }}>
         <Typography
           variant="body2"
           color="text.secondary"
