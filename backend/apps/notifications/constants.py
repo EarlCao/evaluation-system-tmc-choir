@@ -11,6 +11,7 @@ class NotificationType(models.TextChoices):
     REGISTRATION_PENDING = "REGISTRATION_PENDING", "Registration awaiting approval"
     UNUSUAL_ACTIVITY = "UNUSUAL_ACTIVITY", "Unusual activity"
     CYCLE_COMPLETED = "CYCLE_COMPLETED", "Evaluation period completed"
+    MEMBER_REGISTERED = "MEMBER_REGISTERED", "New member account created"
 
 
 MESSAGE_MAX = 200

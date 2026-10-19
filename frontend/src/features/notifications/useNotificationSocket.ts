@@ -1,6 +1,7 @@
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
+import { adminKeys } from "@/features/admin";
 import { authKeys } from "@/features/auth";
 import { dashboardKeys } from "@/features/dashboard";
 import { evaluationKeys } from "@/features/evaluations";
@@ -23,6 +24,10 @@ function refreshFor(queryClient: QueryClient, type: AppNotification["type"]) {
   if (type === "CYCLE_OPENED" || type === "CYCLE_CLOSED") {
     void queryClient.invalidateQueries({ queryKey: evaluationKeys.all });
     void queryClient.invalidateQueries({ queryKey: dashboardKeys.member });
+  }
+  if (type === "MEMBER_REGISTERED" || type === "REGISTRATION_PENDING") {
+    void queryClient.invalidateQueries({ queryKey: [...adminKeys.all, "members"] });
+    void queryClient.invalidateQueries({ queryKey: adminKeys.dashboard() });
   }
 }
 

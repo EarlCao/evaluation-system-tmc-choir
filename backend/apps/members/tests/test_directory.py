@@ -17,6 +17,8 @@ ENTRY_FIELDS = {
     "last_name",
     "display_name",
     "voice_section",
+    "is_officer",
+    "officer_position",
     "has_self_evaluation",
     "self_evaluation_summary",
 }

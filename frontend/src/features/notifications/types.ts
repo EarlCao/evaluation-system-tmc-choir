@@ -6,7 +6,8 @@ export type NotificationType =
   | "ACCOUNT_APPROVED"
   | "REGISTRATION_PENDING"
   | "UNUSUAL_ACTIVITY"
-  | "CYCLE_COMPLETED";
+  | "CYCLE_COMPLETED"
+  | "MEMBER_REGISTERED";
 
 /** GET /api/v1/notifications/ entry: the user's own, safe text only (RT-06). */
 export interface AppNotification {

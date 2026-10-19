@@ -185,3 +185,31 @@ def test_suspension_revokes_open_sockets(member, super_admin, run_events):
     async_to_sync(layer.group_add)(user_group(member.public_id), channel)
     run_events(account_services.set_user_status, actor=super_admin, user=member, status="SUSPENDED")
     assert async_to_sync(layer.receive)(channel)["event"] == "session.revoked"
+
+
+def test_member_otp_verification_notifies_super_admin(super_admin, run_events):
+    from apps.accounts.tokens import make_pending_registration_otp
+
+    member_services.stage_member_registration(
+        email="soprano@example.org",
+        username="soprano_star",
+        password="a-long-test-password-1",  # gitleaks:allow (fake test password)
+        first_name="Maria",
+        last_name="Callas",
+        voice_section_id=voice_section("Soprano").pk,
+        is_officer=True,
+        officer_position="Choir President",
+    )
+    otp = make_pending_registration_otp("soprano@example.org", "soprano_star")
+
+    user = run_events(
+        account_services.verify_email,
+        email="soprano@example.org",
+        otp=otp,
+    )
+
+    notif = Notification.objects.get(recipient=super_admin, type=NotificationType.MEMBER_REGISTERED)
+    assert "Maria Callas (@soprano_star)" in notif.message
+    assert "Choir President" in notif.message
+    assert "has verified their OTP and created an account." in notif.message
+    assert notif.link == f"/admin/members/{user.public_id}"

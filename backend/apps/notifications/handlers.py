@@ -59,13 +59,41 @@ def on_cycle_closed(event: evaluation_events.CycleClosed) -> None:
 
 @subscribe(account_events.UserRegistered)
 def on_user_registered(event: account_events.UserRegistered) -> None:
-    if event.status == UserStatus.PENDING:
+    user = account_selectors.get_user_by_pk(pk=event.target_id)
+    if user is not None and user.status == UserStatus.PENDING and not user.email_verified_at:
         services.notify_many(
             recipient_ids=account_selectors.active_user_ids(role=UserRole.SUPER_ADMIN),
             type=NotificationType.REGISTRATION_PENDING,
             message="A new registration is waiting for approval.",
             link="/admin/members?status=PENDING",
         )
+    realtime.dashboard_changed()
+
+
+@subscribe(account_events.EmailVerified)
+def on_email_verified(event: account_events.EmailVerified) -> None:
+    user = account_selectors.get_user_by_pk(pk=event.target_id)
+    if user is None or user.role != UserRole.MEMBER:
+        return
+    name = user.get_full_name() or user.username
+    officer_label = ""
+    if (
+        hasattr(user, "member_profile")
+        and user.member_profile.is_officer
+        and user.member_profile.officer_position
+    ):
+        officer_label = f" ({user.member_profile.officer_position})"
+    message = f"{name} (@{user.username}){officer_label} has verified their OTP and created an account."
+    if len(message) > 200:
+        message = f"{name} (@{user.username}) has verified their OTP and created an account."
+    if len(message) > 200:
+        message = f"{user.username} has verified their OTP and created an account."
+    services.notify_many(
+        recipient_ids=account_selectors.active_user_ids(role=UserRole.SUPER_ADMIN),
+        type=NotificationType.MEMBER_REGISTERED,
+        message=message,
+        link=f"/admin/members/{user.public_id}",
+    )
     realtime.dashboard_changed()
 
 
