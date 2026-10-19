@@ -147,6 +147,7 @@ def test_deferred_registration_only_creates_account_after_otp_verification(
     django_capture_on_commit_callbacks,
 ):
     import re
+
     from django.core import mail
 
     client = csrf_client()

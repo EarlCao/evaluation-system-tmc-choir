@@ -30,13 +30,73 @@ export interface FormCriterion {
   is_required: boolean;
 }
 
+export interface FormCommentPrompt {
+  key: string;
+  label: string;
+  is_required: boolean;
+}
+
 export interface CycleForm {
   cycle: CycleSummary;
   comment_required: boolean;
   suggestion_required: boolean;
   comment_max_length: number;
   suggestion_max_length: number;
+  comment_prompts?: FormCommentPrompt[];
   criteria: FormCriterion[];
+}
+
+export const DEFAULT_COMMENT_PROMPTS: FormCommentPrompt[] = [
+  {
+    key: "comment",
+    label: "Comments (Unsay imong ikaingon sa akoa?)",
+    is_required: false,
+  },
+  {
+    key: "suggestion",
+    label: "Suggestions (Unsay imong ikasuggest sa akoa?)",
+    is_required: false,
+  },
+  {
+    key: "comment_3",
+    label: "Strengths / Positive traits (Unsay maayo nga nakita nimo sa akoa?)",
+    is_required: false,
+  },
+  {
+    key: "comment_4",
+    label: "Areas for growth (Unsay angay pa nakong palambuon?)",
+    is_required: false,
+  },
+  {
+    key: "comment_5",
+    label: "Encouragement / Message (Unsay imong mensahe o pagdasig para sa akoa?)",
+    is_required: false,
+  },
+];
+
+export function effectiveCommentPrompts(
+  form: Pick<CycleForm, "comment_prompts" | "comment_required" | "suggestion_required">,
+): FormCommentPrompt[] {
+  const defaults: FormCommentPrompt[] = DEFAULT_COMMENT_PROMPTS.map((p) => ({
+    ...p,
+    is_required:
+      p.key === "comment"
+        ? form.comment_required
+        : p.key === "suggestion"
+          ? form.suggestion_required
+          : p.is_required,
+  }));
+  if (form.comment_prompts && form.comment_prompts.length > 0) {
+    if (
+      form.comment_prompts.length === 2 &&
+      form.comment_prompts[0]?.key === "comment" &&
+      form.comment_prompts[1]?.key === "suggestion"
+    ) {
+      return [...form.comment_prompts, ...defaults.slice(2)];
+    }
+    return form.comment_prompts;
+  }
+  return defaults;
 }
 
 export type IneligibilityReason =
@@ -61,6 +121,7 @@ export interface SubmitPayload {
   ratings: { criterion_version: number; value: number | null }[];
   comment: string;
   suggestion: string;
+  comments?: Record<string, string>;
 }
 
 export interface Recipient {
@@ -85,6 +146,12 @@ export interface MyRating {
   label: string;
 }
 
+export interface MyCommentEntry {
+  key: string;
+  label: string;
+  body: string;
+}
+
 /** An evaluation as its author sees it (MINE-01). */
 export interface MyEvaluation {
   public_id: string;
@@ -97,6 +164,7 @@ export interface MyEvaluation {
   ratings: MyRating[];
   comment: string;
   suggestion: string;
+  comments?: MyCommentEntry[];
   can_edit: boolean;
 }
 
@@ -128,6 +196,7 @@ export interface RevisionSnapshot {
   }[];
   comment: string;
   suggestion: string;
+  comments?: MyCommentEntry[];
 }
 
 export interface Revision {
@@ -141,5 +210,6 @@ export interface EditPayload {
   ratings: { criterion_version: number; value: number | null }[];
   comment: string;
   suggestion: string;
+  comments?: Record<string, string>;
   change_summary: string;
 }

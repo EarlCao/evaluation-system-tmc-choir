@@ -38,7 +38,7 @@ describe("MemberProfilePage", () => {
     );
   });
 
-  it("lets members edit their own bio", async () => {
+  it("lets members edit their own bio and shows Evaluate yourself link", async () => {
     const self = { ...other, is_self: true, bio: "" };
     let body: unknown;
     server.use(
@@ -53,8 +53,55 @@ describe("MemberProfilePage", () => {
     await userEvent.type(await screen.findByLabelText(/about you/i), "Second alto.");
     await userEvent.click(screen.getByRole("button", { name: /save bio/i }));
     expect(await screen.findByText("Your bio was saved.")).toBeVisible();
-    expect(screen.queryByRole("link", { name: /^evaluate/i })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /evaluate yourself/i }).length).toBeGreaterThan(0);
     expect(body).toEqual({ bio: "Second alto." });
+  });
+
+  it("displays another member's public self-evaluation ratings and comments", async () => {
+    const withSelfEval: MemberDetail = {
+      ...other,
+      self_evaluation: {
+        public_id: "self-ev-1",
+        cycle: { public_id: "c1", name: "Spring 2026" },
+        submitted_at: "2026-10-19T08:00:00Z",
+        is_edited: false,
+        ratings: [
+          {
+            criterion_version: 11,
+            criterion_name: "Attendance",
+            value: 5,
+            label: "Excellent",
+            min_value: 1,
+            max_value: 5,
+          },
+        ],
+        comment: "I always arrive 15 minutes early.",
+        suggestion: "Working on high notes.",
+        comments: [
+          {
+            key: "comment",
+            label: "Comments (Unsay imong ikaingon sa akoa?)",
+            body: "I always arrive 15 minutes early.",
+          },
+          {
+            key: "suggestion",
+            label: "Suggestions (Unsay imong ikasuggest sa akoa?)",
+            body: "Working on high notes.",
+          },
+        ],
+      },
+    };
+    server.use(
+      loggedInAs(memberUser),
+      http.get(api(`/members/${other.public_id}/`), () => HttpResponse.json(withSelfEval)),
+    );
+    renderRoute(`/app/members/${other.public_id}`);
+    expect(
+      await screen.findByRole("heading", { name: /Public Self-Evaluation & Comments/i }),
+    ).toBeVisible();
+    expect(screen.getByText("5 / 5 — Excellent")).toBeVisible();
+    expect(screen.getByText("I always arrive 15 minutes early.")).toBeVisible();
+    expect(screen.getByText("Working on high notes.")).toBeVisible();
   });
 
   it("treats unknown or inactive members as not found", async () => {

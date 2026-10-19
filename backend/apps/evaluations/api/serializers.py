@@ -75,6 +75,12 @@ class FormCriterionSerializer(serializers.ModelSerializer):
         ]
 
 
+class FormCommentPromptSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    label = serializers.CharField()
+    is_required = serializers.BooleanField()
+
+
 class CycleFormSerializer(serializers.Serializer):
     """Everything the evaluate page needs to render the form (EVAL-01, EVAL-03..05)."""
 
@@ -83,6 +89,9 @@ class CycleFormSerializer(serializers.Serializer):
     suggestion_required = serializers.BooleanField(source="form_version.suggestion_required")
     comment_max_length = serializers.IntegerField(source="form_version.comment_max_length")
     suggestion_max_length = serializers.IntegerField(source="form_version.suggestion_max_length")
+    comment_prompts = FormCommentPromptSerializer(
+        source="form_version.effective_comment_prompts", many=True
+    )
     criteria = FormCriterionSerializer(source="form_version.items", many=True)
 
 
@@ -109,6 +118,11 @@ class SubmitEvaluationSerializer(serializers.Serializer):
     )
     suggestion = serializers.CharField(
         allow_blank=True, required=False, default="", trim_whitespace=False
+    )
+    comments = serializers.DictField(
+        child=serializers.CharField(allow_blank=True, trim_whitespace=False),
+        required=False,
+        default=dict,
     )
 
 
@@ -138,6 +152,12 @@ class MyRatingSerializer(serializers.Serializer):
     label = serializers.CharField()
 
 
+class MyCommentItemSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    label = serializers.CharField()
+    body = serializers.CharField()
+
+
 class MyEvaluationSerializer(serializers.ModelSerializer):
     """MINE-01: one evaluation as its author sees it."""
 
@@ -146,6 +166,7 @@ class MyEvaluationSerializer(serializers.ModelSerializer):
     ratings = MyRatingSerializer(many=True)
     comment = serializers.SerializerMethodField()
     suggestion = serializers.SerializerMethodField()
+    comments = serializers.SerializerMethodField()
     can_edit = serializers.SerializerMethodField()
 
     class Meta:
@@ -161,6 +182,7 @@ class MyEvaluationSerializer(serializers.ModelSerializer):
             "ratings",
             "comment",
             "suggestion",
+            "comments",
             "can_edit",
         ]
 
@@ -174,6 +196,43 @@ class MyEvaluationSerializer(serializers.ModelSerializer):
     def get_suggestion(self, obj: Evaluation) -> str:
         return self._text(obj, CommentKind.SUGGESTION)
 
+    def get_comments(self, obj: Evaluation) -> list[dict]:
+        rows = list(obj.comments.all())
+        by_kind = {r.kind: r for r in rows}
+        result: list[dict] = []
+        used_kinds: set[str] = set()
+        for p in obj.form_version.effective_comment_prompts:
+            key = p["key"]
+            kind = (
+                CommentKind.COMMENT
+                if key == "comment"
+                else (CommentKind.SUGGESTION if key == "suggestion" else key)
+            )
+            used_kinds.add(kind)
+            row = by_kind.get(kind)
+            result.append(
+                {
+                    "key": key,
+                    "label": (row.label if row and row.label else p["label"]),
+                    "body": row.body if row else "",
+                }
+            )
+        for r in rows:
+            if r.kind not in used_kinds:
+                key = (
+                    "comment"
+                    if r.kind == CommentKind.COMMENT
+                    else ("suggestion" if r.kind == CommentKind.SUGGESTION else r.kind)
+                )
+                result.append(
+                    {
+                        "key": key,
+                        "label": r.label or key.title(),
+                        "body": r.body,
+                    }
+                )
+        return result
+
     def get_can_edit(self, obj: Evaluation) -> bool:
         return rules.can_edit(obj)
 
@@ -185,6 +244,11 @@ class EditEvaluationSerializer(serializers.Serializer):
     )
     suggestion = serializers.CharField(
         allow_blank=True, required=False, default="", trim_whitespace=False
+    )
+    comments = serializers.DictField(
+        child=serializers.CharField(allow_blank=True, trim_whitespace=False),
+        required=False,
+        default=dict,
     )
     change_summary = serializers.CharField(
         allow_blank=True, required=False, default="", max_length=200

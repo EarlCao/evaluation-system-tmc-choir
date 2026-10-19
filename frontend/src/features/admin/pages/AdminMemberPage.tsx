@@ -283,17 +283,19 @@ export function AdminMemberPage() {
               Deactivate
             </Button>
           ) : null}
-          <Button
-            disabled={busy}
-            onClick={() => {
-              setPending({
-                kind: "role",
-                role: m.role === "SUPER_ADMIN" ? "MEMBER" : "SUPER_ADMIN",
-              });
-            }}
-          >
-            {m.role === "SUPER_ADMIN" ? "Change to member" : "Make Super Admin"}
-          </Button>
+          {m.role === "SUPER_ADMIN" ? (
+            <Button
+              disabled={busy}
+              onClick={() => {
+                setPending({
+                  kind: "role",
+                  role: "MEMBER",
+                });
+              }}
+            >
+              Change to member
+            </Button>
+          ) : null}
           {m.status === "ACTIVE" && m.role !== "SUPER_ADMIN" ? (
             <Button
               disabled={busy}

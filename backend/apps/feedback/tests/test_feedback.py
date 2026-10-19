@@ -20,7 +20,7 @@ from apps.system import services as system_services
 
 pytestmark = pytest.mark.django_db
 
-ITEM_KEYS = {"feedback_id", "cycle", "date", "is_edited", "comment", "suggestion"}
+ITEM_KEYS = {"feedback_id", "cycle", "date", "is_edited", "comment", "suggestion", "comments"}
 
 
 @pytest.fixture

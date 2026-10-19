@@ -45,6 +45,29 @@ export interface CriterionInput {
   is_required: boolean;
 }
 
+export interface CommentPrompt {
+  public_id: string;
+  key: string;
+  label: string;
+  is_required: boolean;
+  sort_order: number;
+  is_active: boolean;
+  is_archived: boolean;
+  created_at: string;
+}
+
+export interface CommentPromptInput {
+  label: string;
+  key?: string;
+  is_required?: boolean;
+}
+
+export interface FormCommentPrompt {
+  key: string;
+  label: string;
+  is_required: boolean;
+}
+
 export interface FormItem {
   order: number;
   criterion_public_id: string;
@@ -60,6 +83,7 @@ export interface FormVersion {
   suggestion_required: boolean;
   comment_max_length: number;
   suggestion_max_length: number;
+  comment_prompts?: FormCommentPrompt[];
   published_at: string | null;
   created_at: string;
   items: FormItem[];
@@ -72,6 +96,7 @@ export interface FormInput {
   suggestion_required: boolean;
   comment_max_length: number;
   suggestion_max_length: number;
+  comment_prompts?: FormCommentPrompt[];
 }
 
 export interface AdminCycle {

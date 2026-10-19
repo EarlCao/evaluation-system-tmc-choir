@@ -15,10 +15,10 @@ from django.db.models import F, Q
 from apps.core.models import AppendOnlyModel, PublicIdModel, TimeStampedModel
 
 from .constants import (
+    COMMENT_PROMPT_LABEL_MAX,
     CRITERION_DESCRIPTION_MAX,
     CRITERION_NAME_MAX,
     DEFAULT_TEXT_LIMIT,
-    CommentKind,
     CycleStatus,
     EvaluationScope,
     EvaluationStatus,
@@ -29,6 +29,7 @@ from .constants import (
     ScaleType,
 )
 from .constants import ModerationAction as ModerationActionKind
+from .defaults import DEFAULT_COMMENT_PROMPTS
 
 
 class CriterionCategory(TimeStampedModel):
@@ -42,6 +43,23 @@ class CriterionCategory(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.name
+
+
+class CommentPrompt(PublicIdModel, TimeStampedModel):
+    """Admin-configured comment/suggestion prompt (managed on Criteria & Forms pages)."""
+
+    key = models.SlugField(max_length=60, unique=True)
+    label = models.CharField(max_length=COMMENT_PROMPT_LABEL_MAX)
+    is_required = models.BooleanField(default=False)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    is_archived = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["sort_order", "id"]
+
+    def __str__(self) -> str:
+        return self.label
 
 
 class RatingCriterion(PublicIdModel, TimeStampedModel):
@@ -112,6 +130,7 @@ class FormVersion(PublicIdModel, TimeStampedModel):
     suggestion_required = models.BooleanField(default=False)
     comment_max_length = models.PositiveIntegerField(default=DEFAULT_TEXT_LIMIT)
     suggestion_max_length = models.PositiveIntegerField(default=DEFAULT_TEXT_LIMIT)
+    comment_prompts = models.JSONField(default=list, blank=True)
     published_at = models.DateTimeField(null=True, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name="+"
@@ -122,6 +141,34 @@ class FormVersion(PublicIdModel, TimeStampedModel):
 
     def __str__(self) -> str:
         return f"{self.title} (v{self.version})"
+
+    @property
+    def effective_comment_prompts(self) -> list[dict]:
+        if self.comment_prompts:
+            return [
+                {
+                    "key": str(p.get("key") or f"prompt_{i}"),
+                    "label": str(p.get("label") or ""),
+                    "is_required": bool(p.get("is_required", False)),
+                }
+                for i, p in enumerate(self.comment_prompts, start=1)
+            ]
+        return [
+            {
+                "key": p["key"],
+                "label": p["label"],
+                "is_required": (
+                    self.comment_required
+                    if p["key"] == "comment"
+                    else (
+                        self.suggestion_required
+                        if p["key"] == "suggestion"
+                        else bool(p.get("is_required", False))
+                    )
+                ),
+            }
+            for p in DEFAULT_COMMENT_PROMPTS
+        ]
 
     def save(self, *args, **kwargs):
         if self.pk and type(self).objects.filter(pk=self.pk, status=FormStatus.PUBLISHED).exists():
@@ -224,9 +271,6 @@ class Evaluation(PublicIdModel, TimeStampedModel):
     class Meta:
         ordering = ["-submitted_at", "-id"]
         constraints = [
-            models.CheckConstraint(
-                condition=~Q(evaluator=F("recipient")), name="evaluation_not_self"
-            ),
             models.UniqueConstraint(
                 fields=["cycle", "evaluator", "recipient", "submission_number"],
                 name="evaluation_once_per_cycle",
@@ -265,13 +309,16 @@ class EvaluationRating(models.Model):
 
 class EvaluationComment(models.Model):
     evaluation = models.ForeignKey(Evaluation, on_delete=models.PROTECT, related_name="comments")
-    kind = models.CharField(max_length=16, choices=CommentKind.choices)
+    kind = models.CharField(max_length=60)
+    label = models.CharField(max_length=COMMENT_PROMPT_LABEL_MAX, blank=True, default="")
+    order = models.PositiveSmallIntegerField(default=0)
     body = models.TextField()
     moderation_status = models.CharField(
         max_length=16, choices=ModerationStatus.choices, default=ModerationStatus.VISIBLE
     )
 
     class Meta:
+        ordering = ["order", "id"]
         constraints = [
             models.UniqueConstraint(fields=["evaluation", "kind"], name="comment_once_per_kind"),
         ]

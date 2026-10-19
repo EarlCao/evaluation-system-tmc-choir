@@ -111,21 +111,40 @@ describe("EvaluateMemberPage", () => {
     expect(screen.getByRole("slider")).toBeVisible();
   });
 
-  it("validates required ratings and comment before review", async () => {
+  it("validates required ratings on step 1 and required comment on step 2 before review", async () => {
     renderRoute(`/app/members/${RECIPIENT}/evaluate`);
-    await userEvent.click(await screen.findByRole("button", { name: "Review" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Next: Comments" }));
     expect(await screen.findByText("Rate “Attendance”.")).toBeVisible();
-    expect(screen.getByText("A comment is required.")).toBeVisible();
+    expect(submitted).toBeUndefined();
+
+    await userEvent.click(await screen.findByRole("button", { name: "4" }));
+    await userEvent.click(screen.getByRole("button", { name: "Next: Comments" }));
+    expect(
+      await screen.findByLabelText(/1\. Comments \(Unsay imong ikaingon sa akoa\?\)/i),
+    ).toBeVisible();
+    await userEvent.click(screen.getByRole("button", { name: "Review" }));
+    expect(
+      await screen.findByText("Comments (Unsay imong ikaingon sa akoa?) is required."),
+    ).toBeVisible();
     expect(submitted).toBeUndefined();
   });
 
-  it("reviews with the privacy notice, then submits the exact payload", async () => {
+  it("steps through criteria, numbered comments, and review with the privacy notice, then submits", async () => {
     const user = userEvent.setup({ delay: null });
     renderRoute(`/app/members/${RECIPIENT}/evaluate`);
     await user.click(await screen.findByRole("button", { name: "4" }));
     expect(screen.getByText("You chose 4.")).toBeVisible();
-    await user.type(screen.getByLabelText("Comment"), "Steady and reliable");
-    await user.type(screen.getByLabelText(/suggestion/i), "Try the solo");
+    await user.click(screen.getByRole("button", { name: "Next: Comments" }));
+
+    const commentInput = await screen.findByLabelText(
+      /1\. Comments \(Unsay imong ikaingon sa akoa\?\)/i,
+    );
+    const suggestionInput = screen.getByLabelText(
+      /2\. Suggestions \(Unsay imong ikasuggest sa akoa\?\)/i,
+    );
+    await user.type(commentInput, "Steady and reliable");
+    await user.type(suggestionInput, "Try the solo");
+    expect(screen.getAllByText(/3 words · Write as many words as you want/i)).toHaveLength(2);
     await user.click(screen.getByRole("button", { name: "Review" }));
 
     const heading = await screen.findByRole("heading", { name: /review your evaluation/i });
@@ -146,6 +165,13 @@ describe("EvaluateMemberPage", () => {
       ],
       comment: "Steady and reliable",
       suggestion: "Try the solo",
+      comments: {
+        comment: "Steady and reliable",
+        suggestion: "Try the solo",
+        comment_3: "",
+        comment_4: "",
+        comment_5: "",
+      },
     });
   });
 
@@ -153,7 +179,11 @@ describe("EvaluateMemberPage", () => {
     const user = userEvent.setup({ delay: null });
     renderRoute(`/app/members/${RECIPIENT}/evaluate`);
     await user.click(await screen.findByRole("button", { name: "4" }));
-    await user.type(screen.getByLabelText("Comment"), "Lovely tone. From Mira");
+    await user.click(screen.getByRole("button", { name: "Next: Comments" }));
+    await user.type(
+      await screen.findByLabelText(/1\. Comments \(Unsay imong ikaingon sa akoa\?\)/i),
+      "Lovely tone. From Mira",
+    );
     expect(await screen.findByText(/mentions your own name \(Mira\)/i)).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Review" }));
     await screen.findByRole("heading", { name: /review your evaluation/i });
@@ -179,12 +209,19 @@ describe("EvaluateMemberPage", () => {
     const user = userEvent.setup({ delay: null });
     renderRoute(`/app/members/${RECIPIENT}/evaluate`);
     await user.click(await screen.findByRole("button", { name: "4" }));
-    await user.type(screen.getByLabelText("Comment"), "Kept text");
+    await user.click(screen.getByRole("button", { name: "Next: Comments" }));
+    await user.type(
+      await screen.findByLabelText(/1\. Comments \(Unsay imong ikaingon sa akoa\?\)/i),
+      "Kept text",
+    );
     await user.click(screen.getByRole("button", { name: "Review" }));
     await user.click(await screen.findByRole("button", { name: "Submit evaluation" }));
 
     expect(await screen.findByText("Choose a value from 1 to 5 in steps of 1.")).toBeVisible();
-    expect(screen.getByLabelText("Comment")).toHaveValue("Kept text");
+    await user.click(screen.getByRole("button", { name: "Next: Comments" }));
+    expect(
+      await screen.findByLabelText(/1\. Comments \(Unsay imong ikaingon sa akoa\?\)/i),
+    ).toHaveValue("Kept text");
   });
 
   it("shows business-rule conflicts on the review step", async () => {
@@ -204,7 +241,11 @@ describe("EvaluateMemberPage", () => {
     const user = userEvent.setup({ delay: null });
     renderRoute(`/app/members/${RECIPIENT}/evaluate`);
     await user.click(await screen.findByRole("button", { name: "4" }));
-    await user.type(screen.getByLabelText("Comment"), "Ok");
+    await user.click(screen.getByRole("button", { name: "Next: Comments" }));
+    await user.type(
+      await screen.findByLabelText(/1\. Comments \(Unsay imong ikaingon sa akoa\?\)/i),
+      "Ok",
+    );
     await user.click(screen.getByRole("button", { name: "Review" }));
     await user.click(await screen.findByRole("button", { name: "Submit evaluation" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("The evaluation period has ended.");
@@ -224,7 +265,7 @@ describe("EvaluateMemberPage", () => {
       "/app/my-evaluations/ev-9",
     );
     await waitFor(() => {
-      expect(screen.queryByRole("button", { name: "Review" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Next: Comments" })).not.toBeInTheDocument();
     });
   });
 });

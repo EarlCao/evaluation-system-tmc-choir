@@ -207,6 +207,17 @@ describe("Admin criteria page", () => {
       });
     });
   });
+
+  it("displays numbered comment prompts on the criteria page", async () => {
+    renderRoute("/admin/criteria");
+    const promptsTable = await screen.findByRole("table", { name: "Comment prompts" });
+    expect(
+      within(promptsTable).getByText("1. Comments (Unsay imong ikaingon sa akoa?)"),
+    ).toBeVisible();
+    expect(
+      within(promptsTable).getByText("2. Suggestions (Unsay imong ikasuggest sa akoa?)"),
+    ).toBeVisible();
+  });
 });
 
 describe("Admin forms", () => {
@@ -215,6 +226,9 @@ describe("Admin forms", () => {
     expect(await screen.findByText(/published forms can't change/i)).toBeVisible();
     expect(screen.getByRole("list", { name: "Criteria in this form" })).toHaveTextContent(
       "Attendance",
+    );
+    expect(screen.getByRole("list", { name: "Comment prompts in this form" })).toHaveTextContent(
+      "Comments (Unsay imong ikaingon sa akoa?)",
     );
     expect(screen.getByRole("link", { name: "Copy into a new draft" })).toHaveAttribute(
       "href",

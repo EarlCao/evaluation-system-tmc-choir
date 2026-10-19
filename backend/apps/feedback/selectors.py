@@ -49,6 +49,7 @@ class FeedbackItem:
     is_edited: bool
     comment: str
     suggestion: str
+    comments: list[dict]
 
 
 def _visible_rows(recipient, cycle_public_id):
@@ -66,8 +67,24 @@ def list_received(
     visible text are not listed (their ratings appear in the summary)."""
     rows, cycles = _visible_rows(recipient, cycle_public_id)
     texts: dict[int, dict[str, str]] = defaultdict(dict)
+    entries_by_eval: dict[int, list[dict]] = defaultdict(list)
     for c in evaluation_selectors.received_comment_rows(evaluation_ids=[r["id"] for r in rows]):
         texts[c["evaluation_id"]][c["kind"]] = c["body"]
+        key = (
+            "comment"
+            if c["kind"] == CommentKind.COMMENT
+            else ("suggestion" if c["kind"] == CommentKind.SUGGESTION else c["kind"])
+        )
+        label = c.get("label") or (
+            "Comments (Unsay imong ikaingon sa akoa?)"
+            if key == "comment"
+            else "Suggestions (Unsay imong ikasuggest sa akoa?)"
+            if key == "suggestion"
+            else key
+        )
+        entries_by_eval[c["evaluation_id"]].append(
+            {"key": key, "label": label, "body": c["body"]}
+        )
 
     items = []
     for row in rows:
@@ -88,6 +105,7 @@ def list_received(
                     is_edited=row["is_edited"],
                     comment=text.get(CommentKind.COMMENT, ""),
                     suggestion=text.get(CommentKind.SUGGESTION, ""),
+                    comments=entries_by_eval.get(row["id"], []),
                 ),
             )
         )

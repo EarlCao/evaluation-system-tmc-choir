@@ -21,10 +21,18 @@ import type { EvaluationDraft } from "../schema";
 import { recipientName, type MyEvaluation } from "../types";
 
 function toDraft(ev: MyEvaluation): EvaluationDraft {
+  const comments: Record<string, string> = {
+    comment: ev.comment,
+    suggestion: ev.suggestion,
+  };
+  for (const entry of ev.comments ?? []) {
+    comments[entry.key] = entry.body;
+  }
   return {
     ratings: Object.fromEntries(ev.ratings.map((r) => [String(r.criterion_version.id), r.value])),
     comment: ev.comment,
     suggestion: ev.suggestion,
+    comments,
   };
 }
 
@@ -50,6 +58,7 @@ function EditPanel({ ev, onClose }: { ev: MyEvaluation; onClose: (saved: boolean
           })),
           comment: draft.comment,
           suggestion: draft.suggestion,
+          comments: draft.comments,
           change_summary: changeSummary,
         })
       }
@@ -125,6 +134,7 @@ export function MyEvaluationDetailPage() {
               }))}
               comment={ev.comment}
               suggestion={ev.suggestion}
+              {...(ev.comments ? { comments: ev.comments } : {})}
             />
           </Paper>
           {ev.can_edit ? (

@@ -11,7 +11,15 @@ pytestmark = pytest.mark.django_db
 
 DIRECTORY = reverse("members:directory")
 ME = reverse("members:me")
-ENTRY_FIELDS = {"public_id", "first_name", "last_name", "display_name", "voice_section"}
+ENTRY_FIELDS = {
+    "public_id",
+    "first_name",
+    "last_name",
+    "display_name",
+    "voice_section",
+    "has_self_evaluation",
+    "self_evaluation_summary",
+}
 
 
 def make_member(first, last, section="Tenor", **user_kwargs):

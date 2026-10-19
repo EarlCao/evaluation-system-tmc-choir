@@ -94,14 +94,27 @@ function FeedbackList({ cycle }: { cycle: string }) {
                   </Typography>
                   {item.is_edited ? <Chip size="small" label="Edited" /> : null}
                 </Stack>
-                {item.comment ? (
-                  <Typography sx={{ whiteSpace: "pre-wrap" }}>{item.comment}</Typography>
-                ) : null}
-                {item.suggestion ? (
-                  <Typography sx={{ whiteSpace: "pre-wrap" }}>
-                    <strong>Suggestion:</strong> {item.suggestion}
-                  </Typography>
-                ) : null}
+                {item.comments && item.comments.length > 0 ? (
+                  item.comments.map((entry, idx) => (
+                    <Typography key={entry.key} sx={{ whiteSpace: "pre-wrap" }}>
+                      <strong>
+                        {idx + 1}. {entry.label}:
+                      </strong>{" "}
+                      {entry.body}
+                    </Typography>
+                  ))
+                ) : (
+                  <>
+                    {item.comment ? (
+                      <Typography sx={{ whiteSpace: "pre-wrap" }}>{item.comment}</Typography>
+                    ) : null}
+                    {item.suggestion ? (
+                      <Typography sx={{ whiteSpace: "pre-wrap" }}>
+                        <strong>Suggestion:</strong> {item.suggestion}
+                      </Typography>
+                    ) : null}
+                  </>
+                )}
               </Stack>
             </Paper>
           ))}

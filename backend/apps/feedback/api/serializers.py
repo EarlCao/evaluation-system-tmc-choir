@@ -11,6 +11,12 @@ class FeedbackCycleSerializer(serializers.Serializer):
     name = serializers.CharField()
 
 
+class FeedbackCommentEntrySerializer(serializers.Serializer):
+    key = serializers.CharField()
+    label = serializers.CharField()
+    body = serializers.CharField()
+
+
 class FeedbackItemSerializer(serializers.Serializer):
     feedback_id = serializers.CharField()
     cycle = FeedbackCycleSerializer()
@@ -18,6 +24,7 @@ class FeedbackItemSerializer(serializers.Serializer):
     is_edited = serializers.BooleanField()
     comment = serializers.CharField()
     suggestion = serializers.CharField()
+    comments = FeedbackCommentEntrySerializer(many=True)
 
 
 class ScaleSerializer(serializers.Serializer):

@@ -8,6 +8,7 @@ export const configKeys = {
   categories: () => [...configKeys.all, "categories"] as const,
   criteria: (archived: boolean) => [...configKeys.all, "criteria", archived] as const,
   versions: (id: string) => [...configKeys.all, "versions", id] as const,
+  commentPrompts: (archived: boolean) => [...configKeys.all, "commentPrompts", archived] as const,
   forms: () => [...configKeys.all, "forms"] as const,
   form: (id: string) => [...configKeys.all, "form", id] as const,
   cycles: () => [...configKeys.all, "cycles"] as const,
@@ -36,6 +37,11 @@ export const useCriterionVersions = (id: string, enabled: boolean) =>
     queryFn: () => api.fetchCriterionVersions(id),
     enabled,
   });
+export const useCommentPrompts = (archived = false) =>
+  useQuery({
+    queryKey: configKeys.commentPrompts(archived),
+    queryFn: () => api.fetchCommentPrompts(archived),
+  });
 export const useForms = () => useQuery({ queryKey: configKeys.forms(), queryFn: api.fetchForms });
 export const useForm = (id: string) =>
   useQuery({
@@ -60,6 +66,13 @@ export const useUpdateCriterion = () =>
   );
 export const useArchiveCriterion = () => useConfigMutation(api.archiveCriterion);
 export const useReorderCriteria = () => useConfigMutation(api.reorderCriteria);
+export const useCreateCommentPrompt = () => useConfigMutation(api.createCommentPrompt);
+export const useUpdateCommentPrompt = () =>
+  useConfigMutation((a: { id: string; changes: Parameters<typeof api.updateCommentPrompt>[1] }) =>
+    api.updateCommentPrompt(a.id, a.changes),
+  );
+export const useArchiveCommentPrompt = () => useConfigMutation(api.archiveCommentPrompt);
+export const useReorderCommentPrompts = () => useConfigMutation(api.reorderCommentPrompts);
 export const useCreateForm = () => useConfigMutation(api.createForm);
 export const useUpdateForm = () =>
   useConfigMutation((a: { id: string; input: Parameters<typeof api.updateForm>[1] }) =>

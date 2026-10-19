@@ -4,6 +4,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from ..constants import (
+    COMMENT_PROMPT_LABEL_MAX,
     CRITERION_DESCRIPTION_MAX,
     CRITERION_NAME_MAX,
     LABEL_MAX,
@@ -17,6 +18,7 @@ from ..constants import (
 )
 from ..constants import ModerationAction as ModerationActionKind
 from ..models import (
+    CommentPrompt,
     CriterionCategory,
     CriterionVersion,
     Evaluation,
@@ -134,7 +136,41 @@ class ReorderSerializer(serializers.Serializer):
     order = serializers.ListField(child=serializers.UUIDField(), allow_empty=False)
 
 
+# Comment prompts ---------------------------------------------------------------
+class CommentPromptSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CommentPrompt
+        fields = [
+            "public_id",
+            "key",
+            "label",
+            "is_required",
+            "sort_order",
+            "is_active",
+            "is_archived",
+            "created_at",
+        ]
+
+
+class CommentPromptCreateSerializer(serializers.Serializer):
+    label = serializers.CharField(max_length=COMMENT_PROMPT_LABEL_MAX)
+    key = serializers.SlugField(max_length=60, required=False, allow_blank=True, default="")
+    is_required = serializers.BooleanField(required=False, default=False)
+
+
+class CommentPromptUpdateSerializer(serializers.Serializer):
+    label = serializers.CharField(max_length=COMMENT_PROMPT_LABEL_MAX, required=False)
+    is_required = serializers.BooleanField(required=False)
+    is_active = serializers.BooleanField(required=False)
+
+
 # Form versions -----------------------------------------------------------------
+class FormCommentPromptSerializer(serializers.Serializer):
+    key = serializers.CharField(max_length=60, required=False, allow_blank=True, default="")
+    label = serializers.CharField(max_length=COMMENT_PROMPT_LABEL_MAX)
+    is_required = serializers.BooleanField(required=False, default=False)
+
+
 class FormItemSerializer(serializers.ModelSerializer):
     criterion_public_id = serializers.UUIDField(
         source="criterion_version.criterion.public_id", read_only=True
@@ -148,6 +184,9 @@ class FormItemSerializer(serializers.ModelSerializer):
 
 class FormVersionSerializer(serializers.ModelSerializer):
     items = FormItemSerializer(many=True, read_only=True)
+    comment_prompts = FormCommentPromptSerializer(
+        source="effective_comment_prompts", many=True, read_only=True
+    )
 
     class Meta:
         model = FormVersion
@@ -160,6 +199,7 @@ class FormVersionSerializer(serializers.ModelSerializer):
             "suggestion_required",
             "comment_max_length",
             "suggestion_max_length",
+            "comment_prompts",
             "published_at",
             "created_at",
             "items",
@@ -177,6 +217,9 @@ class FormWriteSerializer(serializers.Serializer):
     suggestion_max_length = serializers.IntegerField(
         min_value=1, max_value=TEXT_LIMIT_MAX, required=False
     )
+    comment_prompts = serializers.ListField(
+        child=FormCommentPromptSerializer(), required=False
+    )
 
 
 class FormUpdateSerializer(FormWriteSerializer):
@@ -186,6 +229,9 @@ class FormUpdateSerializer(FormWriteSerializer):
     )
     comment_required = serializers.BooleanField(required=False)
     suggestion_required = serializers.BooleanField(required=False)
+    comment_prompts = serializers.ListField(
+        child=FormCommentPromptSerializer(), required=False
+    )
 
 
 # Cycles ----------------------------------------------------------------------
@@ -284,6 +330,13 @@ class AdminTextSerializer(serializers.Serializer):
     moderation_status = serializers.ChoiceField(choices=ModerationStatus.choices)
 
 
+class AdminCommentEntrySerializer(serializers.Serializer):
+    key = serializers.CharField()
+    label = serializers.CharField()
+    body = serializers.CharField()
+    moderation_status = serializers.ChoiceField(choices=ModerationStatus.choices)
+
+
 def _text(obj: Evaluation, kind: str):
     comment = next((c for c in obj.comments.all() if c.kind == kind), None)
     return AdminTextSerializer(comment).data if comment else None
@@ -298,6 +351,7 @@ class AdminEvaluationSerializer(serializers.ModelSerializer):
     ratings = AdminRatingSerializer(many=True)
     comment = serializers.SerializerMethodField()
     suggestion = serializers.SerializerMethodField()
+    comments = serializers.SerializerMethodField()
     needs_attention = serializers.SerializerMethodField()
 
     class Meta:
@@ -316,6 +370,7 @@ class AdminEvaluationSerializer(serializers.ModelSerializer):
             "ratings",
             "comment",
             "suggestion",
+            "comments",
         ]
 
     @extend_schema_field(AdminTextSerializer(allow_null=True))
@@ -325,6 +380,36 @@ class AdminEvaluationSerializer(serializers.ModelSerializer):
     @extend_schema_field(AdminTextSerializer(allow_null=True))
     def get_suggestion(self, obj):
         return _text(obj, CommentKind.SUGGESTION)
+
+    @extend_schema_field(AdminCommentEntrySerializer(many=True))
+    def get_comments(self, obj):
+        prompt_labels = {
+            p["key"]: p["label"] for p in obj.form_version.effective_comment_prompts
+        }
+        entries = []
+        for c in obj.comments.all():
+            key = (
+                "comment"
+                if c.kind == CommentKind.COMMENT
+                else ("suggestion" if c.kind == CommentKind.SUGGESTION else c.kind)
+            )
+            label = c.label or prompt_labels.get(
+                key,
+                "Comments (Unsay imong ikaingon sa akoa?)"
+                if key == "comment"
+                else "Suggestions (Unsay imong ikasuggest sa akoa?)"
+                if key == "suggestion"
+                else key,
+            )
+            entries.append(
+                {
+                    "key": key,
+                    "label": label,
+                    "body": c.body,
+                    "moderation_status": c.moderation_status,
+                }
+            )
+        return entries
 
     def get_needs_attention(self, obj) -> bool:
         return obj.moderation_status == ModerationStatus.FLAGGED or bool(

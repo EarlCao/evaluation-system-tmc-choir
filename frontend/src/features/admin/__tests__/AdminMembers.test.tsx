@@ -145,8 +145,15 @@ describe("Admin members", () => {
     expect(posts).toEqual([]);
   });
 
-  it("shows server refusals", async () => {
+  it("does not show Make Super Admin button for members", async () => {
     current = active;
+    renderRoute(`/admin/members/${active.public_id}`);
+    await screen.findByRole("heading", { name: /aria lane/i });
+    expect(screen.queryByRole("button", { name: "Make Super Admin" })).not.toBeInTheDocument();
+  });
+
+  it("shows server refusals", async () => {
+    current = { ...active, role: "SUPER_ADMIN", profile: null };
     server.use(
       http.post(api("/admin/members/:id/role/"), () =>
         HttpResponse.json(
@@ -158,7 +165,7 @@ describe("Admin members", () => {
       ),
     );
     renderRoute(`/admin/members/${active.public_id}`);
-    await userEvent.click(await screen.findByRole("button", { name: "Make Super Admin" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Change to member" }));
     await userEvent.click(
       within(await screen.findByRole("dialog")).getByRole("button", { name: "Change role" }),
     );

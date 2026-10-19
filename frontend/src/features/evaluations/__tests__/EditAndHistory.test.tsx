@@ -125,7 +125,10 @@ describe("editing my evaluation (MINE-02..04)", () => {
     renderRoute(`/app/my-evaluations/${ID}`);
     await user.click(await screen.findByRole("button", { name: "Edit evaluation" }));
     await user.click(await screen.findByRole("button", { name: "5: Excellent" }));
-    const comment = screen.getByLabelText("Comment");
+    await user.click(screen.getByRole("button", { name: "Next: Comments" }));
+    const comment = await screen.findByLabelText(
+      /1\. Comments \(Unsay imong ikaingon sa akoa\?\)/i,
+    );
     expect(comment).toHaveValue("First thoughts"); // pre-filled from the current content
     await user.clear(comment);
     await user.type(comment, "Second thoughts");
@@ -141,6 +144,13 @@ describe("editing my evaluation (MINE-02..04)", () => {
       ratings: [{ criterion_version: 11, value: 5 }],
       comment: "Second thoughts",
       suggestion: "",
+      comments: {
+        comment: "Second thoughts",
+        suggestion: "",
+        comment_3: "",
+        comment_4: "",
+        comment_5: "",
+      },
       change_summary: "Fixed typo",
     });
     const history = await screen.findByRole("list", { name: "Revisions" });

@@ -12,7 +12,8 @@ from apps.core.exceptions import BusinessRuleViolation, ValidationError
 from apps.members import selectors as member_selectors
 
 from .. import events, rules, selectors
-from ..constants import CommentKind, Ineligibility, ModerationStatus
+from ..constants import DEFAULT_TEXT_LIMIT, CommentKind, Ineligibility, ModerationStatus
+from ..defaults import DEFAULT_COMMENT_PROMPTS
 from ..models import (
     Evaluation,
     EvaluationComment,
@@ -22,6 +23,14 @@ from ..models import (
 )
 from ..scales import is_valid_value, point_key
 from ..text import clean_text
+
+
+def _kind_for_key(key: str) -> str:
+    if key == "comment":
+        return CommentKind.COMMENT
+    if key == "suggestion":
+        return CommentKind.SUGGESTION
+    return key
 
 
 def _validated_ratings(
@@ -70,25 +79,71 @@ def _validated_ratings(
     return [(items[cv_id], given.get(cv_id)) for cv_id in items]
 
 
-def _validated_texts(form: FormVersion, comment: str, suggestion: str) -> dict[str, str]:
+def _validated_texts(
+    form: FormVersion,
+    comment: str,
+    suggestion: str,
+    comments: dict[str, str] | None = None,
+) -> dict[str, str]:
     """EVAL-05: optional/required per form, length limits enforced server-side."""
-    texts = {"comment": clean_text(comment), "suggestion": clean_text(suggestion)}
-    rules_ = {
-        "comment": (form.comment_required, form.comment_max_length),
-        "suggestion": (form.suggestion_required, form.suggestion_max_length),
-    }
-    errors = {}
-    for field, (required, limit) in rules_.items():
-        if required and not texts[field]:
-            errors[field] = ["This field is required."]
-        elif len(texts[field]) > limit:
-            errors[field] = [f"Keep it under {limit} characters."]
+    raw_map = {str(k): str(v or "") for k, v in (comments or {}).items()}
+    if comment or "comment" not in raw_map:
+        raw_map["comment"] = raw_map.get("comment") or comment
+    if suggestion or "suggestion" not in raw_map:
+        raw_map["suggestion"] = raw_map.get("suggestion") or suggestion
+
+    prompts = form.effective_comment_prompts
+    if (
+        prompts
+        and prompts[0]["key"] != "comment"
+        and comment
+        and not raw_map.get(prompts[0]["key"])
+    ):
+        raw_map[prompts[0]["key"]] = comment
+    if (
+        len(prompts) > 1
+        and prompts[1]["key"] != "suggestion"
+        and suggestion
+        and not raw_map.get(prompts[1]["key"])
+    ):
+        raw_map[prompts[1]["key"]] = suggestion
+
+    texts = {k: clean_text(v) for k, v in raw_map.items()}
+    texts.setdefault("comment", "")
+    texts.setdefault("suggestion", "")
+
+    errors: dict[str, list[str]] = {}
+    for p in prompts:
+        key = p["key"]
+        texts.setdefault(key, "")
+        required = bool(p["is_required"])
+        limit = (
+            form.comment_max_length
+            if key == "comment"
+            else (form.suggestion_max_length if key == "suggestion" else DEFAULT_TEXT_LIMIT)
+        )
+        if required and not texts[key]:
+            errors[key] = ["This field is required."]
+        elif len(texts[key]) > limit:
+            errors[key] = [f"Keep it under {limit} characters."]
+
+    if prompts and prompts[0]["key"] != "comment" and not texts["comment"]:
+        texts["comment"] = texts.get(prompts[0]["key"], "")
+    if len(prompts) > 1 and prompts[1]["key"] != "suggestion" and not texts["suggestion"]:
+        texts["suggestion"] = texts.get(prompts[1]["key"], "")
+
     if errors:
         raise ValidationError(fields=errors)
     return texts
 
 
-def validated_content(form: FormVersion, ratings: Sequence[dict], comment: str, suggestion: str):
+def validated_content(
+    form: FormVersion,
+    ratings: Sequence[dict],
+    comment: str,
+    suggestion: str,
+    comments: dict[str, str] | None = None,
+):
     """Validate ratings and texts together so every problem is reported at once."""
     errors: dict = {}
     checked_ratings, texts = None, None
@@ -97,7 +152,7 @@ def validated_content(form: FormVersion, ratings: Sequence[dict], comment: str, 
     except ValidationError as exc:
         errors.update(exc.fields or {})
     try:
-        texts = _validated_texts(form, comment, suggestion)
+        texts = _validated_texts(form, comment, suggestion, comments=comments)
     except ValidationError as exc:
         errors.update(exc.fields or {})
     if errors:
@@ -107,7 +162,7 @@ def validated_content(form: FormVersion, ratings: Sequence[dict], comment: str, 
 
 def build_snapshot(*, evaluation: Evaluation, ratings, texts: dict[str, str]) -> dict:
     """Full content of one revision (MINE-03/04)."""
-    return {
+    snap: dict = {
         "form_version_id": evaluation.form_version_id,
         "ratings": [
             {
@@ -118,9 +173,15 @@ def build_snapshot(*, evaluation: Evaluation, ratings, texts: dict[str, str]) ->
             }
             for cv, value in ratings
         ],
-        "comment": texts["comment"],
-        "suggestion": texts["suggestion"],
+        "comment": texts.get("comment", ""),
+        "suggestion": texts.get("suggestion", ""),
     }
+    extra_keys = [
+        k for k, v in texts.items() if k not in ("comment", "suggestion") and v
+    ]
+    if extra_keys:
+        snap["comments"] = {k: v for k, v in texts.items() if v}
+    return snap
 
 
 def write_content(*, evaluation: Evaluation, ratings, texts: dict[str, str]) -> None:
@@ -138,19 +199,61 @@ def write_content(*, evaluation: Evaluation, ratings, texts: dict[str, str]) -> 
         for cv, value in ratings
     )
     evaluation.comments.all().delete()
-    EvaluationComment.objects.bulk_create(
-        EvaluationComment(
-            evaluation=evaluation,
-            kind=kind,
-            body=texts[field],
-            moderation_status=previous_status.get(kind, ModerationStatus.VISIBLE),
-        )
-        for kind, field in (
-            (CommentKind.COMMENT, "comment"),
-            (CommentKind.SUGGESTION, "suggestion"),
-        )
-        if texts[field]
-    )
+    prompts = evaluation.form_version.effective_comment_prompts
+    default_labels = {p["key"]: p["label"] for p in DEFAULT_COMMENT_PROMPTS}
+    rows_to_create: list[EvaluationComment] = []
+    seen_kinds: set[str] = set()
+    for order, p in enumerate(prompts, start=1):
+        key = p["key"]
+        body = texts.get(key, "")
+        kind = _kind_for_key(key)
+        seen_kinds.add(kind)
+        if body:
+            rows_to_create.append(
+                EvaluationComment(
+                    evaluation=evaluation,
+                    kind=kind,
+                    label=p["label"],
+                    order=order,
+                    body=body,
+                    moderation_status=previous_status.get(kind, ModerationStatus.VISIBLE),
+                )
+            )
+    next_order = len(prompts) + 1
+    for kind, field, default_label in (
+        (CommentKind.COMMENT, "comment", "Comments (Unsay imong ikaingon sa akoa?)"),
+        (CommentKind.SUGGESTION, "suggestion", "Suggestions (Unsay imong ikasuggest sa akoa?)"),
+    ):
+        if kind not in seen_kinds and texts.get(field):
+            seen_kinds.add(kind)
+            rows_to_create.append(
+                EvaluationComment(
+                    evaluation=evaluation,
+                    kind=kind,
+                    label=default_label,
+                    order=next_order,
+                    body=texts[field],
+                    moderation_status=previous_status.get(kind, ModerationStatus.VISIBLE),
+                )
+            )
+            next_order += 1
+    for key, body in texts.items():
+        kind = _kind_for_key(key)
+        if kind not in seen_kinds and body:
+            seen_kinds.add(kind)
+            label = default_labels.get(key) or f"Additional comment ({key.replace('_', ' ')})"
+            rows_to_create.append(
+                EvaluationComment(
+                    evaluation=evaluation,
+                    kind=kind,
+                    label=label[:200],
+                    order=next_order,
+                    body=body,
+                    moderation_status=previous_status.get(kind, ModerationStatus.VISIBLE),
+                )
+            )
+            next_order += 1
+    EvaluationComment.objects.bulk_create(rows_to_create)
 
 
 def submit_evaluation(
@@ -160,6 +263,7 @@ def submit_evaluation(
     ratings: Sequence[dict],
     comment: str = "",
     suggestion: str = "",
+    comments: dict[str, str] | None = None,
 ) -> Evaluation:
     """EVAL-01, EVAL-05, EVAL-07, EVAL-08, BR-01, BR-12, BR-13, BR-14, BR-05 (revision 1)."""
     cycle = selectors.get_open_cycle()
@@ -171,7 +275,9 @@ def submit_evaluation(
         raise BusinessRuleViolation(verdict.message)
 
     form = cycle.form_version
-    checked_ratings, texts = validated_content(form, ratings, comment, suggestion)
+    checked_ratings, texts = validated_content(
+        form, ratings, comment, suggestion, comments=comments
+    )
     now = timezone.now()
     try:
         with transaction.atomic():
@@ -223,6 +329,7 @@ def edit_evaluation(
     ratings: Sequence[dict],
     comment: str = "",
     suggestion: str = "",
+    comments: dict[str, str] | None = None,
     change_summary: str = "",
 ) -> Evaluation:
     """MINE-02 / MINE-03 / BR-05: the author edits within the window; every real change writes
@@ -237,7 +344,7 @@ def edit_evaluation(
         )
     # Validate against the form the evaluation was submitted with (BR-07).
     checked_ratings, texts = validated_content(
-        evaluation.form_version, ratings, comment, suggestion
+        evaluation.form_version, ratings, comment, suggestion, comments=comments
     )
 
     with transaction.atomic():

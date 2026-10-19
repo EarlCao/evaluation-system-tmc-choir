@@ -24,3 +24,32 @@ DEFAULT_CRITERIA = [
     ),
     ("participation", "Teamwork", "Participation", "Takes part actively in choir activities."),
 ]
+
+DEFAULT_COMMENT_PROMPTS = [
+    {
+        "key": "comment",
+        "label": "Comments (Unsay imong ikaingon sa akoa?)",
+        "is_required": False,
+    },
+    {
+        "key": "suggestion",
+        "label": "Suggestions (Unsay imong ikasuggest sa akoa?)",
+        "is_required": False,
+    },
+    {
+        "key": "comment_3",
+        "label": "Strengths / Positive traits (Unsay maayo nga nakita nimo sa akoa?)",
+        "is_required": False,
+    },
+    {
+        "key": "comment_4",
+        "label": "Areas for growth (Unsay angay pa nakong palambuon?)",
+        "is_required": False,
+    },
+    {
+        "key": "comment_5",
+        "label": "Encouragement / Message (Unsay imong mensahe o pagdasig para sa akoa?)",
+        "is_required": False,
+    },
+]
+

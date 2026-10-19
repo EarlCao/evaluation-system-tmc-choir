@@ -23,11 +23,16 @@ import { isApiError } from "@/lib/errors";
 
 import { CriterionDialog } from "../components/CriterionDialog";
 import {
+  useArchiveCommentPrompt,
   useArchiveCriterion,
   useCategories,
+  useCommentPrompts,
   useCreateCategory,
+  useCreateCommentPrompt,
   useCriteria,
+  useReorderCommentPrompts,
   useReorderCriteria,
+  useUpdateCommentPrompt,
   useUpdateCriterion,
 } from "../configQueries";
 import type { Criterion } from "../configTypes";
@@ -44,6 +49,225 @@ function scaleSummary(c: Criterion): string {
 
 function errorText(error: unknown) {
   return isApiError(error) ? error.message : "Something went wrong.";
+}
+
+function CommentPromptsSection() {
+  const prompts = useCommentPrompts(false);
+  const create = useCreateCommentPrompt();
+  const update = useUpdateCommentPrompt();
+  const archive = useArchiveCommentPrompt();
+  const reorder = useReorderCommentPrompts();
+  const [newLabel, setNewLabel] = useState("");
+  const [newRequired, setNewRequired] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingLabel, setEditingLabel] = useState("");
+
+  const list = prompts.data ?? [];
+  const active = list.filter((p) => !p.is_archived);
+  const mutationError = create.error ?? update.error ?? archive.error ?? reorder.error;
+
+  function movePrompt(index: number, delta: -1 | 1) {
+    const order = active.map((p) => p.public_id);
+    const [item] = order.splice(index, 1);
+    if (item === undefined) return;
+    order.splice(index + delta, 0, item);
+    reorder.mutate(order);
+  }
+
+  return (
+    <Paper variant="outlined" sx={{ p: 2 }}>
+      <Typography variant="h6" component="h2" gutterBottom>
+        Comment &amp; Suggestion Prompts
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        Configure the numbered comment prompts shown on the Comments step after members rate the
+        criteria (for example, <strong>1. Comments (Unsay imong ikaingon sa akoa?)</strong> followed
+        by <strong>2. Suggestions (Unsay imong ikasuggest sa akoa?)</strong>). Members can write as
+        many words as they want.
+      </Typography>
+      {mutationError ? (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {errorText(mutationError)}
+        </Alert>
+      ) : null}
+      {active.length > 0 ? (
+        <TableContainer sx={{ mb: 2 }}>
+          <Table size="small" aria-label="Comment prompts">
+            <TableHead>
+              <TableRow>
+                <TableCell>Order</TableCell>
+                <TableCell>Numbered Prompt</TableCell>
+                <TableCell>Required</TableCell>
+                <TableCell>Active</TableCell>
+                <TableCell>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {active.map((p, index) => (
+                <TableRow key={p.public_id}>
+                  <TableCell sx={{ whiteSpace: "nowrap" }}>
+                    <IconButton
+                      size="small"
+                      aria-label={`Move ${p.label} up`}
+                      disabled={index === 0 || reorder.isPending}
+                      onClick={() => {
+                        movePrompt(index, -1);
+                      }}
+                    >
+                      ↑
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      aria-label={`Move ${p.label} down`}
+                      disabled={index === active.length - 1 || reorder.isPending}
+                      onClick={() => {
+                        movePrompt(index, 1);
+                      }}
+                    >
+                      ↓
+                    </IconButton>
+                  </TableCell>
+                  <TableCell>
+                    {editingId === p.public_id ? (
+                      <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          label="Prompt label"
+                          value={editingLabel}
+                          onChange={(e) => {
+                            setEditingLabel(e.target.value);
+                          }}
+                        />
+                        <Button
+                          size="small"
+                          variant="contained"
+                          disabled={!editingLabel.trim() || update.isPending}
+                          onClick={() => {
+                            update.mutate(
+                              { id: p.public_id, changes: { label: editingLabel.trim() } },
+                              {
+                                onSuccess: () => {
+                                  setEditingId(null);
+                                },
+                              },
+                            );
+                          }}
+                        >
+                          Save
+                        </Button>
+                        <Button
+                          size="small"
+                          onClick={() => {
+                            setEditingId(null);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </Stack>
+                    ) : (
+                      <Typography sx={{ fontWeight: 600 }}>
+                        {index + 1}. {p.label}
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Switch
+                      checked={p.is_required}
+                      onChange={(e) => {
+                        update.mutate({
+                          id: p.public_id,
+                          changes: { is_required: e.target.checked },
+                        });
+                      }}
+                      slotProps={{ input: { "aria-label": `${p.label} required` } }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Switch
+                      checked={p.is_active}
+                      onChange={(e) => {
+                        update.mutate({
+                          id: p.public_id,
+                          changes: { is_active: e.target.checked },
+                        });
+                      }}
+                      slotProps={{ input: { "aria-label": `${p.label} active` } }}
+                    />
+                  </TableCell>
+                  <TableCell sx={{ whiteSpace: "nowrap" }}>
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        setEditingId(p.public_id);
+                        setEditingLabel(p.label);
+                      }}
+                    >
+                      Rename
+                    </Button>
+                    <Button
+                      size="small"
+                      color="error"
+                      disabled={archive.isPending}
+                      onClick={() => {
+                        archive.mutate(p.public_id);
+                      }}
+                    >
+                      Archive
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      ) : null}
+      <Stack
+        component="form"
+        direction={{ xs: "column", sm: "row" }}
+        spacing={1}
+        sx={{ alignItems: { sm: "center" } }}
+        aria-label="Add a comment prompt"
+        onSubmit={(e) => {
+          e.preventDefault();
+          create.mutate(
+            { label: newLabel.trim(), is_required: newRequired },
+            {
+              onSuccess: () => {
+                setNewLabel("");
+                setNewRequired(false);
+              },
+            },
+          );
+        }}
+      >
+        <TextField
+          size="small"
+          label="New comment prompt"
+          placeholder="e.g. Comments (Unsay imong ikaingon sa akoa?)"
+          value={newLabel}
+          onChange={(e) => {
+            setNewLabel(e.target.value);
+          }}
+          sx={{ flex: 1 }}
+        />
+        <FormControlLabel
+          control={
+            <Switch
+              checked={newRequired}
+              onChange={(e) => {
+                setNewRequired(e.target.checked);
+              }}
+            />
+          }
+          label="Required"
+        />
+        <Button type="submit" variant="outlined" disabled={!newLabel.trim() || create.isPending}>
+          Add prompt
+        </Button>
+      </Stack>
+    </Paper>
+  );
 }
 
 function Categories() {
@@ -276,6 +500,7 @@ export function AdminCriteriaPage() {
           </TableBody>
         </Table>
       </TableContainer>
+      <CommentPromptsSection />
       <Categories />
 
       {editing ? (

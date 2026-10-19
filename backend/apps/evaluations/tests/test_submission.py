@@ -4,7 +4,6 @@ from datetime import timedelta
 from decimal import Decimal
 
 import pytest
-from django.db import IntegrityError
 from django.urls import reverse
 from django.utils import timezone
 
@@ -13,7 +12,7 @@ from apps.audit.models import AuditLog
 from apps.core.exceptions import BusinessRuleViolation, ValidationError
 from apps.core.models import AppendOnlyViolation
 from apps.evaluations import services
-from apps.evaluations.models import Evaluation, EvaluationRevision
+from apps.evaluations.models import EvaluationRevision
 from apps.evaluations.tests.factories import make_criterion, make_cycle, make_form
 from apps.members.tests.factories import MemberProfileFactory, voice_section
 
@@ -104,21 +103,29 @@ def test_text_is_cleaned(member, recipient, form, cycle):
 
 
 # --------------------------------------------------------------------------- business rules
-def test_cannot_evaluate_yourself(member, form, cycle):
-    """BR-01"""
-    with pytest.raises(BusinessRuleViolation, match="yourself"):
-        submit(member, member, form)
+def test_can_evaluate_yourself_and_view_publicly(member_client, member, recipient, form, cycle):
+    """Members can evaluate themselves and all members can see it publicly on their profile."""
+    evaluation = submit(member, member, form, suggestion="Practice scales daily")
+    assert evaluation.evaluator == member
+    assert evaluation.recipient == member
 
+    from rest_framework.test import APIClient
 
-def test_database_also_blocks_self_evaluation(member, form, cycle):
-    with pytest.raises(IntegrityError):
-        Evaluation.objects.create(
-            cycle=cycle,
-            evaluator=member,
-            recipient=member,
-            form_version=form,
-            submitted_at=timezone.now(),
-        )
+    other_client = APIClient()
+    other_client.force_login(recipient)
+    profile_resp = other_client.get(reverse("members:detail", args=[member.public_id]))
+    assert profile_resp.status_code == 200
+    self_eval = profile_resp.json()["self_evaluation"]
+    assert self_eval is not None
+    assert self_eval["public_id"] == str(evaluation.public_id)
+    assert self_eval["comment"] == "Great energy!"
+    assert self_eval["suggestion"] == "Practice scales daily"
+    assert self_eval["ratings"][0]["value"] == 4.0
+
+    dir_resp = other_client.get(reverse("members:directory"))
+    entry = next(m for m in dir_resp.json()["results"] if m["public_id"] == str(member.public_id))
+    assert entry["has_self_evaluation"] is True
+    assert entry["self_evaluation_summary"] == "Great energy!"
 
 
 def test_only_once_per_cycle_unless_resubmission_allowed(member, recipient, form, super_admin):
@@ -271,7 +278,7 @@ def test_eligibility_endpoint(member_client, member, recipient, form, cycle):
     after = member_client.get(url, {"recipient": recipient.public_id}).json()
     assert after["reason"] == "ALREADY_EVALUATED"
     assert after["existing_evaluation"] == str(evaluation.public_id)
-    assert member_client.get(url, {"recipient": member.public_id}).json()["reason"] == "SELF"
+    assert member_client.get(url, {"recipient": member.public_id}).json()["can_evaluate"] is True
     assert member_client.get(url, {"recipient": "nope"}).status_code == 400
 
 
@@ -359,3 +366,63 @@ def test_dashboard_shows_cycle_progress(member_client, member, recipient, form, 
     assert data["name"] == cycle.name
     assert data["evaluations_given"] == 1
     assert data["members_left"] == 1
+
+
+def test_custom_comment_prompts_and_unlimited_words(member_client, member, recipient, super_admin):
+    criterion = make_criterion(super_admin, name="Pitch")
+    custom_form = services.create_form_version(
+        actor=super_admin,
+        title="Custom prompts form",
+        criteria=[criterion.public_id],
+        comment_prompts=[
+            {
+                "key": "comment",
+                "label": "Comments (Unsay imong ikaingon sa akoa?)",
+                "is_required": True,
+            },
+            {
+                "key": "suggestion",
+                "label": "Suggestions (Unsay imong ikasuggest sa akoa?)",
+                "is_required": False,
+            },
+            {
+                "key": "encouragement",
+                "label": "Encouragement (Unsay makadasig nimo?)",
+                "is_required": False,
+            },
+        ],
+    )
+    services.publish_form_version(actor=super_admin, form=custom_form)
+    custom_cycle = make_cycle(super_admin, form=custom_form, open=True)
+
+    form_json = member_client.get(
+        reverse("evaluations:cycle-form", args=[custom_cycle.public_id])
+    ).json()
+    assert [p["label"] for p in form_json["comment_prompts"]] == [
+        "Comments (Unsay imong ikaingon sa akoa?)",
+        "Suggestions (Unsay imong ikasuggest sa akoa?)",
+        "Encouragement (Unsay makadasig nimo?)",
+    ]
+
+    long_comment = "Maayo kaayo imong tingog ug determinasyon. " * 120
+    created = member_client.post(
+        reverse("evaluations:submit"),
+        {
+            "recipient": str(recipient.public_id),
+            "ratings": [
+                {"criterion_version": custom_form.items.first().criterion_version_id, "value": 5}
+            ],
+            "comments": {
+                "comment": long_comment,
+                "suggestion": "Padayon sa pagpraktis.",
+                "encouragement": "Kaya nimo!",
+            },
+        },
+        format="json",
+    )
+    assert created.status_code == 201, created.json()
+    body = created.json()
+    assert len(body["comments"]) == 3
+    assert body["comments"][0]["label"] == "Comments (Unsay imong ikaingon sa akoa?)"
+    assert body["comments"][2]["key"] == "encouragement"
+    assert body["comments"][2]["body"] == "Kaya nimo!"

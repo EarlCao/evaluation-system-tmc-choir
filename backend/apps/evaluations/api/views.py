@@ -67,6 +67,7 @@ class EvaluationCreateView(APIView):
             ratings=[dict(r) for r in values["ratings"]],
             comment=values["comment"],
             suggestion=values["suggestion"],
+            comments=values.get("comments"),
         )
         mine = selectors.get_my_evaluation(user=request.user, public_id=evaluation.public_id)
         return Response(MyEvaluationSerializer(mine).data, status=status.HTTP_201_CREATED)
@@ -110,6 +111,7 @@ class MyEvaluationDetailView(APIView):
             ratings=[dict(r) for r in values["ratings"]],
             comment=values["comment"],
             suggestion=values["suggestion"],
+            comments=values.get("comments"),
             change_summary=values["change_summary"],
         )
         return Response(MyEvaluationSerializer(mine).data)

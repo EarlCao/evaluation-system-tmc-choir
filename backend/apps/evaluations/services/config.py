@@ -14,8 +14,9 @@ from apps.core.events import publish
 from apps.core.exceptions import BusinessRuleViolation, ValidationError
 from apps.system.selectors import get_settings
 
-from .. import events
+from .. import events, selectors
 from ..constants import (
+    COMMENT_PROMPT_LABEL_MAX,
     CRITERION_DESCRIPTION_MAX,
     CRITERION_NAME_MAX,
     TEXT_LIMIT_MAX,
@@ -25,6 +26,7 @@ from ..constants import (
     FormStatus,
 )
 from ..models import (
+    CommentPrompt,
     CriterionCategory,
     CriterionVersion,
     Evaluation,
@@ -99,6 +101,85 @@ def update_category(*, actor, category: CriterionCategory, **changes) -> Criteri
             )
         )
     return category
+
+
+# ---------------------------------------------------------------------------
+# Comment prompts (EVAL-05, CFG-04)
+# ---------------------------------------------------------------------------
+def _unique_prompt_key(base: str) -> str:
+    key = slugify(base)[:50] or "prompt"
+    candidate, n = key, 2
+    while CommentPrompt.objects.filter(key=candidate).exists():
+        candidate, n = f"{key}-{n}", n + 1
+    return candidate
+
+
+def create_comment_prompt(
+    *, actor, label: str, is_required: bool = False, key: str = ""
+) -> CommentPrompt:
+    selectors.ensure_default_comment_prompts()
+    label = str(label or "").strip()
+    if not label:
+        raise ValidationError(fields={"label": ["Enter a comment prompt."]})
+    if len(label) > COMMENT_PROMPT_LABEL_MAX:
+        raise ValidationError(
+            fields={"label": [f"Keep it under {COMMENT_PROMPT_LABEL_MAX} characters."]}
+        )
+    order = (CommentPrompt.objects.aggregate(m=Max("sort_order"))["m"] or 0) + 1
+    return CommentPrompt.objects.create(
+        key=_unique_prompt_key(key or label),
+        label=label,
+        is_required=bool(is_required),
+        sort_order=order,
+    )
+
+
+def update_comment_prompt(*, actor, prompt: CommentPrompt, **changes) -> CommentPrompt:
+    allowed = {"label", "is_required", "is_active", "is_archived"}
+    unknown = set(changes) - allowed
+    if unknown:
+        raise ValidationError(
+            fields={f: ["This field cannot be changed."] for f in sorted(unknown)}
+        )
+    if "label" in changes:
+        label = str(changes["label"]).strip()
+        if not label:
+            raise ValidationError(fields={"label": ["Enter a comment prompt."]})
+        if len(label) > COMMENT_PROMPT_LABEL_MAX:
+            raise ValidationError(
+                fields={"label": [f"Keep it under {COMMENT_PROMPT_LABEL_MAX} characters."]}
+            )
+        changes["label"] = label
+    for field, value in changes.items():
+        setattr(prompt, field, value)
+    if prompt.is_archived:
+        prompt.is_active = False
+    prompt.save()
+    return prompt
+
+
+def reorder_comment_prompts(*, actor, ordered_public_ids: Sequence[str]) -> None:
+    selectors.ensure_default_comment_prompts()
+    prompts = {str(p.public_id): p for p in CommentPrompt.objects.filter(is_archived=False)}
+    if sorted(map(str, ordered_public_ids)) != sorted(prompts):
+        raise ValidationError(
+            fields={"order": ["List every non-archived comment prompt exactly once."]}
+        )
+    with transaction.atomic():
+        for position, public_id in enumerate(ordered_public_ids, start=1):
+            p = prompts[str(public_id)]
+            if p.sort_order != position:
+                p.sort_order = position
+                p.save(update_fields=["sort_order", "updated_at"])
+
+
+def archive_comment_prompt(*, actor, prompt: CommentPrompt) -> CommentPrompt:
+    if prompt.is_archived:
+        return prompt
+    prompt.is_archived = True
+    prompt.is_active = False
+    prompt.save(update_fields=["is_archived", "is_active", "updated_at"])
+    return prompt
 
 
 # ---------------------------------------------------------------------------
@@ -257,7 +338,56 @@ FORM_FIELDS = (
     "suggestion_required",
     "comment_max_length",
     "suggestion_max_length",
+    "comment_prompts",
 )
+
+
+def _clean_comment_prompts(raw: Sequence[dict]) -> list[dict]:
+    if not isinstance(raw, Sequence) or isinstance(raw, str | bytes) or len(raw) == 0:
+        raise ValidationError(
+            fields={"comment_prompts": ["Include at least one comment prompt."]}
+        )
+    cleaned: list[dict] = []
+    seen_keys: set[str] = set()
+    for i, item in enumerate(raw, start=1):
+        if not isinstance(item, dict):
+            raise ValidationError(fields={"comment_prompts": ["Invalid comment prompt format."]})
+        label = str(item.get("label") or "").strip()
+        if not label:
+            raise ValidationError(
+                fields={"comment_prompts": [f"Enter a label for comment prompt #{i}."]}
+            )
+        if len(label) > COMMENT_PROMPT_LABEL_MAX:
+            raise ValidationError(
+                fields={
+                    "comment_prompts": [
+                        f"Keep comment prompt #{i} under {COMMENT_PROMPT_LABEL_MAX} characters."
+                    ]
+                }
+            )
+        raw_key = str(item.get("key") or "").strip()
+        if raw_key in ("comment", "suggestion") and raw_key not in seen_keys:
+            base_key = raw_key
+        elif not raw_key and i == 1 and "comment" not in seen_keys:
+            base_key = "comment"
+        elif not raw_key and i == 2 and "suggestion" not in seen_keys:
+            base_key = "suggestion"
+        else:
+            base_key = slugify(raw_key or label)[:50] or f"prompt-{i}"
+        key = base_key
+        n = 2
+        while key in seen_keys:
+            key = f"{base_key}-{n}"
+            n += 1
+        seen_keys.add(key)
+        cleaned.append(
+            {
+                "key": key,
+                "label": label,
+                "is_required": bool(item.get("is_required", False)),
+            }
+        )
+    return cleaned
 
 
 def _clean_form_fields(data: dict) -> dict:
@@ -269,6 +399,23 @@ def _clean_form_fields(data: dict) -> dict:
     for field in ("comment_max_length", "suggestion_max_length"):
         if field in data and not (1 <= int(data[field]) <= TEXT_LIMIT_MAX):
             errors[field] = [f"Choose a limit between 1 and {TEXT_LIMIT_MAX}."]
+    if "comment_prompts" in data and data["comment_prompts"] is not None:
+        try:
+            prompts = _clean_comment_prompts(data["comment_prompts"])
+            data["comment_prompts"] = prompts
+            by_key = {p["key"]: p["is_required"] for p in prompts}
+            if "comment" in by_key and "comment_required" not in data:
+                data["comment_required"] = by_key["comment"]
+            elif prompts and "comment_required" not in data:
+                data["comment_required"] = prompts[0]["is_required"]
+            if "suggestion" in by_key and "suggestion_required" not in data:
+                data["suggestion_required"] = by_key["suggestion"]
+            elif len(prompts) > 1 and "suggestion_required" not in data:
+                data["suggestion_required"] = prompts[1]["is_required"]
+        except ValidationError as exc:
+            errors.update(exc.fields or {})
+    elif "comment_prompts" in data:
+        del data["comment_prompts"]
     if errors:
         raise ValidationError(fields=errors)
     return data
@@ -310,6 +457,23 @@ def create_form_version(*, actor, criteria: Sequence[str], **fields) -> FormVers
     if unknown:
         raise ValidationError(fields={f: ["Unknown field."] for f in sorted(unknown)})
     fields = _clean_form_fields({"title": fields.pop("title", ""), **fields})
+    if "comment_prompts" not in fields and CommentPrompt.objects.filter(
+        is_archived=False, is_active=True
+    ).exists():
+        active_prompts = list(
+            CommentPrompt.objects.filter(is_archived=False, is_active=True).order_by(
+                "sort_order", "id"
+            )
+        )
+        prompts = []
+        for p in active_prompts:
+            req = p.is_required
+            if p.key == "comment" and "comment_required" in fields:
+                req = bool(fields["comment_required"])
+            elif p.key == "suggestion" and "suggestion_required" in fields:
+                req = bool(fields["suggestion_required"])
+            prompts.append({"key": p.key, "label": p.label, "is_required": req})
+        fields["comment_prompts"] = prompts
     ordered = _criteria_in_order(criteria)
     with transaction.atomic():
         number = (FormVersion.objects.select_for_update().aggregate(m=Max("version"))["m"] or 0) + 1
@@ -330,6 +494,15 @@ def update_form_version(
     if unknown:
         raise ValidationError(fields={f: ["Unknown field."] for f in sorted(unknown)})
     fields = _clean_form_fields(fields)
+    if "comment_prompts" not in fields and form.comment_prompts:
+        updated_prompts = [dict(p) for p in form.comment_prompts]
+        for p in updated_prompts:
+            if p.get("key") == "comment" and "comment_required" in fields:
+                p["is_required"] = bool(fields["comment_required"])
+            elif p.get("key") == "suggestion" and "suggestion_required" in fields:
+                p["is_required"] = bool(fields["suggestion_required"])
+        if updated_prompts != form.comment_prompts:
+            fields["comment_prompts"] = updated_prompts
     with transaction.atomic():
         diff = tuple(
             (f, getattr(form, f), v) for f, v in sorted(fields.items()) if getattr(form, f) != v

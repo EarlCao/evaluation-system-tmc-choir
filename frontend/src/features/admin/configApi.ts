@@ -4,6 +4,8 @@ import type { Paginated } from "@/lib/pagination";
 import type {
   AdminCycle,
   Category,
+  CommentPrompt,
+  CommentPromptInput,
   Criterion,
   CriterionInput,
   CriterionVersion,
@@ -39,6 +41,24 @@ export const reorderCriteria = async (order: string[]) =>
   (await apiClient.post<Criterion[]>("/admin/criteria/reorder/", { order })).data;
 export const fetchCriterionVersions = async (id: string) =>
   (await apiClient.get<CriterionVersion[]>(`/admin/criteria/${id}/versions/`)).data;
+
+// Comment prompts
+export const fetchCommentPrompts = async (includeArchived = false) =>
+  (
+    await apiClient.get<CommentPrompt[]>("/admin/comment-prompts/", {
+      params: { include_archived: includeArchived ? "true" : undefined },
+    })
+  ).data;
+export const createCommentPrompt = async (input: CommentPromptInput) =>
+  (await apiClient.post<CommentPrompt>("/admin/comment-prompts/", input)).data;
+export const updateCommentPrompt = async (
+  id: string,
+  changes: Partial<CommentPromptInput> & { is_active?: boolean },
+) => (await apiClient.patch<CommentPrompt>(`/admin/comment-prompts/${id}/`, changes)).data;
+export const archiveCommentPrompt = async (id: string) =>
+  (await apiClient.post<CommentPrompt>(`/admin/comment-prompts/${id}/archive/`)).data;
+export const reorderCommentPrompts = async (order: string[]) =>
+  (await apiClient.post<CommentPrompt[]>("/admin/comment-prompts/reorder/", { order })).data;
 
 // Form versions
 export const fetchForms = async () =>

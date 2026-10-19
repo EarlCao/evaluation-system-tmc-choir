@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from django.db.models import Count, Exists, OuterRef, Prefetch, Q, QuerySet
+from django.db.models import Count, Exists, F, OuterRef, Prefetch, Q, QuerySet
 
 from apps.accounts.constants import UserRole
 from apps.core.exceptions import NotFound
@@ -10,6 +10,7 @@ from apps.members import selectors as member_selectors
 
 from . import rules
 from .constants import (
+    CommentKind,
     CycleStatus,
     EvaluationScope,
     EvaluationStatus,
@@ -17,7 +18,9 @@ from .constants import (
     FormStatus,
     ModerationStatus,
 )
+from .defaults import DEFAULT_COMMENT_PROMPTS
 from .models import (
+    CommentPrompt,
     CriterionCategory,
     CriterionVersion,
     Evaluation,
@@ -47,6 +50,32 @@ def list_categories(*, include_archived: bool = False) -> QuerySet[CriterionCate
 
 def get_category(*, pk: int) -> CriterionCategory:
     return _get(CriterionCategory.objects.all(), pk=pk)
+
+
+# Comment prompts -------------------------------------------------------------
+def ensure_default_comment_prompts() -> None:
+    existing_keys = set(CommentPrompt.objects.values_list("key", flat=True))
+    if not existing_keys or existing_keys <= {"comment", "suggestion"}:
+        for i, p in enumerate(DEFAULT_COMMENT_PROMPTS, start=1):
+            CommentPrompt.objects.get_or_create(
+                key=p["key"],
+                defaults={
+                    "label": p["label"],
+                    "is_required": p["is_required"],
+                    "sort_order": i,
+                },
+            )
+
+
+def list_comment_prompts(*, include_archived: bool = False) -> QuerySet[CommentPrompt]:
+    ensure_default_comment_prompts()
+    qs = CommentPrompt.objects.all()
+    return qs if include_archived else qs.filter(is_archived=False)
+
+
+def get_comment_prompt(*, public_id: UUID | str) -> CommentPrompt:
+    ensure_default_comment_prompts()
+    return _get(CommentPrompt.objects.all(), public_id=public_id)
 
 
 # Criteria --------------------------------------------------------------------
@@ -126,7 +155,7 @@ def get_eligibility(*, viewer, recipient_public_id: UUID | str) -> rules.Eligibi
 def _my_evaluations(user) -> QuerySet[Evaluation]:
     return (
         Evaluation.objects.filter(evaluator=user, status=EvaluationStatus.SUBMITTED)
-        .select_related("cycle", "recipient__member_profile__voice_section")
+        .select_related("cycle", "form_version", "recipient__member_profile__voice_section")
         .prefetch_related("ratings__criterion_version", "comments")
     )
 
@@ -178,9 +207,70 @@ def list_my_revisions(*, user, public_id: UUID | str) -> QuerySet[EvaluationRevi
 FEEDBACK_ROW_FIELDS = ("id", "cycle_id", "submitted_at", "is_edited")
 
 
+def get_public_self_evaluation(*, user) -> dict | None:
+    """Latest visible self-evaluation (evaluator == recipient == user) for public display."""
+    evaluation = (
+        Evaluation.objects.filter(
+            evaluator=user,
+            recipient=user,
+            status=EvaluationStatus.SUBMITTED,
+        )
+        .exclude(moderation_status=ModerationStatus.HIDDEN)
+        .exclude(cycle__status=CycleStatus.DRAFT)
+        .select_related("cycle", "form_version")
+        .prefetch_related("ratings__criterion_version", "comments")
+        .order_by("-cycle__is_current", "-submitted_at", "-id")
+        .first()
+    )
+    if evaluation is None:
+        return None
+    prompts_by_key = {
+        p["key"]: p["label"] for p in evaluation.form_version.effective_comment_prompts
+    }
+    visible_comments = [
+        c for c in evaluation.comments.all() if c.moderation_status != ModerationStatus.HIDDEN
+    ]
+    by_kind = {c.kind: c for c in visible_comments}
+    comments_list = []
+    for c in visible_comments:
+        key = (
+            "comment"
+            if c.kind == CommentKind.COMMENT
+            else ("suggestion" if c.kind == CommentKind.SUGGESTION else c.kind)
+        )
+        label = c.label or prompts_by_key.get(key) or key
+        comments_list.append({"key": key, "label": label, "body": c.body})
+    return {
+        "public_id": str(evaluation.public_id),
+        "cycle": {
+            "public_id": str(evaluation.cycle.public_id),
+            "name": evaluation.cycle.name,
+        },
+        "submitted_at": evaluation.submitted_at.isoformat(),
+        "is_edited": evaluation.is_edited,
+        "ratings": [
+            {
+                "criterion_version": r.criterion_version_id,
+                "criterion_name": r.criterion_version.name,
+                "value": float(r.value) if r.value is not None else None,
+                "label": r.label,
+                "min_value": float(r.criterion_version.min_value),
+                "max_value": float(r.criterion_version.max_value),
+            }
+            for r in evaluation.ratings.all()
+        ],
+        "comment": by_kind[CommentKind.COMMENT].body if CommentKind.COMMENT in by_kind else "",
+        "suggestion": (
+            by_kind[CommentKind.SUGGESTION].body if CommentKind.SUGGESTION in by_kind else ""
+        ),
+        "comments": comments_list,
+    }
+
+
 def _visible_received(recipient) -> QuerySet[Evaluation]:
     return (
         Evaluation.objects.filter(recipient=recipient, status=EvaluationStatus.SUBMITTED)
+        .exclude(evaluator=F("recipient"))
         .exclude(moderation_status=ModerationStatus.HIDDEN)
         .exclude(cycle__status=CycleStatus.DRAFT)
         # AFTER_CLOSE cycles release feedback only once closed (Q4, Privacy Model).
@@ -200,11 +290,12 @@ def received_feedback_rows(*, recipient, cycle_public_id=None) -> list[dict]:
 
 
 def received_comment_rows(*, evaluation_ids) -> list[dict]:
-    """Visible comment/suggestion texts: evaluation_id, kind, body."""
+    """Visible comment/suggestion texts: evaluation_id, kind, label, order, body."""
     return list(
         EvaluationComment.objects.filter(evaluation_id__in=evaluation_ids)
         .exclude(moderation_status=ModerationStatus.HIDDEN)
-        .values("evaluation_id", "kind", "body")
+        .order_by("order", "id")
+        .values("evaluation_id", "kind", "label", "order", "body")
     )
 
 
@@ -352,6 +443,7 @@ def _admin_evaluations() -> QuerySet[Evaluation]:
         Evaluation.objects.filter(status=EvaluationStatus.SUBMITTED)
         .select_related(
             "cycle",
+            "form_version",
             "evaluator__member_profile__voice_section",
             "recipient__member_profile__voice_section",
         )

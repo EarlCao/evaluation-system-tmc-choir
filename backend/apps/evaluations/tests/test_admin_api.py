@@ -165,3 +165,36 @@ def test_seed_demo_data_is_idempotent(monkeypatch):
     assert RatingCriterion.objects.count() == 6
     assert FormVersion.objects.filter(status=FormStatus.PUBLISHED).count() == 1
     assert EvaluationCycle.objects.get(name="Demo cycle").status == CycleStatus.OPEN
+
+
+def test_comment_prompts_crud_and_reorder(admin_client_api):
+    initial = admin_client_api.get(url("comment-prompts")).json()
+    assert len(initial) == 5
+    assert initial[0]["label"] == "Comments (Unsay imong ikaingon sa akoa?)"
+    assert initial[1]["label"] == "Suggestions (Unsay imong ikasuggest sa akoa?)"
+
+    created = admin_client_api.post(
+        url("comment-prompts"),
+        {"label": "Appreciation (Unsay imong gikalipay?)", "is_required": True},
+    )
+    assert created.status_code == 201
+    new_id = created.json()["public_id"]
+
+    updated = admin_client_api.patch(
+        url("comment-prompt", new_id),
+        {"label": "Appreciation (Unsay imong gipasalamatan?)"},
+    )
+    assert updated.status_code == 200
+    assert updated.json()["label"] == "Appreciation (Unsay imong gipasalamatan?)"
+
+    expected_order = [new_id, *[p["public_id"] for p in initial]]
+    reordered = admin_client_api.post(
+        url("comment-prompts-reorder"),
+        {"order": expected_order},
+    )
+    assert reordered.status_code == 200
+    assert [p["public_id"] for p in reordered.json()] == expected_order
+
+    archived = admin_client_api.post(url("comment-prompt-archive", new_id))
+    assert archived.status_code == 200
+    assert archived.json()["is_archived"] is True

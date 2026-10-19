@@ -6,6 +6,7 @@ export interface FeedbackItem {
   is_edited: boolean;
   comment: string;
   suggestion: string;
+  comments?: { key: string; label: string; body: string }[];
 }
 
 export interface CriterionSummary {

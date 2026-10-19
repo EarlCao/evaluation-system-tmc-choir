@@ -50,21 +50,43 @@ class DirectoryEntrySerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(source="user.last_name", read_only=True)
     display_name = serializers.CharField(source="user.display_name", read_only=True)
     voice_section = VoiceSectionSerializer(read_only=True)
+    has_self_evaluation = serializers.BooleanField(read_only=True, default=False)
+    self_evaluation_summary = serializers.CharField(read_only=True, default="")
 
     class Meta:
         model = MemberProfile
-        fields = ["public_id", "first_name", "last_name", "display_name", "voice_section"]
+        fields = [
+            "public_id",
+            "first_name",
+            "last_name",
+            "display_name",
+            "voice_section",
+            "has_self_evaluation",
+            "self_evaluation_summary",
+        ]
 
 
 class MemberDetailSerializer(DirectoryEntrySerializer):
     is_self = serializers.SerializerMethodField()
+    self_evaluation = serializers.SerializerMethodField()
 
     class Meta(DirectoryEntrySerializer.Meta):
-        fields = [*DirectoryEntrySerializer.Meta.fields, "bio", "joined_choir_on", "is_self"]
+        fields = [
+            *DirectoryEntrySerializer.Meta.fields,
+            "bio",
+            "joined_choir_on",
+            "is_self",
+            "self_evaluation",
+        ]
 
     def get_is_self(self, obj: MemberProfile) -> bool:
         request = self.context.get("request")
         return bool(request and request.user.pk == obj.user_id)
+
+    def get_self_evaluation(self, obj: MemberProfile) -> dict | None:
+        from apps.evaluations import selectors as evaluation_selectors
+
+        return evaluation_selectors.get_public_self_evaluation(user=obj.user)
 
 
 class OwnProfileUpdateSerializer(serializers.Serializer):

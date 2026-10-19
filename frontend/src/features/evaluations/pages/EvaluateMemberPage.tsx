@@ -47,13 +47,14 @@ export function EvaluateMemberPage() {
   }
 
   const name = memberName(member.data);
+  const isSelf = member.data.is_self;
   const verdict = eligibility.data;
 
   return (
     <Stack spacing={3} sx={{ py: 4, maxWidth: 760 }}>
       <div>
         <Typography variant="h4" component="h1">
-          Evaluate {name}
+          {isSelf ? `Evaluate yourself (${name})` : `Evaluate ${name}`}
         </Typography>
         {cycle.data ? (
           <Typography color="text.secondary">
@@ -62,10 +63,19 @@ export function EvaluateMemberPage() {
         ) : null}
       </div>
 
+      {isSelf && !done ? (
+        <Alert severity="info">
+          <strong>Public Self-Evaluation:</strong> Your self-evaluation ratings and comments will be
+          displayed publicly on your member profile so all choir members can view them.
+        </Alert>
+      ) : null}
+
       {done ? (
         <Stack spacing={2}>
           <Alert severity="success" role="status">
-            Thank you! Your evaluation of {name} was submitted.
+            {isSelf
+              ? "Thank you! Your public self-evaluation was submitted and is now visible on your profile."
+              : `Thank you! Your evaluation of ${name} was submitted.`}
           </Alert>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
             <Button
@@ -75,6 +85,11 @@ export function EvaluateMemberPage() {
             >
               View your evaluation
             </Button>
+            {isSelf ? (
+              <Button component={RouterLink} to={`/app/members/${publicId}`} variant="outlined">
+                View your public profile
+              </Button>
+            ) : null}
             <Button component={RouterLink} to="/app/members">
               Evaluate someone else
             </Button>
@@ -106,6 +121,7 @@ export function EvaluateMemberPage() {
         <EvaluationForm
           form={form.data}
           recipientName={name}
+          isSelf={isSelf}
           mode="create"
           onConfirm={(draft) =>
             submit.mutateAsync({
@@ -116,6 +132,7 @@ export function EvaluateMemberPage() {
               })),
               comment: draft.comment,
               suggestion: draft.suggestion,
+              comments: draft.comments,
             })
           }
           onDone={setDone}

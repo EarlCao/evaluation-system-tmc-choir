@@ -51,8 +51,6 @@ def eligibility(
 ) -> Eligibility:
     """Can ``evaluator`` evaluate the member behind ``recipient_profile`` right now?"""
     now = now or timezone.now()
-    if recipient_profile.user_id == evaluator.pk:
-        return Eligibility(False, Ineligibility.SELF)
     evaluator_profile = member_selectors.get_own_profile(user=evaluator)
     # Q9: Super Admins moderate and never evaluate, even if they also have a choir profile.
     if evaluator_profile is None or not evaluator.is_active_member or evaluator.is_super_admin:

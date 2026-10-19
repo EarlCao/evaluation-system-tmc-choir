@@ -128,6 +128,74 @@ class CriterionReorderView(AdminView):
         return Response(s.CriterionSerializer(selectors.list_criteria(), many=True).data)
 
 
+# Comment prompts ---------------------------------------------------------------
+class CommentPromptListView(AdminView):
+    @extend_schema(responses=s.CommentPromptSerializer(many=True))
+    def get(self, request):
+        include = request.query_params.get("include_archived") == "true"
+        prompts = selectors.list_comment_prompts(include_archived=include)
+        return Response(s.CommentPromptSerializer(prompts, many=True).data)
+
+    @extend_schema(
+        request=s.CommentPromptCreateSerializer, responses={201: s.CommentPromptSerializer}
+    )
+    def post(self, request):
+        data = s.CommentPromptCreateSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        prompt = services.create_comment_prompt(actor=request.user, **data.validated_data)
+        return Response(
+            s.CommentPromptSerializer(
+                selectors.get_comment_prompt(public_id=prompt.public_id)
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class CommentPromptDetailView(AdminView):
+    @extend_schema(responses=s.CommentPromptSerializer)
+    def get(self, request, public_id):
+        return Response(
+            s.CommentPromptSerializer(selectors.get_comment_prompt(public_id=public_id)).data
+        )
+
+    @extend_schema(request=s.CommentPromptUpdateSerializer, responses=s.CommentPromptSerializer)
+    def patch(self, request, public_id):
+        data = s.CommentPromptUpdateSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        prompt = services.update_comment_prompt(
+            actor=request.user,
+            prompt=selectors.get_comment_prompt(public_id=public_id),
+            **data.validated_data,
+        )
+        return Response(
+            s.CommentPromptSerializer(
+                selectors.get_comment_prompt(public_id=prompt.public_id)
+            ).data
+        )
+
+
+class CommentPromptArchiveView(AdminView):
+    @extend_schema(request=None, responses=s.CommentPromptSerializer)
+    def post(self, request, public_id):
+        prompt = services.archive_comment_prompt(
+            actor=request.user, prompt=selectors.get_comment_prompt(public_id=public_id)
+        )
+        return Response(s.CommentPromptSerializer(prompt).data)
+
+
+class CommentPromptReorderView(AdminView):
+    @extend_schema(request=s.ReorderSerializer, responses=s.CommentPromptSerializer(many=True))
+    def post(self, request):
+        data = s.ReorderSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        services.reorder_comment_prompts(
+            actor=request.user, ordered_public_ids=[str(u) for u in data.validated_data["order"]]
+        )
+        return Response(
+            s.CommentPromptSerializer(selectors.list_comment_prompts(), many=True).data
+        )
+
+
 # Form versions -----------------------------------------------------------------
 class FormListView(AdminView, ListAPIView):
     serializer_class = s.FormVersionSerializer

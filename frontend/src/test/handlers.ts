@@ -72,6 +72,31 @@ export const handlers = [
     }),
   ),
   http.get(api("/members/voice-sections/"), () => HttpResponse.json(voiceSections)),
+  http.get(api("/evaluation-cycles/current/"), () => HttpResponse.json({ cycle: null })),
+  http.get(api("/admin/comment-prompts/"), () =>
+    HttpResponse.json([
+      {
+        public_id: "cp-1",
+        key: "comment",
+        label: "Comments (Unsay imong ikaingon sa akoa?)",
+        is_required: false,
+        sort_order: 1,
+        is_active: true,
+        is_archived: false,
+        created_at: "2026-10-01T00:00:00Z",
+      },
+      {
+        public_id: "cp-2",
+        key: "suggestion",
+        label: "Suggestions (Unsay imong ikasuggest sa akoa?)",
+        is_required: false,
+        sort_order: 2,
+        is_active: true,
+        is_archived: false,
+        created_at: "2026-10-01T00:00:00Z",
+      },
+    ]),
+  ),
   http.get(api("/dashboard/"), () =>
     HttpResponse.json({
       active_members: 3,

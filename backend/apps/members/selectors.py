@@ -4,10 +4,13 @@ from collections.abc import Mapping
 from uuid import UUID
 
 from django.contrib.auth import get_user_model
-from django.db.models import Q, QuerySet
+from django.db.models import Exists, OuterRef, Q, QuerySet, Subquery, TextField, Value
+from django.db.models.functions import Coalesce
 
 from apps.accounts.constants import UserStatus
 from apps.core.exceptions import NotFound, ValidationError
+from apps.evaluations.constants import CycleStatus, EvaluationStatus, ModerationStatus
+from apps.evaluations.models import Evaluation, EvaluationComment
 
 from .filters import DirectoryFilter
 from .models import MemberProfile, VoiceSection
@@ -19,8 +22,38 @@ def list_active_voice_sections() -> QuerySet[VoiceSection]:
 
 def active_profiles() -> QuerySet[MemberProfile]:
     """Profiles of ACTIVE accounts only (MEM-01). Super admins have no profile."""
-    return MemberProfile.objects.filter(user__status=UserStatus.ACTIVE).select_related(
-        "user", "voice_section"
+    self_eval_qs = (
+        Evaluation.objects.filter(
+            evaluator_id=OuterRef("user_id"),
+            recipient_id=OuterRef("user_id"),
+            status=EvaluationStatus.SUBMITTED,
+        )
+        .exclude(moderation_status=ModerationStatus.HIDDEN)
+        .exclude(cycle__status=CycleStatus.DRAFT)
+    )
+    self_comment_qs = (
+        EvaluationComment.objects.filter(
+            evaluation__evaluator_id=OuterRef("user_id"),
+            evaluation__recipient_id=OuterRef("user_id"),
+            evaluation__status=EvaluationStatus.SUBMITTED,
+        )
+        .exclude(evaluation__moderation_status=ModerationStatus.HIDDEN)
+        .exclude(evaluation__cycle__status=CycleStatus.DRAFT)
+        .exclude(moderation_status=ModerationStatus.HIDDEN)
+        .order_by("-evaluation__cycle__is_current", "-evaluation__submitted_at", "order", "id")
+        .values("body")[:1]
+    )
+    return (
+        MemberProfile.objects.filter(user__status=UserStatus.ACTIVE)
+        .select_related("user", "voice_section")
+        .annotate(
+            has_self_evaluation=Exists(self_eval_qs),
+            self_evaluation_summary=Coalesce(
+                Subquery(self_comment_qs, output_field=TextField()),
+                Value("", output_field=TextField()),
+                output_field=TextField(),
+            ),
+        )
     )
 
 

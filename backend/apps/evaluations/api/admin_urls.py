@@ -20,6 +20,22 @@ urlpatterns = [
         v.CriterionVersionsView.as_view(),
         name="criterion-versions",
     ),
+    path("comment-prompts/", v.CommentPromptListView.as_view(), name="comment-prompts"),
+    path(
+        "comment-prompts/reorder/",
+        v.CommentPromptReorderView.as_view(),
+        name="comment-prompts-reorder",
+    ),
+    path(
+        "comment-prompts/<uuid:public_id>/",
+        v.CommentPromptDetailView.as_view(),
+        name="comment-prompt",
+    ),
+    path(
+        "comment-prompts/<uuid:public_id>/archive/",
+        v.CommentPromptArchiveView.as_view(),
+        name="comment-prompt-archive",
+    ),
     path("form-versions/", v.FormListView.as_view(), name="forms"),
     path("form-versions/<uuid:public_id>/", v.FormDetailView.as_view(), name="form"),
     path(

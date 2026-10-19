@@ -84,10 +84,19 @@ export const formSchema = z.object({
   comment_required: z.boolean(),
   suggestion_required: z.boolean(),
   comment_max_length: num("Enter a number.").pipe(
-    z.number().int().min(1).max(5000, "At most 5000."),
+    z.number().int().min(1).max(100000, "At most 100000."),
   ),
   suggestion_max_length: num("Enter a number.").pipe(
-    z.number().int().min(1).max(5000, "At most 5000."),
+    z.number().int().min(1).max(100000, "At most 100000."),
   ),
+  comment_prompts: z
+    .array(
+      z.object({
+        key: z.string(),
+        label: z.string().trim().min(1, "Enter a comment prompt label.").max(200),
+        is_required: z.boolean(),
+      }),
+    )
+    .min(1, "Add at least one comment prompt."),
 });
 export type FormValues = z.infer<typeof formSchema>;

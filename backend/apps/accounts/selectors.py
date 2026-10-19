@@ -16,6 +16,7 @@ def count_members_by_status() -> dict[str, int]:
     """ADM-01: member accounts per status (Super Admins excluded)."""
     counts = dict(
         User.objects.filter(role=UserRole.MEMBER)
+        .exclude(email__endswith="@invalid.local")
         .order_by()  # clear Meta.ordering, which would otherwise join the GROUP BY
         .values_list("status")
         .annotate(n=Count("id"))
