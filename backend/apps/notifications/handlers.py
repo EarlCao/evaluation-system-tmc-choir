@@ -18,6 +18,8 @@ AFTER_CLOSE = "AFTER_CLOSE"
 
 @subscribe(evaluation_events.EvaluationSubmitted)
 def on_evaluation_submitted(event: evaluation_events.EvaluationSubmitted) -> None:
+    if event.actor_id == event.recipient_id:
+        return
     services.queue_feedback_notice(
         recipient_id=event.recipient_id,
         cycle_id=event.cycle_id,

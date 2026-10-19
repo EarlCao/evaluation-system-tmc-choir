@@ -2,7 +2,7 @@ from django.db import models
 
 
 class NotificationType(models.TextChoices):
-    FEEDBACK_AVAILABLE = "FEEDBACK_AVAILABLE", "New feedback"
+    FEEDBACK_AVAILABLE = "FEEDBACK_AVAILABLE", "Someone evaluated you"
     CYCLE_OPENED = "CYCLE_OPENED", "Evaluation period opened"
     CYCLE_CLOSED = "CYCLE_CLOSED", "Evaluation period closed"
     OWN_EVALUATION_EDITED = "OWN_EVALUATION_EDITED", "Your evaluation was edited"

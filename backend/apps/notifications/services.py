@@ -15,7 +15,7 @@ from . import realtime, selectors
 from .constants import LINK_MAX, MESSAGE_MAX, NotificationType
 from .models import Notification, PendingFeedbackNotice
 
-FEEDBACK_MESSAGE = "You have new feedback."
+FEEDBACK_MESSAGE = "Someone evaluated you. You have new feedback."
 FEEDBACK_LINK = "/app/feedback"
 
 

@@ -12,7 +12,7 @@ from apps.notifications.constants import NotificationType
 pytestmark = pytest.mark.django_db
 
 
-def note(user, message="You have new feedback.", link="/app/feedback"):
+def note(user, message="Someone evaluated you. You have new feedback.", link="/app/feedback"):
     return services.notify(
         recipient=user, type=NotificationType.FEEDBACK_AVAILABLE, message=message, link=link
     )

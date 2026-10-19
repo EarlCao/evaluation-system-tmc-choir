@@ -68,7 +68,10 @@ def test_feedback_notice_is_debounced_and_anonymous(setup, super_admin, run_even
 
     assert run_events(services.deliver_due, now=timezone.now() + timedelta(minutes=61)) == 1
     note = _feedback_notes(recipient).get()
-    assert (note.message, note.link) == ("You have new feedback.", "/app/feedback")
+    assert (note.message, note.link) == (
+        "Someone evaluated you. You have new feedback.",
+        "/app/feedback",
+    )
     text = f"{note.message} {note.link}"
     for evaluator in (alice, bob):
         for identity in (evaluator.username, evaluator.first_name, str(evaluator.public_id)):
@@ -90,6 +93,19 @@ def test_no_debounce_delivers_after_commit_and_never_twice_while_unread(
     assert _feedback_notes(recipient).count() == 1
     submit(run_events, setup, MemberProfileFactory().user, recipient)
     assert _feedback_notes(recipient).count() == 1  # the first one is still unread
+
+
+def test_self_evaluation_does_not_queue_feedback_notice(setup, super_admin, run_events):
+    run_events(
+        system_services.update_settings,
+        actor=super_admin,
+        feedback_notification_debounce_minutes=0,
+    )
+    run_events(make_cycle, super_admin, form=setup["form"], open=True)
+    member = MemberProfileFactory().user
+    submit(run_events, setup, member, member)
+    assert not _feedback_notes(member).exists()
+    assert not PendingFeedbackNotice.objects.filter(recipient=member).exists()
 
 
 def test_after_close_feedback_waits_for_the_cycle_to_close(setup, super_admin, run_events):
