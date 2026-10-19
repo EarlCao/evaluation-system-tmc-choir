@@ -29,6 +29,15 @@ export async function fetchAuditEventTypes(): Promise<string[]> {
   return (await apiClient.get<string[]>("/admin/audit-logs/event-types/")).data;
 }
 
+export async function deleteAuditLog(id: number): Promise<void> {
+  await apiClient.delete(`/admin/audit-logs/${String(id)}/`);
+}
+
+export async function clearAuditLogs(f?: AuditFilters): Promise<{ deleted: number }> {
+  const params = f ? auditParams(f) : undefined;
+  return (await apiClient.delete<{ deleted: number }>("/admin/audit-logs/", { params })).data;
+}
+
 /** Plain download link (session cookie); the export is itself audited (AUD-04). */
 export function auditExportUrl(fileType: "csv" | "xlsx", f: AuditFilters): string {
   const params = new URLSearchParams({ file_type: fileType, ...auditParams(f) });

@@ -34,3 +34,27 @@ export const useAuditLogs = (filters: AuditFilters) =>
 
 export const useAuditEventTypes = () =>
   useQuery({ queryKey: systemKeys.eventTypes(), queryFn: api.fetchAuditEventTypes });
+
+export function useDeleteAuditLog() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: api.deleteAuditLog,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [...adminKeys.all, "audit"] });
+      void queryClient.invalidateQueries({ queryKey: systemKeys.eventTypes() });
+      void queryClient.invalidateQueries({ queryKey: adminKeys.dashboard() });
+    },
+  });
+}
+
+export function useClearAuditLogs() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: api.clearAuditLogs,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [...adminKeys.all, "audit"] });
+      void queryClient.invalidateQueries({ queryKey: systemKeys.eventTypes() });
+      void queryClient.invalidateQueries({ queryKey: adminKeys.dashboard() });
+    },
+  });
+}
