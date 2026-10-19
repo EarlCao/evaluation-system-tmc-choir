@@ -8,6 +8,7 @@ export interface AdminSettings {
   time_zone: string;
   registration_mode: RegistrationMode;
   min_aggregate_group_size: number;
+  min_comment_prompts: number;
   feedback_notification_debounce_minutes: number;
   privacy_notice: string;
   retention_evaluations_days: number | null;

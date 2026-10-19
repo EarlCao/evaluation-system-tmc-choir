@@ -39,6 +39,7 @@ import {
   useUpdateCriterion,
 } from "../configQueries";
 import type { Category, CommentPrompt, Criterion } from "../configTypes";
+import { useAdminSettings, useUpdateSettings } from "../systemQueries";
 
 const fmt = (n: number) => String(Number(n.toFixed(2)));
 
@@ -72,8 +73,18 @@ function CommentPromptsSection({ parentShowArchived }: { parentShowArchived: boo
   const list = prompts.data ?? [];
   const active = list.filter((p) => !p.is_archived);
   const visibleRows = includeArchived ? list : active;
+  const settings = useAdminSettings();
+  const updateSettings = useUpdateSettings();
+  const currentMinPrompts = settings.data?.min_comment_prompts ?? 5;
+  const [minPromptsInput, setMinPromptsInput] = useState<string>("");
+  const effectiveMinPrompts = minPromptsInput !== "" ? minPromptsInput : String(currentMinPrompts);
   const mutationError =
-    create.error ?? update.error ?? archive.error ?? remove.error ?? reorder.error;
+    create.error ??
+    update.error ??
+    archive.error ??
+    remove.error ??
+    reorder.error ??
+    updateSettings.error;
 
   function movePrompt(index: number, delta: -1 | 1) {
     const order = active.map((p) => p.public_id);
@@ -110,6 +121,59 @@ function CommentPromptsSection({ parentShowArchived }: { parentShowArchived: boo
         by <strong>2. Suggestions (Unsay imong ikasuggest sa akoa?)</strong>). Members can write as
         many words as they want.
       </Typography>
+
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={2}
+        sx={{
+          p: 1.5,
+          mb: 2,
+          backgroundColor: "action.hover",
+          borderRadius: 1,
+          alignItems: { sm: "center" },
+          justifyContent: "space-between",
+        }}
+      >
+        <div>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+            Minimum required comment &amp; suggestion prompts
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Setup how many comment &amp; suggestion prompts are provided on member evaluation forms (current: {currentMinPrompts})
+          </Typography>
+        </div>
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+          <TextField
+            size="small"
+            type="number"
+            label="At least"
+            value={effectiveMinPrompts}
+            onChange={(e) => setMinPromptsInput(e.target.value)}
+            slotProps={{ htmlInput: { min: 1, max: 50, style: { width: 60 } } }}
+          />
+          <Button
+            size="small"
+            variant="contained"
+            disabled={
+              updateSettings.isPending ||
+              !/^\d+$/.test(effectiveMinPrompts) ||
+              Number(effectiveMinPrompts) < 1 ||
+              Number(effectiveMinPrompts) === currentMinPrompts
+            }
+            onClick={() => {
+              updateSettings.mutate(
+                { min_comment_prompts: Number(effectiveMinPrompts) },
+                {
+                  onSuccess: () => setMinPromptsInput(""),
+                },
+              );
+            }}
+          >
+            {updateSettings.isPending ? "Saving…" : "Save minimum"}
+          </Button>
+        </Stack>
+      </Stack>
+
       {mutationError ? (
         <Alert severity="error" sx={{ mb: 2 }}>
           {errorText(mutationError)}

@@ -66,6 +66,7 @@ export interface AdminMemberFilters {
   status?: UserStatus | "";
   role?: UserRole | "";
   page?: number;
+  pageSize?: number;
 }
 
 export const STATUS_LABEL: Record<UserStatus, string> = {

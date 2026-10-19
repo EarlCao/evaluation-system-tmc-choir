@@ -9,7 +9,7 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
-import { Link as RouterLink, useParams } from "react-router";
+import { Link as RouterLink, useLocation, useParams } from "react-router";
 
 import { ErrorState } from "@/components/ErrorState";
 import { FullPageSpinner } from "@/components/FullPageSpinner";
@@ -221,6 +221,10 @@ function History({ evaluation }: { evaluation: AdminEvaluationDetail }) {
 /** ADM-02 / ADM-03 / ADM-05: one evaluation with its author, revisions and moderation. */
 export function AdminEvaluationPage() {
   const { publicId = "" } = useParams();
+  const location = useLocation();
+  const searchParam =
+    location.search || (location.state?.fromSearch ? `?${location.state.fromSearch}` : "");
+  const backUrl = `/admin/evaluations${searchParam}`;
   const evaluation = useAdminEvaluation(publicId);
   if (evaluation.isPending) return <FullPageSpinner label="Loading evaluation" />;
   if (evaluation.isError) {
@@ -237,7 +241,7 @@ export function AdminEvaluationPage() {
 
   return (
     <Stack spacing={3} sx={{ py: 4, maxWidth: 900 }}>
-      <Link component={RouterLink} to="/admin/evaluations">
+      <Link component={RouterLink} to={backUrl}>
         ← All evaluations
       </Link>
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", flexWrap: "wrap" }}>

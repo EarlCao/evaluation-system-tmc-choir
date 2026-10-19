@@ -10,6 +10,7 @@ EDITABLE = [
     "time_zone",
     "registration_mode",
     "min_aggregate_group_size",
+    "min_comment_prompts",
     "feedback_notification_debounce_minutes",
     "privacy_notice",
     "retention_evaluations_days",
@@ -40,6 +41,9 @@ class SettingsUpdateSerializer(serializers.Serializer):
     registration_mode = serializers.ChoiceField(choices=RegistrationMode.choices, required=False)
     min_aggregate_group_size = serializers.IntegerField(
         min_value=MIN_AGGREGATE_GROUP_SIZE_FLOOR, max_value=50, required=False
+    )
+    min_comment_prompts = serializers.IntegerField(
+        min_value=1, max_value=50, required=False
     )
     feedback_notification_debounce_minutes = serializers.IntegerField(
         min_value=0, max_value=1440, required=False

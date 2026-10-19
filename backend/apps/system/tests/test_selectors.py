@@ -31,4 +31,5 @@ def test_public_settings_expose_only_whitelisted_fields():
         "choir_description",
         "privacy_notice",
         "registration_mode",
+        "min_comment_prompts",
     }

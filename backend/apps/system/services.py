@@ -18,6 +18,7 @@ EDITABLE_FIELDS = frozenset(
         "time_zone",
         "registration_mode",
         "min_aggregate_group_size",
+        "min_comment_prompts",
         "feedback_notification_debounce_minutes",
         "privacy_notice",
         "retention_evaluations_days",

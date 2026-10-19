@@ -76,6 +76,7 @@ export const DEFAULT_COMMENT_PROMPTS: FormCommentPrompt[] = [
 
 export function effectiveCommentPrompts(
   form: Pick<CycleForm, "comment_prompts" | "comment_required" | "suggestion_required">,
+  minCount = 5,
 ): FormCommentPrompt[] {
   const defaults: FormCommentPrompt[] = DEFAULT_COMMENT_PROMPTS.map((p) => ({
     ...p,
@@ -86,17 +87,48 @@ export function effectiveCommentPrompts(
           ? form.suggestion_required
           : p.is_required,
   }));
+  let list: FormCommentPrompt[];
   if (form.comment_prompts && form.comment_prompts.length > 0) {
     if (
       form.comment_prompts.length === 2 &&
       form.comment_prompts[0]?.key === "comment" &&
       form.comment_prompts[1]?.key === "suggestion"
     ) {
-      return [...form.comment_prompts, ...defaults.slice(2)];
+      list = [...form.comment_prompts, ...defaults.slice(2)];
+    } else {
+      list = [...form.comment_prompts];
     }
-    return form.comment_prompts;
+  } else {
+    list = [...defaults];
   }
-  return defaults;
+
+  if (list.length < minCount) {
+    const existingKeys = new Set(list.map((p) => p.key));
+    for (const def of DEFAULT_COMMENT_PROMPTS) {
+      if (list.length >= minCount) break;
+      if (!existingKeys.has(def.key)) {
+        list.push({ ...def });
+        existingKeys.add(def.key);
+      }
+    }
+    let extraIndex = list.length + 1;
+    while (list.length < minCount) {
+      const key = `comment_${extraIndex}`;
+      if (!existingKeys.has(key)) {
+        list.push({
+          key,
+          label: `Additional comment / suggestion #${extraIndex}`,
+          is_required: false,
+        });
+        existingKeys.add(key);
+      }
+      extraIndex++;
+    }
+  } else if (list.length > minCount && (!form.comment_prompts || form.comment_prompts.length === 0)) {
+    list = list.slice(0, minCount);
+  }
+
+  return list;
 }
 
 export type IneligibilityReason =

@@ -24,6 +24,7 @@ import {
   type AdminEvaluationFilters,
   type ModerationStatus,
 } from "../moderationTypes";
+import { useAdminMembers } from "../queries";
 
 const TEXT_FILTERS = [
   "recipient",
@@ -52,6 +53,8 @@ export function AdminEvaluationsPage() {
   const list = useAdminEvaluations(filters);
   const cycles = useCycles();
   const criteria = useCriteria(true);
+  const members = useAdminMembers({ role: "MEMBER", pageSize: 100 });
+  const memberList = members.data?.results ?? [];
 
   function update(key: string, value: string) {
     const next = new URLSearchParams(params);
@@ -135,14 +138,19 @@ export function AdminEvaluationsPage() {
             {hasFilters ? (
               <Button
                 size="small"
-                color="inherit"
+                variant="contained"
+                color="primary"
                 onClick={() => {
                   setParams(new URLSearchParams(), { replace: true });
                 }}
               >
                 Clear all filters
               </Button>
-            ) : null}
+            ) : (
+              <Button size="small" variant="outlined" color="inherit" disabled>
+                Clear all filters
+              </Button>
+            )}
           </Stack>
 
           {/* Active member filter tags if filtered by recipient or evaluator */}
@@ -153,7 +161,7 @@ export function AdminEvaluationsPage() {
                   size="small"
                   color="primary"
                   variant="outlined"
-                  label={`About ${first ? personName(first.recipient) : "one member"}`}
+                  label={`About ${memberList.find((m) => m.public_id === filters.recipient)?.display_name ?? (first ? personName(first.recipient) : "selected member")}`}
                   onDelete={() => {
                     update("recipient", "");
                   }}
@@ -164,7 +172,7 @@ export function AdminEvaluationsPage() {
                   size="small"
                   color="primary"
                   variant="outlined"
-                  label={`Written by ${first ? personName(first.evaluator) : "one member"}`}
+                  label={`Written by ${memberList.find((m) => m.public_id === filters.evaluator)?.display_name ?? (first ? personName(first.evaluator) : "selected member")}`}
                   onDelete={() => {
                     update("evaluator", "");
                   }}
@@ -218,6 +226,94 @@ export function AdminEvaluationsPage() {
                 select
                 fullWidth
                 size="small"
+                label="About (Member)"
+                value={filters.recipient ?? ""}
+                onChange={(e) => {
+                  update("recipient", e.target.value);
+                }}
+              >
+                <MenuItem value="">All members (About)</MenuItem>
+                {memberList.map((m) => (
+                  <MenuItem key={m.public_id} value={m.public_id}>
+                    {m.first_name} {m.last_name}{m.display_name && m.display_name !== `${m.first_name} ${m.last_name}` ? ` (${m.display_name})` : ""}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <TextField
+                select
+                fullWidth
+                size="small"
+                label="From (Member)"
+                value={filters.evaluator ?? ""}
+                onChange={(e) => {
+                  update("evaluator", e.target.value);
+                }}
+              >
+                <MenuItem value="">All members (From)</MenuItem>
+                {memberList.map((m) => (
+                  <MenuItem key={m.public_id} value={m.public_id}>
+                    {m.first_name} {m.last_name}{m.display_name && m.display_name !== `${m.first_name} ${m.last_name}` ? ` (${m.display_name})` : ""}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+            {/* Criteria, rating range, and moderation */}
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <TextField
+                select
+                fullWidth
+                size="small"
+                label="Criterion"
+                value={filters.criterion ?? ""}
+                onChange={(e) => {
+                  update("criterion", e.target.value);
+                }}
+              >
+                <MenuItem value="">Any criterion</MenuItem>
+                {(criteria.data ?? []).map((c) => (
+                  <MenuItem key={c.public_id} value={c.public_id}>
+                    {c.current_version.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <Stack direction="row" spacing={1}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Rating from"
+                  type="number"
+                  value={filters.rating_min ?? ""}
+                  onChange={(e) => {
+                    update("rating_min", e.target.value);
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Rating to"
+                  type="number"
+                  value={filters.rating_max ?? ""}
+                  error={Boolean(fieldError("rating_max"))}
+                  helperText={fieldError("rating_max")}
+                  onChange={(e) => {
+                    update("rating_max", e.target.value);
+                  }}
+                />
+              </Stack>
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <TextField
+                select
+                fullWidth
+                size="small"
                 label="Moderation"
                 value={filters.moderation ?? ""}
                 onChange={(e) => {
@@ -251,55 +347,7 @@ export function AdminEvaluationsPage() {
               </TextField>
             </Grid>
 
-            {/* Criteria, rating range, and date range */}
-            <Grid size={{ xs: 12, md: 4 }}>
-              <TextField
-                select
-                fullWidth
-                size="small"
-                label="Criterion"
-                value={filters.criterion ?? ""}
-                onChange={(e) => {
-                  update("criterion", e.target.value);
-                }}
-              >
-                <MenuItem value="">Any criterion</MenuItem>
-                {(criteria.data ?? []).map((c) => (
-                  <MenuItem key={c.public_id} value={c.public_id}>
-                    {c.current_version.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <Stack direction="row" spacing={1}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Rating from"
-                  type="number"
-                  value={filters.rating_min ?? ""}
-                  onChange={(e) => {
-                    update("rating_min", e.target.value);
-                  }}
-                />
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Rating to"
-                  type="number"
-                  value={filters.rating_max ?? ""}
-                  error={Boolean(fieldError("rating_max"))}
-                  helperText={fieldError("rating_max")}
-                  onChange={(e) => {
-                    update("rating_max", e.target.value);
-                  }}
-                />
-              </Stack>
-            </Grid>
-
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <Grid size={{ xs: 12, sm: 8, md: 6 }}>
               <Stack direction="row" spacing={1}>
                 <TextField
                   fullWidth
@@ -360,17 +408,30 @@ export function AdminEvaluationsPage() {
             rows={list.data.results}
             label="Evaluations"
             dimmed={list.isPlaceholderData}
+            selectedCriterion={filters.criterion}
+            currentSearch={params.toString()}
           />
-          {pageCount(list.data.count) > 1 ? (
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={2}
+            sx={{
+              justifyContent: "space-between",
+              alignItems: "center",
+              pt: 1,
+            }}
+          >
+            <Typography variant="caption" color="text.secondary">
+              Page {filters.page} of {Math.max(1, pageCount(list.data.count))}
+            </Typography>
             <Pagination
-              count={pageCount(list.data.count)}
+              count={Math.max(1, pageCount(list.data.count))}
               page={filters.page}
               onChange={(_, value) => {
                 update("page", value > 1 ? String(value) : "");
               }}
-              sx={{ alignSelf: "center" }}
+              color="primary"
             />
-          ) : null}
+          </Stack>
         </>
       )}
     </Stack>

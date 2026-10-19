@@ -16,6 +16,7 @@ const settings: AdminSettings = {
   time_zone: "UTC",
   registration_mode: "APPROVAL",
   min_aggregate_group_size: 3,
+  min_comment_prompts: 5,
   feedback_notification_debounce_minutes: 60,
   privacy_notice: "Your name is hidden from members.",
   retention_evaluations_days: null,
@@ -138,6 +139,26 @@ describe("System settings (SET-01/03)", () => {
     expect(await screen.findByText("This name is not allowed.")).toBeVisible();
     expect(screen.getByLabelText("Choir name")).toHaveAttribute("aria-invalid", "true");
     expect(patches).toEqual([{ choir_name: "Rejected", min_aggregate_group_size: 4 }]);
+  });
+
+  it("configures minimum comment prompts with validation", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderRoute("/admin/settings");
+    const minPromptsField = await screen.findByLabelText("Minimum comment & suggestion prompts");
+    expect(minPromptsField).toHaveValue(5);
+
+    // Test validation for < 1
+    await user.clear(minPromptsField);
+    await user.type(minPromptsField, "0");
+    await user.click(screen.getByRole("button", { name: "Save settings" }));
+    expect(await screen.findByText("At least 1 comment prompt.")).toBeVisible();
+
+    // Valid update to 7
+    await user.clear(minPromptsField);
+    await user.type(minPromptsField, "7");
+    await user.click(screen.getByRole("button", { name: "Save settings" }));
+    expect(await screen.findByText("Settings saved.")).toBeVisible();
+    expect(patches).toEqual([{ min_comment_prompts: 7 }]);
   });
 });
 

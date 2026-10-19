@@ -9,6 +9,7 @@ export interface PublicSettings {
   choir_description: string;
   privacy_notice: string;
   registration_mode: "OPEN" | "APPROVAL" | "EMAIL_VERIFICATION" | "CLOSED";
+  min_comment_prompts?: number;
 }
 
 export async function fetchPublicSettings(): Promise<PublicSettings> {

@@ -115,7 +115,47 @@ beforeEach(() => {
     http.get(api("/admin/evaluation-cycles/"), () =>
       HttpResponse.json({ count: 0, next: null, previous: null, results: [] }),
     ),
-    http.get(api("/admin/criteria/"), () => HttpResponse.json([])),
+    http.get(api("/admin/criteria/"), () =>
+      HttpResponse.json([
+        {
+          public_id: "k1",
+          current_version: { name: "Attendance" },
+        },
+        {
+          public_id: "k2",
+          current_version: { name: "Vocal performance" },
+        },
+      ]),
+    ),
+    http.get(api("/admin/members/"), () =>
+      HttpResponse.json({
+        count: 2,
+        next: null,
+        previous: null,
+        results: [
+          {
+            public_id: "r1",
+            first_name: "Rosa",
+            last_name: "Reyes",
+            display_name: "Rosa Reyes",
+            username: "rosa",
+            email: "rosa@example.com",
+            role: "MEMBER",
+            status: "ACTIVE",
+          },
+          {
+            public_id: "e1",
+            first_name: "Ernesto",
+            last_name: "Cruz",
+            display_name: "Ernesto Cruz",
+            username: "ernesto",
+            email: "ernesto@example.com",
+            role: "MEMBER",
+            status: "ACTIVE",
+          },
+        ],
+      }),
+    ),
   );
 });
 
@@ -169,6 +209,87 @@ describe("All evaluations browser (ADM-02/03)", () => {
     await waitFor(() => {
       expect(router.state.location.search).not.toContain("evaluation_type");
     });
+  });
+
+  it("filters evaluations by member and criterion, isolates ratings, and clears filters", async () => {
+    const { router } = renderRoute("/admin/evaluations");
+    const table = await screen.findByRole("table", { name: "Evaluations" });
+    expect(table).toBeVisible();
+
+    // Check View button in table
+    expect(screen.getByRole("link", { name: "View" })).toBeVisible();
+
+    // Clear all filters button should be disabled initially
+    expect(screen.getByRole("button", { name: "Clear all filters" })).toBeDisabled();
+
+    // Select About member
+    const aboutSelect = screen.getByLabelText("About (Member)");
+    await userEvent.click(aboutSelect);
+    const rosaOption = await screen.findByRole("option", { name: /Rosa Reyes/i });
+    await userEvent.click(rosaOption);
+    await waitFor(() => {
+      expect(router.state.location.search).toContain("recipient=r1");
+    });
+
+    // Clear all filters button becomes enabled
+    const clearBtn = screen.getByRole("button", { name: "Clear all filters" });
+    expect(clearBtn).toBeEnabled();
+
+    // Click Clear all filters
+    await userEvent.click(clearBtn);
+    await waitFor(() => {
+      expect(router.state.location.search).toBe("");
+    });
+  });
+
+  it("isolates ratings to selected criterion and preserves filters on back navigation", async () => {
+    const multiRatingDetail: AdminEvaluationDetail = {
+      ...detail,
+      ratings: [
+        {
+          criterion_public_id: "k1",
+          criterion_name: "Attendance",
+          criterion_version: 1,
+          scale_type: "NUMERIC",
+          max_value: 5,
+          value: 4,
+          label: "Very good",
+        },
+        {
+          criterion_public_id: "k2",
+          criterion_name: "Vocal performance",
+          criterion_version: 1,
+          scale_type: "NUMERIC",
+          max_value: 5,
+          value: 5,
+          label: "Excellent",
+        },
+      ],
+    };
+    server.use(
+      http.get(api("/admin/evaluations/"), () =>
+        HttpResponse.json({ count: 1, next: null, previous: null, results: [multiRatingDetail] }),
+      ),
+    );
+
+    // Load with criterion=k2 filter
+    renderRoute("/admin/evaluations?criterion=k2");
+    const table = await screen.findByRole("table", { name: "Evaluations" });
+    // Should ONLY show Vocal performance, NOT Attendance!
+    expect(within(table).getByText("Vocal performance: 5/5")).toBeVisible();
+    expect(within(table).queryByText("Attendance: 4/5")).not.toBeInTheDocument();
+
+    // Click View to open evaluation detail
+    const viewLink = within(table).getByRole("link", { name: "View" });
+    expect(viewLink).toHaveAttribute("href", "/admin/evaluations/ev1?criterion=k2");
+    await userEvent.click(viewLink);
+
+    // Detail page loads
+    expect(await screen.findByRole("heading", { name: "Evaluation of Rosa Reyes" })).toBeVisible();
+
+    // Back button preserves filters
+    const backLink = screen.getByRole("link", { name: "← All evaluations" });
+    expect(backLink).toHaveAttribute("href", "/admin/evaluations?criterion=k2");
   });
 
   it("has an empty moderation queue state", async () => {

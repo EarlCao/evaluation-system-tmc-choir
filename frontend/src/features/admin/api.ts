@@ -25,6 +25,7 @@ export async function fetchAdminMembers(f: AdminMemberFilters): Promise<Paginate
       status: f.status || undefined,
       role: f.role || undefined,
       page: f.page && f.page > 1 ? f.page : undefined,
+      page_size: f.pageSize || undefined,
     },
   });
   return data;

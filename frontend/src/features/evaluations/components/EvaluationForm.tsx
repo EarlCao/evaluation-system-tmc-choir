@@ -22,6 +22,7 @@ import { PrivacyNotice } from "@/components/PrivacyNotice";
 import { useCurrentUser } from "@/features/auth";
 import { isApiError } from "@/lib/errors";
 import { applyServerErrors } from "@/lib/forms";
+import { usePublicSettings } from "@/lib/systemSettings";
 
 import { clearEvaluationDraft, saveEvaluationDraft } from "../draftStorage";
 import { ownNameMentions } from "../identity";
@@ -91,7 +92,12 @@ export function EvaluationForm({
   onDone,
   onCancel,
 }: EvaluationFormProps) {
-  const basePrompts = useMemo(() => effectiveCommentPrompts(form), [form]);
+  const publicSettings = usePublicSettings().data;
+  const minCommentPrompts = publicSettings?.min_comment_prompts ?? 5;
+  const basePrompts = useMemo(
+    () => effectiveCommentPrompts(form, minCommentPrompts),
+    [form, minCommentPrompts],
+  );
   const baseKeys = useMemo(() => new Set(basePrompts.map((p) => p.key)), [basePrompts]);
   const [extraPrompts, setExtraPrompts] = useState<FormCommentPrompt[]>(() => {
     return Object.keys(initial?.comments ?? {})
@@ -372,8 +378,8 @@ export function EvaluationForm({
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {isSelf
-                ? "Share your self-evaluation comments below (at least 5 comment prompts available). You can write as many words as you want, and all choir members will be able to see your self-comments."
-                : "Share at least 5 comments/suggestions below. You can write as many words as you want for each prompt."}
+                ? `Share your self-evaluation comments below (at least ${String(minCommentPrompts)} comment prompts available). You can write as many words as you want, and all choir members will be able to see your self-comments.`
+                : `Share at least ${String(minCommentPrompts)} comments/suggestions below. You can write as many words as you want for each prompt.`}
             </Typography>
           </div>
           <FormAlert message={formState.errors.root?.server?.message} />

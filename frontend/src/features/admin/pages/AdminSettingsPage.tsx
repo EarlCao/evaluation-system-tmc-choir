@@ -47,6 +47,7 @@ function toDraft(s: AdminSettings): Draft {
     time_zone: s.time_zone,
     registration_mode: s.registration_mode,
     min_aggregate_group_size: String(s.min_aggregate_group_size),
+    min_comment_prompts: String(s.min_comment_prompts ?? 5),
     feedback_notification_debounce_minutes: String(s.feedback_notification_debounce_minutes),
     privacy_notice: s.privacy_notice,
     retention_evaluations_days: text(s.retention_evaluations_days),
@@ -63,6 +64,8 @@ function validate(d: Draft): Record<string, string> {
   if (!d.privacy_notice.trim()) errors.privacy_notice = "The privacy notice can't be empty.";
   if (!whole(d.min_aggregate_group_size) || Number(d.min_aggregate_group_size) < PRIVACY_FLOOR)
     errors.min_aggregate_group_size = `At least ${String(PRIVACY_FLOOR)}, so nobody can work out who rated them.`;
+  if (!whole(d.min_comment_prompts) || Number(d.min_comment_prompts) < 1)
+    errors.min_comment_prompts = "At least 1 comment prompt.";
   if (
     !whole(d.feedback_notification_debounce_minutes) ||
     Number(d.feedback_notification_debounce_minutes) > 1440
@@ -87,6 +90,7 @@ function toInput(d: Draft): SettingsInput {
     time_zone: d.time_zone,
     registration_mode: d.registration_mode as RegistrationMode,
     min_aggregate_group_size: Number(d.min_aggregate_group_size),
+    min_comment_prompts: Number(d.min_comment_prompts),
     feedback_notification_debounce_minutes: Number(d.feedback_notification_debounce_minutes),
     privacy_notice: d.privacy_notice,
     retention_evaluations_days: days(d.retention_evaluations_days),
@@ -211,6 +215,19 @@ function SettingsForm({ settings }: { settings: AdminSettings }) {
             errors.privacy_notice ??
             "Shown before every evaluation is submitted. Keep it accurate: the Super Admin can see who wrote each evaluation."
           }
+        />
+      </Group>
+
+      <Group title="Evaluation comments & suggestions setup">
+        <TextField
+          label="Minimum comment & suggestion prompts"
+          type="number"
+          {...props("min_comment_prompts")}
+          helperText={
+            errors.min_comment_prompts ??
+            "Configures how many comment & suggestion prompts are displayed on member evaluation forms (at least 1 prompt, default 5)."
+          }
+          slotProps={{ htmlInput: { min: 1, max: 50 } }}
         />
       </Group>
 

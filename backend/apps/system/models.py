@@ -33,6 +33,10 @@ class SystemSettings(TimeStampedModel):
         default=MIN_AGGREGATE_GROUP_SIZE_FLOOR,
         validators=[MinValueValidator(MIN_AGGREGATE_GROUP_SIZE_FLOOR)],
     )
+    min_comment_prompts = models.PositiveSmallIntegerField(
+        default=5,
+        validators=[MinValueValidator(1)],
+    )
     feedback_notification_debounce_minutes = models.PositiveSmallIntegerField(default=60)
     privacy_notice = models.TextField(default=DEFAULT_PRIVACY_NOTICE, max_length=10000)
 

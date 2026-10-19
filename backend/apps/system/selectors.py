@@ -11,6 +11,7 @@ PUBLIC_FIELDS = (
     "choir_description",
     "privacy_notice",
     "registration_mode",
+    "min_comment_prompts",
 )
 
 
