@@ -36,7 +36,7 @@ import {
   useUpdateCommentPrompt,
   useUpdateCriterion,
 } from "../configQueries";
-import type { Criterion } from "../configTypes";
+import type { Category, Criterion } from "../configTypes";
 
 const fmt = (n: number) => String(Number(n.toFixed(2)));
 
@@ -326,6 +326,7 @@ function Categories() {
   const create = useCreateCategory();
   const remove = useDeleteCategory();
   const [name, setName] = useState("");
+  const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
   const mutationError = create.error ?? remove.error;
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
@@ -339,7 +340,7 @@ function Categories() {
             label={c.name}
             disabled={remove.isPending}
             onDelete={() => {
-              remove.mutate(c.id);
+              setDeletingCategory(c);
             }}
           />
         ))}
@@ -378,6 +379,30 @@ function Categories() {
           {errorText(mutationError)}
         </Alert>
       ) : null}
+      <ConfirmDialog
+        open={deletingCategory !== null}
+        title={
+          deletingCategory
+            ? `Delete category “${deletingCategory.name}”?`
+            : "Delete this category?"
+        }
+        description="Any criteria currently assigned to this category will become uncategorized."
+        confirmLabel="Delete category"
+        destructive
+        pending={remove.isPending}
+        onClose={() => {
+          setDeletingCategory(null);
+        }}
+        onConfirm={() => {
+          if (deletingCategory) {
+            remove.mutate(deletingCategory.id, {
+              onSettled: () => {
+                setDeletingCategory(null);
+              },
+            });
+          }
+        }}
+      />
     </Paper>
   );
 }
