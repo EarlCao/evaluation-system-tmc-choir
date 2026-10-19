@@ -53,7 +53,7 @@ export const createCommentPrompt = async (input: CommentPromptInput) =>
   (await apiClient.post<CommentPrompt>("/admin/comment-prompts/", input)).data;
 export const updateCommentPrompt = async (
   id: string,
-  changes: Partial<CommentPromptInput> & { is_active?: boolean },
+  changes: Partial<CommentPromptInput> & { is_active?: boolean; is_archived?: boolean },
 ) => (await apiClient.patch<CommentPrompt>(`/admin/comment-prompts/${id}/`, changes)).data;
 export const archiveCommentPrompt = async (id: string) =>
   (await apiClient.post<CommentPrompt>(`/admin/comment-prompts/${id}/archive/`)).data;

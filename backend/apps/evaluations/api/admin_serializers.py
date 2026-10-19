@@ -162,6 +162,7 @@ class CommentPromptUpdateSerializer(serializers.Serializer):
     label = serializers.CharField(max_length=COMMENT_PROMPT_LABEL_MAX, required=False)
     is_required = serializers.BooleanField(required=False)
     is_active = serializers.BooleanField(required=False)
+    is_archived = serializers.BooleanField(required=False)
 
 
 # Form versions -----------------------------------------------------------------
