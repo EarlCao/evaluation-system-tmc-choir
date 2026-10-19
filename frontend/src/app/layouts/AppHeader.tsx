@@ -124,7 +124,7 @@ export function AppHeader({ home, badge, nav, children, onOpenMobileNav }: AppHe
                 textOverflow: "ellipsis",
               }}
             >
-              TMC CHOIR EVALUATION SYSTEM
+              TMC Choir Evaluation System
             </Typography>
           </Box>
           {badge ? (

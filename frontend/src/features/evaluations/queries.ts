@@ -41,6 +41,7 @@ export function useSubmitEvaluation() {
       queryClient.setQueryData(evaluationKeys.mineDetail(evaluation.public_id), evaluation);
       void queryClient.invalidateQueries({ queryKey: evaluationKeys.all });
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      void queryClient.invalidateQueries({ queryKey: ["members"] });
     },
   });
 }

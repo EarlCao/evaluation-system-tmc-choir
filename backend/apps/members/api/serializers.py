@@ -64,6 +64,12 @@ class DirectoryEntrySerializer(serializers.ModelSerializer):
     voice_section = VoiceSectionSerializer(read_only=True)
     has_self_evaluation = serializers.BooleanField(read_only=True, default=False)
     self_evaluation_summary = serializers.CharField(read_only=True, default="")
+    is_evaluated = serializers.BooleanField(
+        source="is_evaluated_by_viewer", read_only=True, default=False
+    )
+    evaluation_id = serializers.UUIDField(
+        source="evaluation_id_by_viewer", read_only=True, default=None, allow_null=True
+    )
 
     class Meta:
         model = MemberProfile
@@ -77,6 +83,8 @@ class DirectoryEntrySerializer(serializers.ModelSerializer):
             "officer_position",
             "has_self_evaluation",
             "self_evaluation_summary",
+            "is_evaluated",
+            "evaluation_id",
         ]
 
 

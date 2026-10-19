@@ -102,4 +102,61 @@ describe("MemberDirectoryPage", () => {
     renderRoute("/app/members");
     expect(await screen.findByText("We couldn't load the member list.")).toBeVisible();
   });
+
+  it("displays green Evaluated badge and View evaluation button for evaluated members during an open cycle", async () => {
+    server.use(
+      http.get(api("/evaluation-cycles/current/"), () =>
+        HttpResponse.json({
+          cycle: {
+            public_id: "cycle-1",
+            name: "Concert 2026",
+            status: "OPEN",
+            ends_at: "2026-12-31T00:00:00Z",
+          },
+        }),
+      ),
+      http.get(api("/members/"), () =>
+        HttpResponse.json({
+          count: 2,
+          next: null,
+          previous: null,
+          results: [
+            {
+              public_id: "member-1",
+              first_name: "Alice",
+              last_name: "Song",
+              display_name: "",
+              voice_section: { id: 1, name: "Soprano" },
+              is_evaluated: true,
+              evaluation_id: "eval-alice-123",
+            },
+            {
+              public_id: "member-2",
+              first_name: "Bob",
+              last_name: "Chant",
+              display_name: "",
+              voice_section: { id: 2, name: "Alto" },
+              is_evaluated: false,
+              evaluation_id: null,
+            },
+          ],
+        }),
+      ),
+    );
+
+    renderRoute("/app/members");
+    expect(await screen.findByText("Alice Song")).toBeVisible();
+    expect(screen.getByText("Bob Chant")).toBeVisible();
+
+    // Alice is evaluated -> has green "Evaluated" chip and "View evaluation" button
+    expect(screen.getByText("Evaluated")).toBeVisible();
+    const aliceBtn = screen.getByRole("link", { name: /view evaluation/i });
+    expect(aliceBtn).toBeVisible();
+    expect(aliceBtn).toHaveAttribute("href", "/app/my-evaluations/eval-alice-123");
+
+    // Bob is not evaluated -> has "Evaluate" button and no "Evaluated" chip
+    const bobBtn = screen.getByRole("link", { name: "Evaluate" });
+    expect(bobBtn).toBeVisible();
+    expect(bobBtn).toHaveAttribute("href", "/app/members/member-2/evaluate");
+  });
 });

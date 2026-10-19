@@ -85,6 +85,9 @@ function setup(eligibility: Eligibility = eligible) {
         is_self: false,
       }),
     ),
+    http.get(api("/members/"), () =>
+      HttpResponse.json({ count: 0, next: null, previous: null, results: [] }),
+    ),
     http.get(api("/evaluations/eligibility/"), () => HttpResponse.json(eligibility)),
     http.get(api("/evaluation-cycles/current/"), () => HttpResponse.json({ cycle })),
     http.get(api(`/evaluation-cycles/${CYCLE}/form/`), () => HttpResponse.json(form)),
@@ -96,6 +99,7 @@ function setup(eligibility: Eligibility = eligible) {
 }
 
 beforeEach(() => {
+  localStorage.clear();
   setup();
 });
 
@@ -272,4 +276,88 @@ describe("EvaluateMemberPage", () => {
       expect(screen.queryByRole("button", { name: "Next: Comments" })).not.toBeInTheDocument();
     });
   });
+
+  it("allows members to add an extra comment, and delete it with confirmation modal", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderRoute(`/app/members/${RECIPIENT}/evaluate`);
+    await user.click(await screen.findByRole("button", { name: "4" }));
+    await user.click(screen.getByRole("button", { name: "Next: Comments" }));
+
+    // Add another comment
+    const addButton = await screen.findByRole("button", { name: "+ Add another comment" });
+    await user.click(addButton);
+
+    // Prompt 6 should now be visible
+    const extraInput = await screen.findByLabelText(/6\. Additional comment/i);
+    expect(extraInput).toBeVisible();
+    await user.type(extraInput, "Special note for this member");
+
+    // Click Remove comment button
+    const removeButton = screen.getByRole("button", { name: "Remove comment" });
+    await user.click(removeButton);
+
+    // Confirmation dialog opens
+    const dialog = await screen.findByRole("dialog", { name: "Remove Comment" });
+    expect(dialog).toBeVisible();
+    expect(within(dialog).getByText(/are you sure you want to remove/i)).toBeVisible();
+
+    // Clicking cancel preserves the comment
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Remove Comment" })).not.toBeInTheDocument();
+    });
+    expect(screen.getByLabelText(/6\. Additional comment/i)).toHaveValue("Special note for this member");
+
+    // Click remove again and confirm deletion
+    await user.click(screen.getByRole("button", { name: "Remove comment" }));
+    const confirmDialog = await screen.findByRole("dialog", { name: "Remove Comment" });
+    await user.click(within(confirmDialog).getByRole("button", { name: "Remove" }));
+
+    // Dialog closes and extra comment field is removed
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Remove Comment" })).not.toBeInTheDocument();
+    });
+    expect(screen.queryByLabelText(/6\. Additional comment/i)).not.toBeInTheDocument();
+  });
+
+  it("warns about unsaved progress when clicking Back to members and restores saved draft", async () => {
+    const user = userEvent.setup({ delay: null });
+    const { router } = renderRoute(`/app/members/${RECIPIENT}/evaluate`);
+
+    // Top "Back to members" button is visible
+    const backBtn = await screen.findByRole("link", { name: "Back to members" });
+    expect(backBtn).toBeVisible();
+
+    // Fill in a rating
+    await user.click(await screen.findByRole("button", { name: "4" }));
+
+    // Click "Back to members" -> blocker opens warning dialog
+    await user.click(backBtn);
+    const dialog = await screen.findByRole("dialog", { name: "Unsaved Evaluation Progress" });
+    expect(dialog).toBeVisible();
+    expect(within(dialog).getByText(/You have unsaved ratings or comments/i)).toBeVisible();
+
+    // "Stay & Continue" keeps the user on the evaluation form
+    await user.click(within(dialog).getByRole("button", { name: /stay & continue/i }));
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Unsaved Evaluation Progress" })).not.toBeInTheDocument();
+    });
+    expect(router.state.location.pathname).toBe(`/app/members/${RECIPIENT}/evaluate`);
+
+    // Click back again, and choose "Save Draft & Leave"
+    await user.click(backBtn);
+    const saveDialog = await screen.findByRole("dialog", { name: "Unsaved Evaluation Progress" });
+    await user.click(within(saveDialog).getByRole("button", { name: /save draft & leave/i }));
+
+    // Router proceeds away from the page
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/app/members");
+    });
+
+    // When the member returns to evaluate the same member, the draft is restored!
+    renderRoute(`/app/members/${RECIPIENT}/evaluate`);
+    expect(await screen.findByText(/draft restored/i)).toBeVisible();
+    expect(await screen.findByRole("button", { name: "4" })).toHaveAttribute("aria-pressed", "true");
+  });
 });
+

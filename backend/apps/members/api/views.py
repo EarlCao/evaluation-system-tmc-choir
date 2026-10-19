@@ -87,7 +87,9 @@ class DirectoryView(ListAPIView):
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        return selectors.list_directory(params=self.request.query_params)
+        return selectors.list_directory(
+            params=self.request.query_params, viewer=self.request.user
+        )
 
 
 class MemberDetailView(APIView):
@@ -95,7 +97,7 @@ class MemberDetailView(APIView):
 
     @extend_schema(responses=MemberDetailSerializer)
     def get(self, request, public_id):
-        profile = selectors.get_member_profile(public_id=public_id)
+        profile = selectors.get_member_profile(public_id=public_id, viewer=request.user)
         return Response(MemberDetailSerializer(profile, context={"request": request}).data)
 
 

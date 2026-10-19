@@ -1,9 +1,11 @@
 import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
+import SvgIcon from "@mui/material/SvgIcon";
 import Typography from "@mui/material/Typography";
-import { useState } from "react";
-import { Link as RouterLink, useParams } from "react-router";
+import { useMemo, useState } from "react";
+import { Link as RouterLink, useNavigate, useParams } from "react-router";
 
 import { ErrorState } from "@/components/ErrorState";
 import { FullPageSpinner } from "@/components/FullPageSpinner";
@@ -12,18 +14,26 @@ import { memberName, useMember } from "@/features/members";
 import { isApiError } from "@/lib/errors";
 
 import { EvaluationForm } from "../components/EvaluationForm";
+import { clearEvaluationDraft, loadEvaluationDraft } from "../draftStorage";
 import { useCurrentCycle, useCycleForm, useEligibility, useSubmitEvaluation } from "../queries";
 import type { MyEvaluation } from "../types";
 
 /** EVAL-01: evaluate a member in the open cycle. */
 export function EvaluateMemberPage() {
   const { publicId = "" } = useParams();
+  const navigate = useNavigate();
   const member = useMember(publicId);
   const eligibility = useEligibility(publicId);
   const cycle = useCurrentCycle();
   const form = useCycleForm(cycle.data?.public_id);
   const submit = useSubmitEvaluation();
   const [done, setDone] = useState<MyEvaluation | null>(null);
+
+  const cycleId = cycle.data?.public_id;
+  const initialDraft = useMemo(() => {
+    if (!cycleId || !publicId) return undefined;
+    return loadEvaluationDraft(cycleId, publicId) ?? undefined;
+  }, [cycleId, publicId]);
 
   if (member.isPending || eligibility.isPending || cycle.isPending) {
     return <FullPageSpinner label="Loading evaluation form" />;
@@ -52,6 +62,21 @@ export function EvaluateMemberPage() {
 
   return (
     <Stack spacing={3} sx={{ py: 4, maxWidth: 760 }}>
+      <Box>
+        <Button
+          component={RouterLink}
+          to="/app/members"
+          startIcon={
+            <SvgIcon fontSize="small">
+              <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+            </SvgIcon>
+          }
+          sx={{ textTransform: "none", color: "text.secondary", pl: 0 }}
+        >
+          Back to members
+        </Button>
+      </Box>
+
       <div>
         <Typography variant="h4" component="h1">
           {isSelf ? `Evaluate yourself (${name})` : `Evaluate ${name}`}
@@ -121,8 +146,11 @@ export function EvaluateMemberPage() {
         <EvaluationForm
           form={form.data}
           recipientName={name}
+          recipientId={publicId}
+          cycleId={cycleId}
           isSelf={isSelf}
           mode="create"
+          initial={initialDraft}
           onConfirm={(draft) =>
             submit.mutateAsync({
               recipient: publicId,
@@ -135,7 +163,13 @@ export function EvaluateMemberPage() {
               comments: draft.comments,
             })
           }
-          onDone={setDone}
+          onDone={(evalResult) => {
+            if (cycleId && publicId) {
+              clearEvaluationDraft(cycleId, publicId);
+            }
+            setDone(evalResult);
+          }}
+          onCancel={() => navigate("/app/members")}
         />
       )}
     </Stack>

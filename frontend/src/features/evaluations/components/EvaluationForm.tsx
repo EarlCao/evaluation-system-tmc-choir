@@ -3,6 +3,11 @@ import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import SvgIcon from "@mui/material/SvgIcon";
@@ -10,6 +15,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
+import { useBlocker } from "react-router";
 
 import { FormAlert } from "@/components/form/FormAlert";
 import { PrivacyNotice } from "@/components/PrivacyNotice";
@@ -17,6 +23,7 @@ import { useCurrentUser } from "@/features/auth";
 import { isApiError } from "@/lib/errors";
 import { applyServerErrors } from "@/lib/forms";
 
+import { clearEvaluationDraft, saveEvaluationDraft } from "../draftStorage";
 import { ownNameMentions } from "../identity";
 import { buildDraftSchema, countWords, emptyDraft, type EvaluationDraft } from "../schema";
 import {
@@ -36,6 +43,8 @@ type Step = "criteria" | "comments" | "review";
 interface EvaluationFormProps {
   form: CycleForm;
   recipientName: string;
+  recipientId?: string;
+  cycleId?: string;
   isSelf?: boolean;
   mode: "create" | "edit";
   initial?: EvaluationDraft;
@@ -73,6 +82,8 @@ function normalizeInitialDraft(form: CycleForm, initial?: EvaluationDraft): Eval
 export function EvaluationForm({
   form,
   recipientName,
+  recipientId,
+  cycleId,
   isSelf = false,
   mode,
   initial,
@@ -81,8 +92,8 @@ export function EvaluationForm({
   onCancel,
 }: EvaluationFormProps) {
   const basePrompts = useMemo(() => effectiveCommentPrompts(form), [form]);
+  const baseKeys = useMemo(() => new Set(basePrompts.map((p) => p.key)), [basePrompts]);
   const [extraPrompts, setExtraPrompts] = useState<FormCommentPrompt[]>(() => {
-    const baseKeys = new Set(basePrompts.map((p) => p.key));
     return Object.keys(initial?.comments ?? {})
       .filter((k) => !baseKeys.has(k) && (initial?.comments[k] ?? "").trim().length > 0)
       .map((k, i) => ({
@@ -91,6 +102,7 @@ export function EvaluationForm({
         is_required: false,
       }));
   });
+  const [promptToDelete, setPromptToDelete] = useState<FormCommentPrompt | null>(null);
   const prompts = useMemo(() => [...basePrompts, ...extraPrompts], [basePrompts, extraPrompts]);
   const schema = useMemo(() => buildDraftSchema(form), [form]);
   const [step, setStep] = useState<Step>("criteria");
@@ -102,10 +114,72 @@ export function EvaluationForm({
       defaultValues: normalizeInitialDraft(form, initial),
     });
 
+  const watchedRatings = useWatch({ control, name: "ratings" });
   const watchedComments = useWatch({ control, name: "comments" });
   const me = useCurrentUser().data;
   const allCommentTexts = Object.values(watchedComments ?? {}).join("\n");
   const ownNames = isSelf ? [] : ownNameMentions(allCommentTexts, me);
+
+  const hasRestoredDraft = useMemo(() => {
+    if (mode !== "create" || !initial) return false;
+    const hasRating = Object.values(initial.ratings ?? {}).some((v) => v !== null);
+    const hasComment = Object.values(initial.comments ?? {}).some(
+      (c) => typeof c === "string" && c.trim().length > 0,
+    );
+    return hasRating || hasComment;
+  }, [mode, initial]);
+
+  const hasProgress = useMemo(() => {
+    if (!watchedRatings && !watchedComments) return false;
+    const hasAnyRating = Object.values(watchedRatings ?? {}).some((v) => v !== null);
+    const hasAnyComment = Object.values(watchedComments ?? {}).some(
+      (c) => typeof c === "string" && c.trim().length > 0,
+    );
+    return hasAnyRating || hasAnyComment;
+  }, [watchedRatings, watchedComments]);
+
+  const submittedRef = useRef(false);
+
+  useEffect(() => {
+    if (mode === "create" && cycleId && recipientId && hasProgress) {
+      saveEvaluationDraft(cycleId, recipientId, buildNormalizedDraft());
+    }
+  }, [watchedRatings, watchedComments, mode, cycleId, recipientId, hasProgress]);
+
+  useEffect(() => {
+    if (mode !== "create" || !hasProgress || pending || submittedRef.current) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [mode, hasProgress, pending]);
+
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      mode === "create" &&
+      hasProgress &&
+      !pending &&
+      !submittedRef.current &&
+      currentLocation.pathname !== nextLocation.pathname,
+  );
+
+  const handleSaveDraftAndLeave = () => {
+    if (cycleId && recipientId) {
+      saveEvaluationDraft(cycleId, recipientId, buildNormalizedDraft());
+    }
+    blocker.proceed?.();
+  };
+
+  const handleDiscardDraftAndLeave = () => {
+    if (cycleId && recipientId) {
+      clearEvaluationDraft(cycleId, recipientId);
+    }
+    blocker.proceed?.();
+  };
 
   const reviewHeading = useRef<HTMLHeadingElement>(null);
   const commentsHeading = useRef<HTMLHeadingElement>(null);
@@ -127,7 +201,7 @@ export function EvaluationForm({
 
   function addExtraCommentPrompt() {
     const nextNumber = prompts.length + 1;
-    const key = `comment_${String(nextNumber)}`;
+    const key = `comment_custom_${String(Date.now())}`;
     setExtraPrompts((prev) => [
       ...prev,
       {
@@ -139,23 +213,40 @@ export function EvaluationForm({
     setValue(`comments.${key}`, "");
   }
 
+  function confirmDeletePrompt() {
+    if (!promptToDelete) return;
+    const keyToRemove = promptToDelete.key;
+    setExtraPrompts((prev) => prev.filter((p) => p.key !== keyToRemove));
+    setValue(`comments.${keyToRemove}`, "");
+    setPromptToDelete(null);
+  }
+
   function buildNormalizedDraft(): EvaluationDraft {
     const raw = getValues();
-    const comments = { ...raw.comments };
+    const activeKeys = new Set(prompts.map((p) => p.key));
+    const comments: Record<string, string> = {};
+    for (const [k, v] of Object.entries(raw.comments ?? {})) {
+      if (activeKeys.has(k)) {
+        comments[k] = (v ?? "").trim();
+      }
+    }
     return {
       ratings: raw.ratings,
       comment: (comments.comment ?? raw.comment ?? "").trim(),
       suggestion: (comments.suggestion ?? raw.suggestion ?? "").trim(),
-      comments: Object.fromEntries(
-        Object.entries(comments).map(([k, v]) => [k, v.trim()]),
-      ),
+      comments,
     };
   }
 
   async function confirm() {
     setPending(true);
     try {
-      onDone(await onConfirm(buildNormalizedDraft(), changeSummary.trim()));
+      const result = await onConfirm(buildNormalizedDraft(), changeSummary.trim());
+      submittedRef.current = true;
+      if (cycleId && recipientId) {
+        clearEvaluationDraft(cycleId, recipientId);
+      }
+      onDone(result);
     } catch (error) {
       applyServerErrors(error, setError, ["ratings", "comment", "suggestion", "comments"]);
       if (isApiError(error) && Object.keys(error.fields).length > 0) {
@@ -185,201 +276,291 @@ export function EvaluationForm({
   if (step === "review") {
     const values = buildNormalizedDraft();
     return (
-      <Stack spacing={3}>
-        <StepIndicator step="review" />
-        <Typography variant="h5" component="h2" tabIndex={-1} ref={reviewHeading}>
-          {mode === "create" ? "Review your evaluation of" : "Review your changes for"}{" "}
-          {isSelf ? `yourself (${recipientName})` : recipientName}
-        </Typography>
-        <Paper variant="outlined" sx={{ p: 3 }}>
-          <EvaluationSummary
-            ratings={form.criteria.map((c) => {
-              const v = values.ratings[String(c.criterion_version)] ?? null;
-              return {
-                name: c.name,
-                value: v,
-                label: v === null ? "" : (c.labels[pointKey(v)] ?? ""),
-                max: c.max_value,
-              };
-            })}
-            comment={values.comment}
-            suggestion={values.suggestion}
-            comments={prompts.map((p) => ({
-              key: p.key,
-              label: p.label,
-              body: values.comments[p.key] ?? "",
-            }))}
-          />
-        </Paper>
-        {mode === "edit" ? (
-          <TextField
-            label="What did you change? (optional)"
-            value={changeSummary}
-            onChange={(event) => {
-              setChangeSummary(event.target.value);
-            }}
-            error={changeSummary.length > CHANGE_SUMMARY_MAX}
-            helperText={`${String(changeSummary.length)}/${String(CHANGE_SUMMARY_MAX)} · Only you and the Super Admin see this.`}
-          />
-        ) : null}
-        {isSelf ? (
-          <Alert severity="info">
-            <strong>Public Self-Evaluation:</strong> Your self-evaluation ratings and comments will
-            be visible publicly on your member profile so all choir members can see them.
-          </Alert>
-        ) : (
-          <PrivacyNotice />
-        )}
-        {ownNames.length > 0 ? <OwnNameWarning names={ownNames} /> : null}
-        <FormAlert message={formState.errors.root?.server?.message} />
-        <Stack direction={{ xs: "column-reverse", sm: "row" }} spacing={2}>
-          <Button
-            onClick={() => {
-              setStep("comments");
-            }}
-            disabled={pending}
-          >
-            Back to edit
-          </Button>
-          <Button
-            variant="contained"
-            size="large"
-            onClick={() => void confirm()}
-            disabled={pending || changeSummary.length > CHANGE_SUMMARY_MAX}
-          >
-            {pending ? "Saving…" : mode === "create" ? "Submit evaluation" : "Save changes"}
-          </Button>
+      <>
+        <Stack spacing={3}>
+          <StepIndicator step="review" />
+          <Typography variant="h5" component="h2" tabIndex={-1} ref={reviewHeading}>
+            {mode === "create" ? "Review your evaluation of" : "Review your changes for"}{" "}
+            {isSelf ? `yourself (${recipientName})` : recipientName}
+          </Typography>
+          <Paper variant="outlined" sx={{ p: 3 }}>
+            <EvaluationSummary
+              ratings={form.criteria.map((c) => {
+                const v = values.ratings[String(c.criterion_version)] ?? null;
+                return {
+                  name: c.name,
+                  value: v,
+                  label: v === null ? "" : (c.labels[pointKey(v)] ?? ""),
+                  max: c.max_value,
+                };
+              })}
+              comment={values.comment}
+              suggestion={values.suggestion}
+              comments={prompts.map((p) => ({
+                key: p.key,
+                label: p.label,
+                body: values.comments[p.key] ?? "",
+              }))}
+            />
+          </Paper>
+          {mode === "edit" ? (
+            <TextField
+              label="What did you change? (optional)"
+              value={changeSummary}
+              onChange={(event) => {
+                setChangeSummary(event.target.value);
+              }}
+              error={changeSummary.length > CHANGE_SUMMARY_MAX}
+              helperText={`${String(changeSummary.length)}/${String(CHANGE_SUMMARY_MAX)} · Only you and the Super Admin see this.`}
+            />
+          ) : null}
+          {isSelf ? (
+            <Alert severity="info">
+              <strong>Public Self-Evaluation:</strong> Your self-evaluation ratings and comments will
+              be visible publicly on your member profile so all choir members can see them.
+            </Alert>
+          ) : (
+            <PrivacyNotice />
+          )}
+          {ownNames.length > 0 ? <OwnNameWarning names={ownNames} /> : null}
+          <FormAlert message={formState.errors.root?.server?.message} />
+          <Stack direction={{ xs: "column-reverse", sm: "row" }} spacing={2}>
+            <Button
+              onClick={() => {
+                setStep("comments");
+              }}
+              disabled={pending}
+            >
+              Back to edit
+            </Button>
+            <Button
+              variant="contained"
+              size="large"
+              onClick={() => void confirm()}
+              disabled={pending || changeSummary.length > CHANGE_SUMMARY_MAX}
+            >
+              {pending ? "Saving…" : mode === "create" ? "Submit evaluation" : "Save changes"}
+            </Button>
+          </Stack>
         </Stack>
-      </Stack>
+        <UnsavedChangesDialog
+          blocker={blocker}
+          recipientName={recipientName}
+          onSaveAndLeave={handleSaveDraftAndLeave}
+          onDiscardAndLeave={handleDiscardDraftAndLeave}
+        />
+      </>
     );
   }
 
   if (step === "comments") {
     return (
-      <Stack
-        component="form"
-        spacing={3}
-        noValidate
-        onSubmit={goToReview}
-        aria-label={`${mode === "create" ? "Evaluate" : "Edit evaluation of"} ${recipientName}`}
-      >
-        <StepIndicator step="comments" />
-        <div>
-          <Typography variant="h6" component="h2" tabIndex={-1} ref={commentsHeading}>
-            {isSelf
-              ? `Self-Comments & Reflections (${recipientName})`
-              : `Comments & Suggestions for ${recipientName}`}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {isSelf
-              ? "Share your self-evaluation comments below (at least 5 comment prompts available). You can write as many words as you want, and all choir members will be able to see your self-comments."
-              : "Share at least 5 comments/suggestions below. You can write as many words as you want for each prompt."}
-          </Typography>
-        </div>
-        <FormAlert message={formState.errors.root?.server?.message} />
-        {prompts.map((prompt, idx) => {
-          const textValue = watchedComments?.[prompt.key] ?? "";
-          const words = countWords(textValue);
-          const numberedLabel = `${String(idx + 1)}. ${prompt.label}${prompt.is_required ? "" : " (optional)"}`;
-          return (
-            <Controller
-              key={prompt.key}
-              control={control}
-              name={`comments.${prompt.key}`}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  value={field.value ?? ""}
-                  onChange={(e) => {
-                    field.onChange(e.target.value);
-                    if (prompt.key === "comment") {
-                      setValue("comment", e.target.value);
-                    } else if (prompt.key === "suggestion") {
-                      setValue("suggestion", e.target.value);
-                    }
-                  }}
-                  label={numberedLabel}
-                  multiline
-                  minRows={3}
-                  error={Boolean(fieldState.error)}
-                  helperText={
-                    fieldState.error?.message ??
-                    `${String(words)} ${words === 1 ? "word" : "words"} · Write as many words as you want.`
-                  }
+      <>
+        <Stack
+          component="form"
+          spacing={3}
+          noValidate
+          onSubmit={goToReview}
+          aria-label={`${mode === "create" ? "Evaluate" : "Edit evaluation of"} ${recipientName}`}
+        >
+          <StepIndicator step="comments" />
+          <div>
+            <Typography variant="h6" component="h2" tabIndex={-1} ref={commentsHeading}>
+              {isSelf
+                ? `Self-Comments & Reflections (${recipientName})`
+                : `Comments & Suggestions for ${recipientName}`}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {isSelf
+                ? "Share your self-evaluation comments below (at least 5 comment prompts available). You can write as many words as you want, and all choir members will be able to see your self-comments."
+                : "Share at least 5 comments/suggestions below. You can write as many words as you want for each prompt."}
+            </Typography>
+          </div>
+          <FormAlert message={formState.errors.root?.server?.message} />
+          {prompts.map((prompt, idx) => {
+            const isExtraPrompt = !baseKeys.has(prompt.key);
+            const textValue = watchedComments?.[prompt.key] ?? "";
+            const words = countWords(textValue);
+            const numberedLabel = `${String(idx + 1)}. ${prompt.label}${prompt.is_required ? "" : " (optional)"}`;
+            return (
+              <Box key={prompt.key} sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                {isExtraPrompt ? (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 1,
+                    }}
+                  >
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                      Additional comment #{String(idx + 1)}
+                    </Typography>
+                    <Button
+                      type="button"
+                      size="small"
+                      color="error"
+                      onClick={() => setPromptToDelete(prompt)}
+                      startIcon={
+                        <SvgIcon fontSize="small">
+                          <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+                        </SvgIcon>
+                      }
+                      sx={{ textTransform: "none", fontSize: "0.78rem" }}
+                    >
+                      Remove comment
+                    </Button>
+                  </Box>
+                ) : null}
+                <Controller
+                  control={control}
+                  name={`comments.${prompt.key}`}
+                  render={({ field, fieldState }) => (
+                    <TextField
+                      {...field}
+                      value={field.value ?? ""}
+                      onChange={(e) => {
+                        field.onChange(e.target.value);
+                        if (prompt.key === "comment") {
+                          setValue("comment", e.target.value);
+                        } else if (prompt.key === "suggestion") {
+                          setValue("suggestion", e.target.value);
+                        }
+                      }}
+                      label={numberedLabel}
+                      multiline
+                      minRows={3}
+                      error={Boolean(fieldState.error)}
+                      helperText={
+                        fieldState.error?.message ??
+                        `${String(words)} ${words === 1 ? "word" : "words"} · Write as many words as you want.`
+                      }
+                    />
+                  )}
                 />
-              )}
-            />
-          );
-        })}
-        <div>
-          <Button variant="outlined" size="small" onClick={addExtraCommentPrompt}>
-            + Add another comment
-          </Button>
-        </div>
-        {ownNames.length > 0 ? <OwnNameWarning names={ownNames} /> : null}
-        <Stack direction={{ xs: "column-reverse", sm: "row" }} spacing={2}>
-          {onCancel ? <Button onClick={onCancel}>Cancel</Button> : null}
-          <Button
-            variant="outlined"
-            onClick={() => {
-              setStep("criteria");
-            }}
-          >
-            Back to criteria
-          </Button>
-          <Button type="submit" variant="contained" size="large">
-            Review
-          </Button>
+              </Box>
+            );
+          })}
+          <div>
+            <Button variant="outlined" size="small" onClick={addExtraCommentPrompt}>
+              + Add another comment
+            </Button>
+          </div>
+          {ownNames.length > 0 ? <OwnNameWarning names={ownNames} /> : null}
+          <Stack direction={{ xs: "column-reverse", sm: "row" }} spacing={2}>
+            {onCancel ? <Button onClick={onCancel}>Cancel</Button> : null}
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setStep("criteria");
+              }}
+            >
+              Back to criteria
+            </Button>
+            <Button type="submit" variant="contained" size="large">
+              Review
+            </Button>
+          </Stack>
         </Stack>
-      </Stack>
+
+        <Dialog
+          open={promptToDelete !== null}
+          onClose={() => setPromptToDelete(null)}
+          aria-labelledby="remove-comment-dialog-title"
+          aria-describedby="remove-comment-dialog-description"
+        >
+          <DialogTitle id="remove-comment-dialog-title">Remove Comment</DialogTitle>
+          <DialogContent>
+            <DialogContentText id="remove-comment-dialog-description">
+              Are you sure you want to remove &ldquo;{promptToDelete?.label}&rdquo;? Any comments written
+              in this field will be permanently deleted.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setPromptToDelete(null)}>Cancel</Button>
+            <Button
+              color="error"
+              variant="contained"
+              onClick={confirmDeletePrompt}
+              autoFocus
+            >
+              Remove
+            </Button>
+          </DialogActions>
+        </Dialog>
+        <UnsavedChangesDialog
+          blocker={blocker}
+          recipientName={recipientName}
+          onSaveAndLeave={handleSaveDraftAndLeave}
+          onDiscardAndLeave={handleDiscardDraftAndLeave}
+        />
+      </>
     );
   }
 
   return (
-    <Stack
-      component="form"
-      spacing={3}
-      noValidate
-      onSubmit={(e) => {
-        e.preventDefault();
-        void goToComments();
-      }}
-      aria-label={`${mode === "create" ? "Evaluate" : "Edit evaluation of"} ${recipientName}`}
-    >
-      <StepIndicator step="criteria" />
-      <div>
-        <Typography variant="h6" component="h2">
-          Criteria Ratings
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Rate {recipientName} on each criterion using the scale below, then continue to comments.
-        </Typography>
-      </div>
-      <RatingScaleGuide />
-      <FormAlert message={formState.errors.root?.server?.message} />
-      {form.criteria.map((criterion) => (
-        <Controller
-          key={criterion.criterion_version}
-          control={control}
-          name={`ratings.${String(criterion.criterion_version)}`}
-          render={({ field, fieldState }) => (
-            <RatingInput
-              criterion={criterion}
-              value={field.value ?? null}
-              onChange={field.onChange}
-              error={fieldState.error?.message}
-            />
-          )}
-        />
-      ))}
+    <>
+      <Stack
+        component="form"
+        spacing={3}
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault();
+          void goToComments();
+        }}
+        aria-label={`${mode === "create" ? "Evaluate" : "Edit evaluation of"} ${recipientName}`}
+      >
+        <StepIndicator step="criteria" />
+        <div>
+          <Typography variant="h6" component="h2">
+            Criteria Ratings
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Rate {recipientName} on each criterion using the scale below, then continue to comments.
+          </Typography>
+        </div>
+        {hasRestoredDraft ? (
+          <Alert severity="info" sx={{ py: 0.5, px: 1.5, fontSize: "0.85rem" }}>
+            Draft restored: Your previously saved ratings and comments have been loaded.
+          </Alert>
+        ) : null}
+        <RatingScaleGuide />
+        <FormAlert message={formState.errors.root?.server?.message} />
+        {form.criteria.map((criterion) => (
+          <Controller
+            key={criterion.criterion_version}
+            control={control}
+            name={`ratings.${String(criterion.criterion_version)}`}
+            render={({ field, fieldState }) => (
+              <RatingInput
+                criterion={criterion}
+                value={field.value ?? null}
+                onChange={field.onChange}
+                error={fieldState.error?.message}
+              />
+            )}
+          />
+        ))}
 
-      <Stack direction={{ xs: "column-reverse", sm: "row" }} spacing={2}>
-        {onCancel ? <Button onClick={onCancel}>Cancel</Button> : null}
-        <Button type="submit" variant="contained" size="large">
-          Next: Comments
-        </Button>
+        <Stack direction={{ xs: "column-reverse", sm: "row" }} spacing={2}>
+          {onCancel ? (
+            <Button onClick={onCancel} variant="outlined">
+              {mode === "create" ? "Back to members" : "Cancel"}
+            </Button>
+          ) : null}
+          <Button type="submit" variant="contained" size="large">
+            Next: Comments
+          </Button>
+        </Stack>
       </Stack>
-    </Stack>
+      <UnsavedChangesDialog
+        blocker={blocker}
+        recipientName={recipientName}
+        onSaveAndLeave={handleSaveDraftAndLeave}
+        onDiscardAndLeave={handleDiscardDraftAndLeave}
+      />
+    </>
   );
 }
 
@@ -582,5 +763,54 @@ function RatingScaleGuide() {
         ) : null}
       </Stack>
     </Paper>
+  );
+}
+
+interface UnsavedChangesDialogProps {
+  blocker: {
+    state: "unblocked" | "blocked" | "proceeding";
+    reset?: () => void;
+    proceed?: () => void;
+  };
+  recipientName: string;
+  onSaveAndLeave: () => void;
+  onDiscardAndLeave: () => void;
+}
+
+function UnsavedChangesDialog({
+  blocker,
+  recipientName,
+  onSaveAndLeave,
+  onDiscardAndLeave,
+}: UnsavedChangesDialogProps) {
+  const open = blocker.state === "blocked";
+
+  return (
+    <Dialog
+      open={open}
+      onClose={() => blocker.reset?.()}
+      aria-labelledby="unsaved-changes-dialog-title"
+      aria-describedby="unsaved-changes-dialog-description"
+    >
+      <DialogTitle id="unsaved-changes-dialog-title">Unsaved Evaluation Progress</DialogTitle>
+      <DialogContent>
+        <DialogContentText id="unsaved-changes-dialog-description">
+          You have unsaved ratings or comments for <strong>{recipientName}</strong>. If you leave
+          now, your progress will be saved as a draft so you won&apos;t need to rewrite your
+          evaluation when you return.
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2, gap: 1, flexWrap: "wrap" }}>
+        <Button onClick={() => blocker.reset?.()} color="inherit">
+          Stay &amp; Continue
+        </Button>
+        <Button onClick={onDiscardAndLeave} color="error">
+          Discard Draft
+        </Button>
+        <Button onClick={onSaveAndLeave} variant="contained" autoFocus>
+          Save Draft &amp; Leave
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }

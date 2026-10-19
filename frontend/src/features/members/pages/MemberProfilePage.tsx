@@ -6,6 +6,7 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Link from "@mui/material/Link";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
+import SvgIcon from "@mui/material/SvgIcon";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
@@ -238,6 +239,21 @@ export function MemberProfilePage() {
                 />
               ) : null}
               {data.is_self ? <Chip label="You" color="primary" variant="outlined" /> : null}
+              {data.is_evaluated ? (
+                <Chip
+                  label="Evaluated"
+                  color="success"
+                  icon={
+                    <SvgIcon fontSize="small" sx={{ "&&": { color: "inherit" } }}>
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                    </SvgIcon>
+                  }
+                  sx={{
+                    fontWeight: 700,
+                    "& .MuiChip-icon": { color: "inherit" },
+                  }}
+                />
+              ) : null}
             </Stack>
           </div>
           {data.joined_choir_on ? (
@@ -246,13 +262,33 @@ export function MemberProfilePage() {
             </Typography>
           ) : null}
           <div>
-            <Button
-              component={RouterLink}
-              to={`/app/members/${data.public_id}/evaluate`}
-              variant="contained"
-            >
-              {data.is_self ? "Evaluate yourself" : `Evaluate ${shortName}`}
-            </Button>
+            {data.is_evaluated ? (
+              <Button
+                component={RouterLink}
+                to={
+                  data.evaluation_id
+                    ? `/app/my-evaluations/${data.evaluation_id}`
+                    : `/app/members/${data.public_id}/evaluate`
+                }
+                variant="outlined"
+                color="success"
+                startIcon={
+                  <SvgIcon fontSize="small">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                  </SvgIcon>
+                }
+              >
+                {data.is_self ? "View self-evaluation" : `View evaluation of ${shortName}`}
+              </Button>
+            ) : (
+              <Button
+                component={RouterLink}
+                to={`/app/members/${data.public_id}/evaluate`}
+                variant="contained"
+              >
+                {data.is_self ? "Evaluate yourself" : `Evaluate ${shortName}`}
+              </Button>
+            )}
           </div>
           {data.is_self ? (
             <BioEditor member={data} />

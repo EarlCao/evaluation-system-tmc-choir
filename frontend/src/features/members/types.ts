@@ -40,6 +40,8 @@ export interface DirectoryMember {
   officer_position?: string;
   has_self_evaluation?: boolean;
   self_evaluation_summary?: string;
+  is_evaluated?: boolean;
+  evaluation_id?: string | null;
 }
 
 /** GET /members/{public_id}/ and /members/me/. */

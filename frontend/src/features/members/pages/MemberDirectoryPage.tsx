@@ -10,6 +10,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Pagination from "@mui/material/Pagination";
 import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
+import SvgIcon from "@mui/material/SvgIcon";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
@@ -38,6 +39,8 @@ function MemberCard({
   isSelf: boolean;
   canEvaluate: boolean;
 }) {
+  const isEvaluated = Boolean(member.is_evaluated);
+
   return (
     <Card
       variant="outlined"
@@ -46,6 +49,14 @@ function MemberCard({
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
+        borderColor: isEvaluated ? "success.main" : undefined,
+        bgcolor: isEvaluated
+          ? (theme) =>
+              theme.palette.mode === "dark"
+                ? "rgba(46, 125, 50, 0.12)"
+                : "rgba(46, 125, 50, 0.04)"
+          : undefined,
+        transition: "border-color 0.2s, background-color 0.2s",
       }}
     >
       <CardActionArea
@@ -69,6 +80,22 @@ function MemberCard({
               />
             ) : null}
             {isSelf ? <Chip size="small" label="You" color="primary" variant="outlined" /> : null}
+            {isEvaluated ? (
+              <Chip
+                size="small"
+                icon={
+                  <SvgIcon fontSize="small" sx={{ "&&": { color: "inherit" } }}>
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                  </SvgIcon>
+                }
+                label="Evaluated"
+                color="success"
+                sx={{
+                  fontWeight: 700,
+                  "& .MuiChip-icon": { color: "inherit" },
+                }}
+              />
+            ) : null}
             {member.has_self_evaluation ? (
               <Chip
                 size="small"
@@ -98,14 +125,35 @@ function MemberCard({
       </CardActionArea>
       {canEvaluate ? (
         <CardActions sx={{ px: 2, pb: 1.5, pt: 0 }}>
-          <Button
-            component={RouterLink}
-            to={`/app/members/${member.public_id}/evaluate`}
-            size="small"
-            variant={isSelf ? "outlined" : "contained"}
-          >
-            {isSelf ? "Evaluate yourself" : "Evaluate"}
-          </Button>
+          {isEvaluated ? (
+            <Button
+              component={RouterLink}
+              to={
+                member.evaluation_id
+                  ? `/app/my-evaluations/${member.evaluation_id}`
+                  : `/app/members/${member.public_id}/evaluate`
+              }
+              size="small"
+              variant="outlined"
+              color="success"
+              startIcon={
+                <SvgIcon fontSize="small">
+                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                </SvgIcon>
+              }
+            >
+              {isSelf ? "View self-evaluation" : "View evaluation"}
+            </Button>
+          ) : (
+            <Button
+              component={RouterLink}
+              to={`/app/members/${member.public_id}/evaluate`}
+              size="small"
+              variant={isSelf ? "outlined" : "contained"}
+            >
+              {isSelf ? "Evaluate yourself" : "Evaluate"}
+            </Button>
+          )}
         </CardActions>
       ) : null}
     </Card>

@@ -21,6 +21,8 @@ ENTRY_FIELDS = {
     "officer_position",
     "has_self_evaluation",
     "self_evaluation_summary",
+    "is_evaluated",
+    "evaluation_id",
 }
 
 
@@ -146,3 +148,29 @@ def test_own_profile_bio_length_is_limited(member_client):
 
 def test_super_admin_without_profile_gets_404_for_own_profile(admin_client_api):
     assert admin_client_api.get(ME).status_code == 404
+
+
+def test_directory_marks_already_evaluated_members_for_viewer(member_client, member):
+    target = make_member("Jane", "Doe")
+    not_evaluated = make_member("John", "Smith")
+    from django.utils import timezone
+    from apps.evaluations.models import Evaluation
+    from apps.evaluations.tests.factories import make_cycle
+
+    cycle = make_cycle(open=True)
+    evaluation = Evaluation.objects.create(
+        evaluator=member,
+        recipient=target,
+        cycle=cycle,
+        form_version=cycle.form_version,
+        status="SUBMITTED",
+        submitted_at=timezone.now(),
+    )
+
+    response = member_client.get(DIRECTORY)
+    assert response.status_code == 200
+    results = {m["public_id"]: m for m in response.json()["results"]}
+    assert results[str(target.public_id)]["is_evaluated"] is True
+    assert results[str(target.public_id)]["evaluation_id"] == str(evaluation.public_id)
+    assert results[str(not_evaluated.public_id)]["is_evaluated"] is False
+    assert results[str(not_evaluated.public_id)]["evaluation_id"] is None
