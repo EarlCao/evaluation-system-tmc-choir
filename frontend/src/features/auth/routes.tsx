@@ -27,4 +27,3 @@ export const guestAuthRoutes: RouteObject[] = [
 
 /** Pages inside the member area (/app/...). */
 export const memberAuthRoutes: RouteObject[] = [{ path: "profile", element: <ProfilePage /> }];
-

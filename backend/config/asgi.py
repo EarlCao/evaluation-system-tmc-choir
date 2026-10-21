@@ -11,7 +11,8 @@ django_asgi_app = get_asgi_application()
 
 from channels.auth import AuthMiddlewareStack  # noqa: E402
 from channels.routing import ProtocolTypeRouter, URLRouter  # noqa: E402
-from channels.security.websocket import AllowedHostsOriginValidator  # noqa: E402
+from channels.security.websocket import OriginValidator  # noqa: E402
+from django.conf import settings  # noqa: E402
 
 from .routing import websocket_urlpatterns  # noqa: E402
 
@@ -19,8 +20,9 @@ application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
         # Session auth (same cookie as the API) + Origin must match ALLOWED_HOSTS (CSWSH).
-        "websocket": AllowedHostsOriginValidator(
-            AuthMiddlewareStack(URLRouter(websocket_urlpatterns))
+        "websocket": OriginValidator(
+            AuthMiddlewareStack(URLRouter(websocket_urlpatterns)),
+            settings.CSRF_TRUSTED_ORIGINS,
         ),
     }
 )

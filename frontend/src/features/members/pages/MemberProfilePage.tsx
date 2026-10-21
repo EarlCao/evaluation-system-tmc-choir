@@ -235,7 +235,9 @@ export function MemberProfilePage() {
               {data.is_officer ? (
                 <Chip
                   color="secondary"
-                  label={data.officer_position ? `Officer: ${data.officer_position}` : "Choir Officer"}
+                  label={
+                    data.officer_position ? `Officer: ${data.officer_position}` : "Choir Officer"
+                  }
                 />
               ) : null}
               {data.is_self ? <Chip label="You" color="primary" variant="outlined" /> : null}

@@ -4,5 +4,3 @@ import { LoginPage } from "./LoginPage";
 export function WelcomePage() {
   return <LoginPage />;
 }
-
-

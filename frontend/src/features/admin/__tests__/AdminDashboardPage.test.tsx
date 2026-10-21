@@ -80,4 +80,3 @@ describe("AdminDashboardPage (ADM-01)", () => {
     expect(router.state.location.pathname).toBe("/admin");
   });
 });
-

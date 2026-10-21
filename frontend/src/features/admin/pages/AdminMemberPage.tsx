@@ -26,7 +26,7 @@ import {
   useMemberAction,
   useSendPasswordReset,
 } from "../queries";
-import type { AdminMember, UserRole, UserStatus } from "../types";
+import type { AdminMember, UserStatus } from "../types";
 import { StatusChip } from "./AdminMembersPage";
 
 type Pending =
@@ -382,11 +382,7 @@ export function AdminMemberPage() {
       <ConfirmDialog
         open={pending !== null}
         pending={busy}
-        title={
-          pending?.kind === "status"
-            ? pending.title
-            : "Send a password reset email?"
-        }
+        title={pending?.kind === "status" ? pending.title : "Send a password reset email?"}
         description={
           pending?.kind === "status"
             ? pending.status === "ACTIVE"

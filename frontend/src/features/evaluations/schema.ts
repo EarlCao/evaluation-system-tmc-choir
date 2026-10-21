@@ -31,10 +31,7 @@ export function buildDraftSchema(form: CycleForm) {
     commentsShape[p.key] = z
       .string()
       .max(maxLen, `Keep it under ${String(maxLen)} characters.`)
-      .refine(
-        (v) => !p.is_required || v.trim().length > 0,
-        `${p.label} is required.`,
-      );
+      .refine((v) => !p.is_required || v.trim().length > 0, `${p.label} is required.`);
   }
 
   return z.object({

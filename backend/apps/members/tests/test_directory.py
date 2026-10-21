@@ -154,6 +154,7 @@ def test_directory_marks_already_evaluated_members_for_viewer(member_client, mem
     target = make_member("Jane", "Doe")
     not_evaluated = make_member("John", "Smith")
     from django.utils import timezone
+
     from apps.evaluations.models import Evaluation
     from apps.evaluations.tests.factories import make_cycle
 
@@ -180,6 +181,7 @@ def test_directory_filter_by_evaluation_status(member_client, member):
     target = make_member("Jane", "Doe")
     not_evaluated = make_member("John", "Smith")
     from django.utils import timezone
+
     from apps.evaluations.models import Evaluation
     from apps.evaluations.tests.factories import make_cycle
 
@@ -213,4 +215,3 @@ def test_directory_filter_by_evaluation_status(member_client, member):
     all_ids = [m["public_id"] for m in res_all.json()["results"]]
     assert str(target.public_id) in all_ids
     assert str(not_evaluated.public_id) in all_ids
-

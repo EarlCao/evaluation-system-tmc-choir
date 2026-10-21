@@ -11,4 +11,3 @@ export function RequireAuth() {
   if (state.user.is_super_admin) return <Navigate to="/admin" replace />;
   return <Outlet />;
 }
-

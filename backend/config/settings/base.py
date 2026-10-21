@@ -4,6 +4,8 @@ All configuration comes from environment variables (django-environ). In developm
 they are read from the repository-root ``.env`` file; see ``.env.example``.
 """
 
+import atexit
+import tempfile
 from pathlib import Path
 
 import environ
@@ -124,9 +126,7 @@ if DATABASES["default"]["ENGINE"] == "django.db.backends.mysql":
     _db_options = DATABASES["default"].setdefault("OPTIONS", {})
     # Aiven MySQL service URIs include `?ssl-mode=REQUIRED`, which django-environ parses into
     # OPTIONS["ssl-mode"]. Convert that into the `ssl` dictionary expected by mysqlclient.
-    _ssl_mode = str(
-        _db_options.pop("ssl-mode", _db_options.pop("ssl_mode", ""))
-    ).upper()
+    _ssl_mode = str(_db_options.pop("ssl-mode", _db_options.pop("ssl_mode", ""))).upper()
     _db_options.update(
         {
             "charset": "utf8mb4",
@@ -139,15 +139,20 @@ if DATABASES["default"]["ENGINE"] == "django.db.backends.mysql":
     _db_ssl_ca = env("DB_SSL_CA", default="").strip()
     _db_ssl_ca_cert = env("DB_SSL_CA_CERT", default="").strip()
     if _db_ssl_ca_cert and not _db_ssl_ca:
-        _ca_file = Path("/tmp/aiven-mysql-ca.pem")
-        _ca_file.write_text(_db_ssl_ca_cert.replace("\\n", "\n"), encoding="utf-8")
-        _db_ssl_ca = str(_ca_file)
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix="-mysql-ca.pem", delete=False
+        ) as _ca_file:
+            _ca_file.write(_db_ssl_ca_cert.replace("\\n", "\n"))
+            _db_ssl_ca = _ca_file.name
+        atexit.register(Path(_db_ssl_ca).unlink, missing_ok=True)
     if _db_ssl_ca:
         _db_options["ssl"] = {"ca": _db_ssl_ca}
+        _db_options["ssl_mode"] = "VERIFY_IDENTITY"
     elif _ssl_mode in {"REQUIRED", "VERIFY_CA", "VERIFY_IDENTITY"} or env.bool(
         "DB_SSL_REQUIRED", default=False
     ):
         _db_options.setdefault("ssl", {})
+        _db_options["ssl_mode"] = _ssl_mode or "REQUIRED"
     DATABASES["default"]["TEST"] = {"CHARSET": "utf8mb4", "COLLATION": "utf8mb4_unicode_ci"}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -181,6 +186,7 @@ EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="").strip()
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL", default=False)
 EMAIL_TIMEOUT = env.int("EMAIL_TIMEOUT", default=15)
+EMAIL_FILE_PATH = env("EMAIL_FILE_PATH", default="")
 if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 else:
@@ -262,6 +268,16 @@ LOGGING = {
 # Realtime (Realtime Architecture, step 5.1): Redis channel layer (or in-memory fallback)
 # ---------------------------------------------------------------------------
 _redis_url = env("REDIS_URL", default="redis://127.0.0.1:6380/0").strip()
+BACKUP_DIR = Path(env("BACKUP_DIR", default=str(REPO_ROOT / "backups")))
+CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+if _redis_url and not _redis_url.startswith("memory://"):
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": _redis_url,
+            "KEY_PREFIX": "choir-eval",
+        }
+    }
 if not _redis_url or _redis_url.startswith("memory://"):
     CHANNEL_LAYERS = {
         "default": {

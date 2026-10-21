@@ -3,6 +3,11 @@ tags: [decisions, adr]
 ---
 # Decisions Log (ADRs)
 
+Deployment review (2026-10-21): restore append-only audit access and archival removal;
+share expiring registration/throttle state through Redis; count distinct contributors;
+register public directory readers to preserve dependency direction; complete SMTP
+delivery before success without a secret-printing fallback. See [[Deployment Readiness 2026-10-20]].
+
 Format: [[ADR Template]]. Status: Proposed · Accepted · Superseded.
 
 | ADR | Title | Status | Date |
@@ -27,8 +32,29 @@ Format: [[ADR Template]]. Status: Proposed · Accepted · Superseded.
 | ADR-018 | Exports: stdlib csv, openpyxl, reportlab; formula-injection guard; synchronous audit | Accepted | 2026-10-17 |
 | ADR-019 | Containerised dev stack (backend + frontend services in docker-compose) | Accepted | 2026-10-18 |
 | ADR-020 | Feedback notices: pending rows + worker/lazy delivery; enriched events; best-effort WS push | Accepted | 2026-10-18 |
+| ADR-021 | Deployment hardening: shared challenges, explicit origins, immutable history and recovery | Accepted | 2026-10-21 |
 
 ---
+
+### ADR-021: Deployment hardening and recovery
+**Context:** the readiness audit found process-local registration state, approval and
+privacy defects, unsafe deletion paths, and production/recovery configuration gaps.
+**Decision:** require shared Redis in production for expiring registration challenges,
+guess counters, throttles and settings; retain only password hashes in pending state.
+Complete SMTP delivery synchronously without logging secrets (generic password-reset
+responses even on SMTP failure). Prefer ADR-003's same-origin deployment; existing
+separate-origin support is allowed only through explicit CORS/CSRF/WS allowlists and
+masked CSRF response tokens, never authentication tokens in browser storage.
+Archive criteria/categories and prohibit arbitrary audit deletion. Count distinct
+contributors before exposing member aggregates. Use author-scoped tab drafts cleared
+on session changes. JSON restore preserves existing immutable history and merges rows;
+checksummed SQL backups with a pre-restore snapshot are the full recovery mechanism.
+Pin the verified Python production base by digest and update it deliberately.
+**Consequences:** Redis/SMTP availability and backup permissions are operational
+requirements; off-host recovery and live cookie/email checks remain launch gates.
+Cross-module directory enrichment uses registered public readers to preserve the DAG.
+Public self-reflections are preserved pending the separate BR-01 policy decision;
+this ADR does not resolve that product conflict. See [[Deployment Readiness 2026-10-20]].
 
 ### ADR-001: Modular monolith
 **Context:** one choir, modest load, a small team, and the spec asks for "separate Django apps by responsibility".

@@ -139,7 +139,8 @@ function CommentPromptsSection({ parentShowArchived }: { parentShowArchived: boo
             Minimum required comment &amp; suggestion prompts
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Setup how many comment &amp; suggestion prompts are provided on member evaluation forms (current: {currentMinPrompts})
+            Setup how many comment &amp; suggestion prompts are provided on member evaluation forms
+            (current: {currentMinPrompts})
           </Typography>
         </div>
         <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
@@ -148,7 +149,9 @@ function CommentPromptsSection({ parentShowArchived }: { parentShowArchived: boo
             type="number"
             label="At least"
             value={effectiveMinPrompts}
-            onChange={(e) => setMinPromptsInput(e.target.value)}
+            onChange={(e) => {
+              setMinPromptsInput(e.target.value);
+            }}
             slotProps={{ htmlInput: { min: 1, max: 50, style: { width: 60 } } }}
           />
           <Button
@@ -164,7 +167,9 @@ function CommentPromptsSection({ parentShowArchived }: { parentShowArchived: boo
               updateSettings.mutate(
                 { min_comment_prompts: Number(effectiveMinPrompts) },
                 {
-                  onSuccess: () => setMinPromptsInput(""),
+                  onSuccess: () => {
+                    setMinPromptsInput("");
+                  },
                 },
               );
             }}
@@ -485,11 +490,9 @@ function Categories() {
       <ConfirmDialog
         open={deletingCategory !== null}
         title={
-          deletingCategory
-            ? `Delete category “${deletingCategory.name}”?`
-            : "Delete this category?"
+          deletingCategory ? `Delete category “${deletingCategory.name}”?` : "Delete this category?"
         }
-        description="Any criteria currently assigned to this category will become uncategorized."
+        description="This archives the category. Historical criteria keep their category."
         confirmLabel="Delete category"
         destructive
         pending={remove.isPending}
@@ -763,7 +766,7 @@ export function AdminCriteriaPage() {
             ? `Delete criterion “${deleting.current_version.name}”?`
             : "Delete this criterion?"
         }
-        description="This permanently removes this criterion. If you only want to hide it from new forms, use Archive instead."
+        description="This archives the criterion and preserves ratings and historical forms."
         confirmLabel="Delete criterion"
         destructive
         pending={remove.isPending}

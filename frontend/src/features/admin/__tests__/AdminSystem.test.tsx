@@ -91,7 +91,7 @@ describe("Audit log (AUD-03/04)", () => {
       "href",
       "/api/v1/admin/audit-logs/export/?file_type=csv&event_type=system.settings.changed",
     );
-    expect(screen.getByRole("button", { name: /remove/i })).toBeVisible();
+    expect(screen.queryByRole("button", { name: /remove|delete/i })).not.toBeInTheDocument();
   });
 
   it("searches (debounced) through the URL", async () => {
@@ -100,8 +100,8 @@ describe("Audit log (AUD-03/04)", () => {
     await userEvent.type(screen.getByLabelText(/search event/i), "10.0.0.1");
     await waitFor(() => {
       expect(router.state.location.search).toBe("?search=10.0.0.1");
+      expect(auditSearches.at(-1)).toBe("?search=10.0.0.1");
     });
-    expect(auditSearches.at(-1)).toBe("?search=10.0.0.1");
   });
 });
 
@@ -185,4 +185,3 @@ describe("Privacy page (SET-03)", () => {
     expect(screen.queryByRole("link", { name: "Privacy: who sees what" })).not.toBeInTheDocument();
   });
 });
-

@@ -1,5 +1,6 @@
 import { apiClient, ensureCsrfCookie } from "@/lib/apiClient";
 import { isApiError } from "@/lib/errors";
+import { clearPrivateDrafts } from "@/lib/privateStorage";
 
 import type {
   ChangePasswordInput,
@@ -16,18 +17,23 @@ export async function fetchCurrentUser(): Promise<CurrentUser | null> {
     const { data } = await apiClient.get<CurrentUser>("/auth/me/");
     return data;
   } catch (error) {
-    if (isApiError(error) && error.status === 401) return null;
+    if (isApiError(error) && error.status === 401) {
+      clearPrivateDrafts();
+      return null;
+    }
     throw error;
   }
 }
 
 export async function login(input: LoginInput): Promise<CurrentUser> {
+  clearPrivateDrafts();
   await ensureCsrfCookie();
   const { data } = await apiClient.post<CurrentUser>("/auth/login/", input);
   return data;
 }
 
 export async function logout(): Promise<void> {
+  clearPrivateDrafts();
   await apiClient.post("/auth/logout/");
 }
 
@@ -113,4 +119,3 @@ export async function deactivateOwnAccount(input: {
   const { data } = await apiClient.post<Detail>("/auth/deactivate/", input);
   return data;
 }
-

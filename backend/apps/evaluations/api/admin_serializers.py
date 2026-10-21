@@ -219,9 +219,7 @@ class FormWriteSerializer(serializers.Serializer):
     suggestion_max_length = serializers.IntegerField(
         min_value=1, max_value=TEXT_LIMIT_MAX, required=False
     )
-    comment_prompts = serializers.ListField(
-        child=FormCommentPromptSerializer(), required=False
-    )
+    comment_prompts = serializers.ListField(child=FormCommentPromptSerializer(), required=False)
 
 
 class FormUpdateSerializer(FormWriteSerializer):
@@ -231,9 +229,7 @@ class FormUpdateSerializer(FormWriteSerializer):
     )
     comment_required = serializers.BooleanField(required=False)
     suggestion_required = serializers.BooleanField(required=False)
-    comment_prompts = serializers.ListField(
-        child=FormCommentPromptSerializer(), required=False
-    )
+    comment_prompts = serializers.ListField(child=FormCommentPromptSerializer(), required=False)
 
 
 # Cycles ----------------------------------------------------------------------
@@ -391,9 +387,7 @@ class AdminEvaluationSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(AdminCommentEntrySerializer(many=True))
     def get_comments(self, obj):
-        prompt_labels = {
-            p["key"]: p["label"] for p in obj.form_version.effective_comment_prompts
-        }
+        prompt_labels = {p["key"]: p["label"] for p in obj.form_version.effective_comment_prompts}
         entries = []
         for c in obj.comments.all():
             key = (

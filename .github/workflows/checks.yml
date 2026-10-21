@@ -1,0 +1,63 @@
+name: Application checks
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Prepare local test configuration
+        run: cp .env.example .env
+      - name: Start test infrastructure
+        run: docker compose up -d --build --wait mysql redis backend
+      - name: Backend checks
+        run: |
+          docker compose exec -T backend ruff check .
+          docker compose exec -T backend ruff format --check .
+          docker compose exec -T backend python manage.py makemigrations --check --dry-run
+          docker compose exec -T backend pytest -q
+      - name: Frontend checks
+        run: |
+          npm --prefix frontend ci
+          npm --prefix frontend run lint
+          npm --prefix frontend run format:check
+          npm --prefix frontend run build
+          npm --prefix frontend run test
+          npm --prefix frontend audit --omit=dev
+      - name: Production images
+        run: |
+          docker build -f deploy/backend.Dockerfile -t choir-backend:check .
+          docker build -f deploy/frontend.Dockerfile -t choir-frontend:check .
+      - name: Container diagnostics
+        if: failure()
+        run: docker compose logs --tail 80 backend mysql
+      - name: Remove test infrastructure
+        if: always()
+        run: docker compose down -v
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: cp .env.example .env
+      - run: npm --prefix frontend ci
+      - run: scripts/e2e.sh
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-test-report
+          path: frontend/playwright-report

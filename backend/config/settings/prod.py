@@ -3,6 +3,8 @@
 ``python manage.py check --deploy --settings=config.settings.prod`` must pass with zero issues.
 """
 
+from urllib.parse import urlsplit
+
 from django.core.exceptions import ImproperlyConfigured
 
 from .base import *
@@ -18,14 +20,33 @@ if not ALLOWED_HOSTS or "*" in ALLOWED_HOSTS:
         "Production requires explicit DJANGO_ALLOWED_HOSTS (wildcard '*' is not allowed)."
     )
 
-for _key_name, _key_val in (("DJANGO_SECRET_KEY", SECRET_KEY), ("FEEDBACK_ID_KEY", FEEDBACK_ID_KEY)):
-    if len(_key_val) < 32 or "change-me" in _key_val.lower() or _key_val.startswith("django-insecure"):
+for _key_name, _key_val in (
+    ("DJANGO_SECRET_KEY", SECRET_KEY),
+    ("FEEDBACK_ID_KEY", FEEDBACK_ID_KEY),
+):
+    if (
+        len(_key_val) < (50 if _key_name == "DJANGO_SECRET_KEY" else 32)
+        or "change-me" in _key_val.lower()
+        or _key_val.startswith("django-insecure")
+    ):
         raise ImproperlyConfigured(
-            f"{_key_name} must be a strong, unique secret of at least 32 characters in production."
+            f"{_key_name} must be a strong, unique secret "
+            "(DJANGO_SECRET_KEY: at least 50 characters; FEEDBACK_ID_KEY: at least 32)."
         )
 
 if SECRET_KEY == FEEDBACK_ID_KEY:
     raise ImproperlyConfigured("FEEDBACK_ID_KEY must differ from DJANGO_SECRET_KEY.")
+
+if CACHES["default"]["BACKEND"] != "django.core.cache.backends.redis.RedisCache":
+    raise ImproperlyConfigured(
+        "Production requires REDIS_URL for shared OTPs, throttles and realtime."
+    )
+
+if EMAIL_BACKEND != "django.core.mail.backends.smtp.EmailBackend" or not EMAIL_HOST:
+    raise ImproperlyConfigured("Production requires a working SMTP EMAIL_BACKEND and EMAIL_HOST.")
+
+if urlsplit(FRONTEND_URL).scheme != "https":
+    raise ImproperlyConfigured("Production requires an HTTPS FRONTEND_URL.")
 
 USE_X_FORWARDED_FOR = env.bool("USE_X_FORWARDED_FOR", default=True)
 REST_FRAMEWORK["NUM_PROXIES"] = 1 if USE_X_FORWARDED_FOR else 0

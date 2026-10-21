@@ -30,10 +30,7 @@ export interface SocketOptions {
   random?: () => number;
 }
 
-export function socketUrl(
-  path: string,
-  location?: Pick<Location, "protocol" | "host">,
-) {
+export function socketUrl(path: string, location?: Pick<Location, "protocol" | "host">) {
   if (!location) {
     const configuredWsBase = (import.meta.env.VITE_WS_BASE_URL as string | undefined)?.trim();
     if (configuredWsBase) {

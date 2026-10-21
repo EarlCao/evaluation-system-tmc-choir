@@ -124,7 +124,10 @@ export function effectiveCommentPrompts(
       }
       extraIndex++;
     }
-  } else if (list.length > minCount && (!form.comment_prompts || form.comment_prompts.length === 0)) {
+  } else if (
+    list.length > minCount &&
+    (!form.comment_prompts || form.comment_prompts.length === 0)
+  ) {
     list = list.slice(0, minCount);
   }
 

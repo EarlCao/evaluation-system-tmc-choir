@@ -29,7 +29,12 @@ export function MemberLayout() {
       }}
     >
       <SkipLink />
-      <AppHeader home="/app" onOpenMobileNav={() => setMobileNavOpen(true)}>
+      <AppHeader
+        home="/app"
+        onOpenMobileNav={() => {
+          setMobileNavOpen(true);
+        }}
+      >
         <NotificationBell base="/app" />
         <AccountMenu />
       </AppHeader>
@@ -38,7 +43,9 @@ export function MemberLayout() {
       <Drawer
         anchor="left"
         open={mobileNavOpen}
-        onClose={() => setMobileNavOpen(false)}
+        onClose={() => {
+          setMobileNavOpen(false);
+        }}
         ModalProps={{ keepMounted: true }}
         slotProps={{
           paper: {
@@ -76,7 +83,9 @@ export function MemberLayout() {
             </Typography>
           </Box>
           <IconButton
-            onClick={() => setMobileNavOpen(false)}
+            onClick={() => {
+              setMobileNavOpen(false);
+            }}
             aria-label="Close navigation menu"
             size="small"
           >
@@ -86,7 +95,11 @@ export function MemberLayout() {
           </IconButton>
         </Box>
         <Box sx={{ flexGrow: 1, overflowY: "auto", overscrollBehavior: "contain" }}>
-          <MemberNav onNavigate={() => setMobileNavOpen(false)} />
+          <MemberNav
+            onNavigate={() => {
+              setMobileNavOpen(false);
+            }}
+          />
         </Box>
       </Drawer>
 
@@ -135,4 +148,3 @@ export function MemberLayout() {
     </Box>
   );
 }
-

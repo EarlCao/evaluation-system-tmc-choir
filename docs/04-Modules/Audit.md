@@ -6,6 +6,11 @@ status: model + record + event handler (1.3), viewer API/UI + export (4.6) imple
 ---
 # Module: Audit
 
+Deployment review (2026-10-21): arbitrary API deletion and UI delete controls were
+removed to restore AUD-03. Retention remains the deletion mechanism. Backup downloads
+are audited; JSON recovery cannot rewrite existing immutable history.
+See [[Deployment Readiness 2026-10-20]].
+
 **Backend:** `apps/audit` · **Frontend:** `features/admin` (audit log viewer)
 **Requirements:** AUD-01..05 · **Rules:** BR-08
 

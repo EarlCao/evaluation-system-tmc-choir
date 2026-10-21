@@ -119,13 +119,18 @@ def test_filter_by_evaluation_type_and_is_self_serialized(world, admin_client_ap
     self_eval = services.submit_evaluation(
         evaluator=world["alice"],
         recipient_public_id=world["alice"].public_id,
-        ratings=[{"criterion_version": r.criterion_version_id, "value": 4} for r in world["low"].ratings.all()],
+        ratings=[
+            {"criterion_version": r.criterion_version_id, "value": 4}
+            for r in world["low"].ratings.all()
+        ],
         comment="My self review.",
         suggestion="Keep practicing.",
     )
 
     # 1. Self evaluations only
-    res_self = admin_client_api.get(url("evaluations"), {"cycle": world["cycle"].public_id, "evaluation_type": "self"})
+    res_self = admin_client_api.get(
+        url("evaluations"), {"cycle": world["cycle"].public_id, "evaluation_type": "self"}
+    )
     assert res_self.status_code == 200
     self_rows = res_self.json()["results"]
     assert len(self_rows) == 1
@@ -133,7 +138,9 @@ def test_filter_by_evaluation_type_and_is_self_serialized(world, admin_client_ap
     assert self_rows[0]["is_self"] is True
 
     # 2. Peer evaluations only
-    res_peer = admin_client_api.get(url("evaluations"), {"cycle": world["cycle"].public_id, "evaluation_type": "peer"})
+    res_peer = admin_client_api.get(
+        url("evaluations"), {"cycle": world["cycle"].public_id, "evaluation_type": "peer"}
+    )
     assert res_peer.status_code == 200
     peer_rows = res_peer.json()["results"]
     assert len(peer_rows) == 2

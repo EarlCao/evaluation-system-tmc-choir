@@ -6,6 +6,12 @@ status: configuration (2.2), submissions (2.3), editing + revisions (3.1), admin
 ---
 # Module: Evaluations
 
+Deployment review (2026-10-21): removal archives criteria/categories and preserves
+historical ratings/forms. Submission rechecks eligibility under a cycle lock; edits
+check ownership before payload validation. Retention keeps the current revision.
+The existing public self-reflection feature conflicts with older BR-01 prose below;
+see the policy launch gate in [[Deployment Readiness 2026-10-20]].
+
 **Backend:** `apps/evaluations` · **Frontend:** `features/evaluations` (+ admin screens in `features/admin`)
 **Requirements:** EVAL-01..08, CFG-01..06, MINE-01..07, ADM-02, ADM-05 · **Rules:** BR-01, 02, 05, 07, 12–14, 17, 18
 

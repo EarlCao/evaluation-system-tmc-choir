@@ -11,6 +11,7 @@ import { ErrorState } from "@/components/ErrorState";
 import { FullPageSpinner } from "@/components/FullPageSpinner";
 import { NotFoundPage } from "@/components/NotFoundPage";
 import { memberName, useMember } from "@/features/members";
+import { useCurrentUser } from "@/features/auth";
 import { isApiError } from "@/lib/errors";
 
 import { EvaluationForm } from "../components/EvaluationForm";
@@ -22,6 +23,7 @@ import type { MyEvaluation } from "../types";
 export function EvaluateMemberPage() {
   const { publicId = "" } = useParams();
   const navigate = useNavigate();
+  const ownerId = useCurrentUser().data?.public_id ?? "";
   const member = useMember(publicId);
   const eligibility = useEligibility(publicId);
   const cycle = useCurrentCycle();
@@ -32,8 +34,8 @@ export function EvaluateMemberPage() {
   const cycleId = cycle.data?.public_id;
   const initialDraft = useMemo(() => {
     if (!cycleId || !publicId) return undefined;
-    return loadEvaluationDraft(cycleId, publicId) ?? undefined;
-  }, [cycleId, publicId]);
+    return loadEvaluationDraft(cycleId, publicId, ownerId) ?? undefined;
+  }, [cycleId, publicId, ownerId]);
 
   if (member.isPending || eligibility.isPending || cycle.isPending) {
     return <FullPageSpinner label="Loading evaluation form" />;
@@ -144,6 +146,7 @@ export function EvaluateMemberPage() {
         />
       ) : (
         <EvaluationForm
+          key={`${cycleId ?? ""}:${ownerId}`}
           form={form.data}
           recipientName={name}
           recipientId={publicId}
@@ -165,7 +168,7 @@ export function EvaluateMemberPage() {
           }
           onDone={(evalResult) => {
             if (cycleId && publicId) {
-              clearEvaluationDraft(cycleId, publicId);
+              clearEvaluationDraft(cycleId, publicId, ownerId);
             }
             setDone(evalResult);
           }}

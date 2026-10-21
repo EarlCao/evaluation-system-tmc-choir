@@ -6,6 +6,11 @@ status: implemented (step 1.2)
 ---
 # Module: Core (shared kernel)
 
+Deployment review (2026-10-21): CORS is restricted to explicit configured origins,
+supports the registration header, and always varies by Origin. Production requires
+strong independent secrets, HTTPS URLs, SMTP and shared Redis; the permission matrix
+covers backup routes. See [[Deployment Readiness 2026-10-20]].
+
 **Backend:** `apps/core` · **Frontend:** `src/lib`, `src/components`, `src/app`
 
 ## Responsibility

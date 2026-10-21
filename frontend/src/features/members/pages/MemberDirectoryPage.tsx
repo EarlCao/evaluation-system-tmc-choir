@@ -52,9 +52,7 @@ function MemberCard({
         borderColor: isEvaluated ? "success.main" : undefined,
         bgcolor: isEvaluated
           ? (theme) =>
-              theme.palette.mode === "dark"
-                ? "rgba(46, 125, 50, 0.12)"
-                : "rgba(46, 125, 50, 0.04)"
+              theme.palette.mode === "dark" ? "rgba(46, 125, 50, 0.12)" : "rgba(46, 125, 50, 0.04)"
           : undefined,
         transition: "border-color 0.2s, background-color 0.2s",
       }}
@@ -97,12 +95,7 @@ function MemberCard({
               />
             ) : null}
             {member.has_self_evaluation ? (
-              <Chip
-                size="small"
-                label="Self-evaluated"
-                color="success"
-                variant="outlined"
-              />
+              <Chip size="small" label="Self-evaluated" color="success" variant="outlined" />
             ) : null}
           </Stack>
           {member.self_evaluation_summary ? (
@@ -231,8 +224,8 @@ export function MemberDirectoryPage() {
           Evaluation period <strong>{openCycle.name}</strong> is open until{" "}
           {new Date(openCycle.ends_at).toLocaleDateString()}. Click <strong>Evaluate</strong> on a
           member below to rate criteria and leave comments, or click{" "}
-          <strong>Evaluate yourself</strong> to post your public self-evaluation and comments for all
-          members to see.
+          <strong>Evaluate yourself</strong> to post your public self-evaluation and comments for
+          all members to see.
         </Alert>
       ) : null}
 
@@ -291,21 +284,27 @@ export function MemberDirectoryPage() {
           clickable
           color={evaluationStatus === "all" ? "primary" : "default"}
           variant={evaluationStatus === "all" ? "filled" : "outlined"}
-          onClick={() => updateParams({ evaluation_status: undefined, page: undefined })}
+          onClick={() => {
+            updateParams({ evaluation_status: undefined, page: undefined });
+          }}
         />
         <Chip
           label="Haven't evaluated / comments yet"
           clickable
           color={evaluationStatus === "pending" ? "primary" : "default"}
           variant={evaluationStatus === "pending" ? "filled" : "outlined"}
-          onClick={() => updateParams({ evaluation_status: "pending", page: undefined })}
+          onClick={() => {
+            updateParams({ evaluation_status: "pending", page: undefined });
+          }}
         />
         <Chip
           label="Completed"
           clickable
           color={evaluationStatus === "completed" ? "success" : "default"}
           variant={evaluationStatus === "completed" ? "filled" : "outlined"}
-          onClick={() => updateParams({ evaluation_status: "completed", page: undefined })}
+          onClick={() => {
+            updateParams({ evaluation_status: "completed", page: undefined });
+          }}
         />
       </Stack>
 

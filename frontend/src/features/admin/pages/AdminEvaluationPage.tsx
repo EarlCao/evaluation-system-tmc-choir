@@ -118,7 +118,7 @@ function Revisions({ publicId }: { publicId: string }) {
               ? Object.entries(rawComments).map(([k, v]) => ({
                   key: k,
                   label: k === "comment" ? "Comment" : k === "suggestion" ? "Suggestion" : k,
-                  body: String(v),
+                  body: v,
                 }))
               : [];
 
@@ -222,8 +222,15 @@ function History({ evaluation }: { evaluation: AdminEvaluationDetail }) {
 export function AdminEvaluationPage() {
   const { publicId = "" } = useParams();
   const location = useLocation();
-  const searchParam =
-    location.search || (location.state?.fromSearch ? `?${location.state.fromSearch}` : "");
+  const routeState: unknown = location.state;
+  const fromSearch =
+    routeState &&
+    typeof routeState === "object" &&
+    "fromSearch" in routeState &&
+    typeof routeState.fromSearch === "string"
+      ? routeState.fromSearch
+      : "";
+  const searchParam = location.search || (fromSearch ? `?${fromSearch}` : "");
   const backUrl = `/admin/evaluations${searchParam}`;
   const evaluation = useAdminEvaluation(publicId);
   if (evaluation.isPending) return <FullPageSpinner label="Loading evaluation" />;
@@ -237,7 +244,7 @@ export function AdminEvaluationPage() {
     );
   }
   const e = evaluation.data;
-  const isSelf = e.is_self ?? (e.evaluator.public_id === e.recipient.public_id);
+  const isSelf = e.is_self ?? e.evaluator.public_id === e.recipient.public_id;
 
   return (
     <Stack spacing={3} sx={{ py: 4, maxWidth: 900 }}>
@@ -246,7 +253,8 @@ export function AdminEvaluationPage() {
       </Link>
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", flexWrap: "wrap" }}>
         <Typography variant="h4" component="h1">
-          {isSelf ? "Self-evaluation of " : "Evaluation of "}{personName(e.recipient)}
+          {isSelf ? "Self-evaluation of " : "Evaluation of "}
+          {personName(e.recipient)}
         </Typography>
         {isSelf ? (
           <Chip
@@ -322,11 +330,7 @@ export function AdminEvaluationPage() {
             <Stack spacing={1}>
               <Typography variant="h6" component="h2">
                 {c.label ||
-                  (c.key === "comment"
-                    ? "Comment"
-                    : c.key === "suggestion"
-                      ? "Suggestion"
-                      : c.key)}
+                  (c.key === "comment" ? "Comment" : c.key === "suggestion" ? "Suggestion" : c.key)}
               </Typography>
               <Typography sx={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
                 {c.body || <span style={{ color: "#888" }}>None written.</span>}

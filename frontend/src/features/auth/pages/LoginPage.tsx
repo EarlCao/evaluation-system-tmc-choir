@@ -45,7 +45,6 @@ export function LoginPage() {
           control={control}
           label="Username or email"
           autoComplete="username"
-          autoFocus
         />
         <PasswordField
           name="password"
@@ -75,6 +74,3 @@ export function LoginPage() {
     </AuthCard>
   );
 }
-
-
-

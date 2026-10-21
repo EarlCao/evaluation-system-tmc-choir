@@ -61,7 +61,8 @@ def test_login_returns_me_payload_and_starts_session():
         URL["login"], {"identifier": user.username, "password": DEFAULT_PASSWORD}
     )
     assert response.status_code == 200
-    assert set(response.json()) == ME_FIELDS
+    assert set(response.json()) == ME_FIELDS | {"csrf_token"}
+    assert response.json()["csrf_token"]
     assert "password" not in response.content.decode()
     assert client.get(URL["me"]).json()["username"] == user.username
 
@@ -204,7 +205,8 @@ def test_password_reset_is_throttled():
     assert codes == [202, 202, 202, 429]
 
 
-def test_verify_email_api():
+def test_verify_email_api(registration_mode):
+    registration_mode("EMAIL_VERIFICATION")
     user = UserFactory(pending=True)
     response = csrf_client().post(
         URL["verify-email"],

@@ -20,7 +20,8 @@ test("a member evaluates another, who sees the feedback anonymously", async ({ b
   for (const button of await fours.all()) {
     await button.click();
   }
-  await page.getByLabel(/^Comment/).fill(COMMENT);
+  await page.getByRole("button", { name: /next.*comment/i }).click();
+  await page.getByLabel(/1\. Comments/).fill(COMMENT);
   await page.getByRole("button", { name: "Review" }).click();
   await expect(page.getByText("Who can see your evaluation")).toBeVisible();
   await page.getByRole("button", { name: "Submit evaluation" }).click();

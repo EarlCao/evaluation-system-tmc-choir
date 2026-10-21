@@ -76,7 +76,6 @@ export function useAdminLogin() {
 
 export const useLogin = useMemberLogin;
 
-
 export function useLogout() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -148,4 +147,3 @@ export function useDeactivateOwnAccount() {
     },
   });
 }
-

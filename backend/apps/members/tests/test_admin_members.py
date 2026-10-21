@@ -126,7 +126,9 @@ def test_super_admin_cannot_be_demoted_service(super_admin):
     from apps.accounts import services
 
     other = SuperAdminFactory()
-    with pytest.raises(BusinessRuleViolation, match="Super Admin accounts cannot be changed to member"):
+    with pytest.raises(
+        BusinessRuleViolation, match="Super Admin accounts cannot be changed to member"
+    ):
         services.set_user_role(actor=other, user=super_admin, role=UserRole.MEMBER)
 
 

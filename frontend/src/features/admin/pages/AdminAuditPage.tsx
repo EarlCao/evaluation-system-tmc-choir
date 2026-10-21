@@ -1,4 +1,3 @@
-import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Collapse from "@mui/material/Collapse";
@@ -18,7 +17,6 @@ import Typography from "@mui/material/Typography";
 import { Fragment, useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 
-import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ErrorState } from "@/components/ErrorState";
 import { formatDateTime } from "@/lib/datetime";
 import { isApiError } from "@/lib/errors";
@@ -26,12 +24,7 @@ import { pageCount } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
 
 import { auditExportUrl } from "../systemApi";
-import {
-  useAuditEventTypes,
-  useAuditLogs,
-  useClearAuditLogs,
-  useDeleteAuditLog,
-} from "../systemQueries";
+import { useAuditEventTypes, useAuditLogs } from "../systemQueries";
 import type { AuditEntry, AuditFilters } from "../systemTypes";
 
 const FILTER_KEYS = ["event_type", "actor", "occurred_from", "occurred_to"] as const;
@@ -55,15 +48,7 @@ function Json({ label, value }: { label: string; value: unknown }) {
   );
 }
 
-function EntryRow({
-  entry,
-  onDelete,
-  deleteDisabled,
-}: {
-  entry: AuditEntry;
-  onDelete: (entry: AuditEntry) => void;
-  deleteDisabled: boolean;
-}) {
+function EntryRow({ entry }: { entry: AuditEntry }) {
   const [open, setOpen] = useState(false);
   return (
     <Fragment>
@@ -104,17 +89,6 @@ function EntryRow({
           >
             {open ? "Hide" : "Details"}
           </Button>
-          <Button
-            size="small"
-            color="error"
-            disabled={deleteDisabled}
-            aria-label={`Delete entry ${String(entry.id)}`}
-            onClick={() => {
-              onDelete(entry);
-            }}
-          >
-            Delete
-          </Button>
         </TableCell>
       </TableRow>
       <TableRow>
@@ -135,7 +109,7 @@ function EntryRow({
   );
 }
 
-/** AUD-03 / AUD-04: the audit log, searchable, filterable, exportable, and removable by Super Admin. */
+/** AUD-03 / AUD-04: append-only audit log with filters and audited exports. */
 export function AdminAuditPage() {
   const [params, setParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState(params.get("search") ?? "");
@@ -150,11 +124,6 @@ export function AdminAuditPage() {
   }
   const logs = useAuditLogs(filters);
   const eventTypes = useAuditEventTypes();
-  const removeOne = useDeleteAuditLog();
-  const clearAll = useClearAuditLogs();
-  const [deletingEntry, setDeletingEntry] = useState<AuditEntry | null>(null);
-  const [confirmClearAll, setConfirmClearAll] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
 
   const urlSearch = params.get("search") ?? "";
   useEffect(() => {
@@ -182,14 +151,6 @@ export function AdminAuditPage() {
   const fields = isApiError(logs.error) ? logs.error.fields : undefined;
   const dateError = Array.isArray(fields?.occurred_to) ? fields.occurred_to.join(" ") : undefined;
   const firstActor = logs.data?.results[0]?.actor;
-  const hasActiveFilters = Boolean(
-    filters.search ||
-      filters.event_type ||
-      filters.actor ||
-      filters.occurred_from ||
-      filters.occurred_to,
-  );
-  const totalCount = logs.data?.count ?? 0;
 
   return (
     <Stack spacing={3} sx={{ py: 4 }}>
@@ -200,31 +161,11 @@ export function AdminAuditPage() {
         <Typography variant="h4" component="h1">
           Audit log
         </Typography>
-        <Button
-          variant="outlined"
-          color="error"
-          disabled={totalCount === 0 || clearAll.isPending}
-          onClick={() => {
-            setConfirmClearAll(true);
-          }}
-        >
-          {hasActiveFilters ? "Remove matching entries" : "Remove all entries"}
-        </Button>
       </Stack>
       <Typography color="text.secondary">
         Every sign-in, account change, evaluation, setting change, moderation decision, export and
         view of evaluator identities.
       </Typography>
-      {notice ? (
-        <Alert
-          severity="success"
-          onClose={() => {
-            setNotice(null);
-          }}
-        >
-          {notice}
-        </Alert>
-      ) : null}
 
       {filters.actor ? (
         <Stack direction="row">
@@ -334,14 +275,7 @@ export function AdminAuditPage() {
               </TableHead>
               <TableBody>
                 {logs.data.results.map((entry) => (
-                  <EntryRow
-                    key={entry.id}
-                    entry={entry}
-                    onDelete={(item) => {
-                      setDeletingEntry(item);
-                    }}
-                    deleteDisabled={removeOne.isPending}
-                  />
+                  <EntryRow key={entry.id} entry={entry} />
                 ))}
               </TableBody>
             </Table>
@@ -358,67 +292,6 @@ export function AdminAuditPage() {
           ) : null}
         </>
       )}
-
-      <ConfirmDialog
-        open={deletingEntry !== null}
-        title={
-          deletingEntry
-            ? `Delete audit entry “${deletingEntry.event_type}”?`
-            : "Delete this audit entry?"
-        }
-        description="This permanently removes this entry from the audit log."
-        confirmLabel="Delete entry"
-        destructive
-        pending={removeOne.isPending}
-        onClose={() => {
-          setDeletingEntry(null);
-        }}
-        onConfirm={() => {
-          if (deletingEntry) {
-            removeOne.mutate(deletingEntry.id, {
-              onSuccess: () => {
-                setNotice("Audit log entry removed.");
-              },
-              onSettled: () => {
-                setDeletingEntry(null);
-              },
-            });
-          }
-        }}
-      />
-
-      <ConfirmDialog
-        open={confirmClearAll}
-        title={
-          hasActiveFilters
-            ? `Remove ${String(totalCount)} matching audit log ${totalCount === 1 ? "entry" : "entries"}?`
-            : `Remove all ${String(totalCount)} audit log ${totalCount === 1 ? "entry" : "entries"}?`
-        }
-        description={
-          hasActiveFilters
-            ? "This permanently removes all audit log entries matching your current filters."
-            : "This permanently removes all entries from the audit log."
-        }
-        confirmLabel={hasActiveFilters ? "Remove matching entries" : "Remove all entries"}
-        destructive
-        pending={clearAll.isPending}
-        onClose={() => {
-          setConfirmClearAll(false);
-        }}
-        onConfirm={() => {
-          clearAll.mutate(hasActiveFilters ? filters : undefined, {
-            onSuccess: (res) => {
-              update("page", "");
-              setNotice(
-                `Removed ${String(res.deleted)} audit log ${res.deleted === 1 ? "entry" : "entries"}.`,
-              );
-            },
-            onSettled: () => {
-              setConfirmClearAll(false);
-            },
-          });
-        }}
-      />
     </Stack>
   );
 }

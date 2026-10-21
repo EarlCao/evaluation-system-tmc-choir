@@ -75,7 +75,9 @@ export function AccountMenu() {
           <IconButton
             size="small"
             aria-label="Log out"
-            onClick={() => setConfirmLogout(true)}
+            onClick={() => {
+              setConfirmLogout(true);
+            }}
             sx={{
               p: 0.75,
               color: "error.main",
@@ -97,7 +99,9 @@ export function AccountMenu() {
 
       <Dialog
         open={confirmLogout}
-        onClose={() => setConfirmLogout(false)}
+        onClose={() => {
+          setConfirmLogout(false);
+        }}
         aria-labelledby="logout-dialog-title"
         maxWidth="xs"
         fullWidth
@@ -111,7 +115,13 @@ export function AccountMenu() {
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ pb: 2.5, px: 3 }}>
-          <Button onClick={() => setConfirmLogout(false)} color="inherit" variant="text">
+          <Button
+            onClick={() => {
+              setConfirmLogout(false);
+            }}
+            color="inherit"
+            variant="text"
+          >
             Cancel
           </Button>
           <Button
@@ -128,4 +138,3 @@ export function AccountMenu() {
     </>
   );
 }
-

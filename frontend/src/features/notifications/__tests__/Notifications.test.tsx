@@ -101,9 +101,7 @@ describe("Notification bell (RT-01, RT-02)", () => {
     });
     expect(posts).toContain("/api/v1/notifications/read-all/");
 
-    await userEvent.click(
-      within(list).getByText("Someone evaluated you. You have new feedback."),
-    );
+    await userEvent.click(within(list).getByText("Someone evaluated you. You have new feedback."));
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/app/feedback");
     });

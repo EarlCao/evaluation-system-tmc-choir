@@ -9,6 +9,7 @@ test("pages are keyboard-navigable, labelled and responsive at 360px width", asy
 }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await page.goto("/login");
+  await expect(page.getByRole("heading", { name: "Log in", exact: true })).toBeVisible();
 
   // Skip link is first tab stop and points to #main
   await page.keyboard.press("Tab");
@@ -27,7 +28,10 @@ test("pages are keyboard-navigable, labelled and responsive at 360px width", asy
   const memberPage = await signedIn(browser, singer.identifier, singer.password);
   await memberPage.setViewportSize({ width: 360, height: 740 });
   await memberPage.goto("/app/members");
+  await expect(memberPage.locator("main#main")).toBeVisible();
+  await memberPage.getByRole("button", { name: "Open navigation menu" }).click();
   await expect(memberPage.getByRole("navigation", { name: "Main" })).toBeVisible();
+  await memberPage.getByRole("button", { name: "Close navigation menu" }).click();
   await expect(memberPage.locator("main#main")).toBeVisible();
 
   const memberOverflow = await memberPage.evaluate(

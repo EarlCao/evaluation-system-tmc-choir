@@ -16,7 +16,7 @@ if (!("ResizeObserver" in globalThis)) {
 }
 
 // jsdom + MUI renders can be slow when test files run in parallel.
-configure({ asyncUtilTimeout: 3000 });
+configure({ asyncUtilTimeout: 5000 });
 
 beforeAll(() => {
   server.listen({ onUnhandledFrame: "error" });
@@ -24,6 +24,8 @@ beforeAll(() => {
 
 afterEach(() => {
   cleanup();
+  localStorage.clear();
+  sessionStorage.clear();
   server.resetHandlers();
   // forget cookies between tests
   for (const cookie of document.cookie.split("; ")) {

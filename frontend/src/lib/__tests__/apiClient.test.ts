@@ -93,6 +93,20 @@ describe("apiClient", () => {
 });
 
 describe("ensureCsrfCookie", () => {
+  it("uses a returned token when the API cookie is on a separate origin", async () => {
+    let header: string | null = null;
+    server.use(
+      http.get(api("/auth/csrf/"), () => HttpResponse.json({ csrf_token: "masked-token" })),
+      http.post(api("/things/"), ({ request }) => {
+        header = request.headers.get("x-csrftoken");
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    await ensureCsrfCookie();
+    expect(readCookie("csrftoken")).toBeNull();
+    await apiClient.post("/things/", {});
+    expect(header).toBe("masked-token");
+  });
   it("fetches the CSRF endpoint only when the cookie is missing", async () => {
     let calls = 0;
     server.use(

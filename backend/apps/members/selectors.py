@@ -4,26 +4,23 @@ from collections.abc import Mapping
 from uuid import UUID
 
 from django.contrib.auth import get_user_model
-from django.db.models import (
-    BooleanField,
-    Exists,
-    OuterRef,
-    Q,
-    QuerySet,
-    Subquery,
-    TextField,
-    UUIDField,
-    Value,
-)
-from django.db.models.functions import Coalesce
+from django.db.models import Q, QuerySet
 
 from apps.accounts.constants import UserStatus
 from apps.core.exceptions import NotFound, ValidationError
-from apps.evaluations.constants import CycleStatus, EvaluationStatus, ModerationStatus
-from apps.evaluations.models import Evaluation, EvaluationComment
 
 from .filters import DirectoryFilter
 from .models import MemberProfile, VoiceSection
+
+_directory_enricher = None
+_self_evaluation_reader = None
+
+
+def register_evaluation_readers(*, directory_enricher, self_evaluation_reader) -> None:
+    """Higher modules supply optional read models without reversing dependencies."""
+    global _directory_enricher, _self_evaluation_reader
+    _directory_enricher = directory_enricher
+    _self_evaluation_reader = self_evaluation_reader
 
 
 def list_active_voice_sections() -> QuerySet[VoiceSection]:
@@ -32,72 +29,14 @@ def list_active_voice_sections() -> QuerySet[VoiceSection]:
 
 def active_profiles(viewer=None) -> QuerySet[MemberProfile]:
     """Profiles of ACTIVE accounts only (MEM-01). Super admins have no profile."""
-    self_eval_qs = (
-        Evaluation.objects.filter(
-            evaluator_id=OuterRef("user_id"),
-            recipient_id=OuterRef("user_id"),
-            status=EvaluationStatus.SUBMITTED,
-        )
-        .exclude(moderation_status=ModerationStatus.HIDDEN)
-        .exclude(cycle__status=CycleStatus.DRAFT)
+    qs = MemberProfile.objects.filter(user__status=UserStatus.ACTIVE).select_related(
+        "user", "voice_section"
     )
-    self_comment_qs = (
-        EvaluationComment.objects.filter(
-            evaluation__evaluator_id=OuterRef("user_id"),
-            evaluation__recipient_id=OuterRef("user_id"),
-            evaluation__status=EvaluationStatus.SUBMITTED,
-        )
-        .exclude(evaluation__moderation_status=ModerationStatus.HIDDEN)
-        .exclude(evaluation__cycle__status=CycleStatus.DRAFT)
-        .exclude(moderation_status=ModerationStatus.HIDDEN)
-        .order_by("-evaluation__cycle__is_current", "-evaluation__submitted_at", "order", "id")
-        .values("body")[:1]
-    )
-    qs = (
-        MemberProfile.objects.filter(user__status=UserStatus.ACTIVE)
-        .select_related("user", "voice_section")
-        .annotate(
-            has_self_evaluation=Exists(self_eval_qs),
-            self_evaluation_summary=Coalesce(
-                Subquery(self_comment_qs, output_field=TextField()),
-                Value("", output_field=TextField()),
-                output_field=TextField(),
-            ),
-        )
-    )
+    return _directory_enricher(qs, viewer) if _directory_enricher else qs
 
-    if (
-        viewer
-        and getattr(viewer, "is_authenticated", False)
-        and not getattr(viewer, "is_super_admin", False)
-    ):
-        from apps.evaluations.selectors import get_open_cycle
 
-        open_cycle = get_open_cycle()
-        eval_by_viewer_qs = Evaluation.objects.filter(
-            evaluator=viewer,
-            recipient_id=OuterRef("user_id"),
-            status=EvaluationStatus.SUBMITTED,
-        )
-        if open_cycle:
-            eval_by_viewer_qs = eval_by_viewer_qs.filter(cycle=open_cycle)
-        else:
-            eval_by_viewer_qs = eval_by_viewer_qs.exclude(cycle__status=CycleStatus.DRAFT)
-
-        qs = qs.annotate(
-            is_evaluated_by_viewer=Exists(eval_by_viewer_qs),
-            evaluation_id_by_viewer=Subquery(
-                eval_by_viewer_qs.order_by("-submitted_at").values("public_id")[:1],
-                output_field=UUIDField(),
-            ),
-        )
-    else:
-        qs = qs.annotate(
-            is_evaluated_by_viewer=Value(False, output_field=BooleanField()),
-            evaluation_id_by_viewer=Value(None, output_field=UUIDField(null=True)),
-        )
-
-    return qs
+def get_public_self_evaluation(*, user) -> dict | None:
+    return _self_evaluation_reader(user=user) if _self_evaluation_reader else None
 
 
 def list_directory(*, params: Mapping[str, str], viewer=None) -> QuerySet[MemberProfile]:

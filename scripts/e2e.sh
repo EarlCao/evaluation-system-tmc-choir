@@ -8,6 +8,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 PROJECT=choir-eval-e2e
+export E2E_MAIL_DIR
+E2E_MAIL_DIR=$(mktemp -d /tmp/choir-eval-mail.XXXXXXXX)
+chmod 777 "$E2E_MAIL_DIR"  # isolated dev backend writes as root; browser runner reads only
 PLAYWRIGHT_IMAGE=mcr.microsoft.com/playwright:v1.57.0-noble   # keep in step with @playwright/test
 export FRONTEND_HOST_PORT=5281 BACKEND_HOST_PORT=8011 MYSQL_HOST_PORT=3308 REDIS_HOST_PORT=6381
 # Throwaway credentials for the throwaway database (never used anywhere else).
@@ -20,13 +23,23 @@ cleanup() {
     echo "KEEP=1: stack left running on http://localhost:${FRONTEND_HOST_PORT}"
   else
     compose down -v --remove-orphans >/dev/null 2>&1 || true
+    case "$E2E_MAIL_DIR" in
+      /tmp/choir-eval-mail.*)
+        find "$E2E_MAIL_DIR" -maxdepth 1 -type f -delete
+        rmdir "$E2E_MAIL_DIR"
+        ;;
+    esac
   fi
 }
 trap cleanup EXIT
 
 echo "› starting the e2e stack (project ${PROJECT})"
 compose down -v --remove-orphans >/dev/null 2>&1 || true
-compose up -d --build mysql redis backend frontend
+if [ "${E2E_SKIP_BUILD:-0}" = "1" ]; then
+  compose up -d mysql redis backend frontend
+else
+  compose up -d --build mysql redis backend frontend
+fi
 
 echo "› waiting for the production build to be served on :${FRONTEND_HOST_PORT}"
 for _ in $(seq 1 120); do
@@ -46,5 +59,6 @@ docker run --rm --network host --ipc host \
   -u "$(id -u):$(id -g)" -e HOME=/tmp \
   -e E2E_BASE_URL="http://localhost:${FRONTEND_HOST_PORT}" \
   -e E2E_ADMIN_PASSWORD -e E2E_MEMBER_PASSWORD \
+  -e E2E_MAIL_DIR=/e2e-mail -v "$E2E_MAIL_DIR:/e2e-mail:ro" \
   -v "$PWD/frontend:/work" -w /work \
   "$PLAYWRIGHT_IMAGE" npx playwright test "$@"

@@ -6,6 +6,14 @@ status: implemented (step 1.4); admin API/UI in step 4.2
 ---
 # Module: Accounts
 
+## Deployment review (2026-10-21)
+
+Pending OTP registrations use expiring shared cache with a password **hash** and a
+fresh challenge nonce. Verification preserves admin approval. Registration retries
+cannot delete existing accounts. OTP guesses are limited across client IPs. SMTP
+failures are reported without printing secrets. CSRF/login responses return a masked
+`csrf_token` for configured separate-origin clients. See [[Deployment Readiness 2026-10-20]].
+
 **Backend:** `apps/accounts` · **Frontend:** `features/auth`
 **Requirements:** AUTH-01..06 ([[Functional Requirements]])
 
@@ -107,4 +115,3 @@ Related: [[Security Model]] · [[Roles and Permissions]] · [[System Settings]]
 ## Implementation notes (step 6.4): self-deactivation
 - `deactivate_own_account(*, request, user, password, reason="")`: verifies `user.check_password(password)`, refuses to deactivate the last active Super Admin, sets `status = DEACTIVATED`, publishes `accounts.user.status_changed`, and logs the session out. Historical evaluations remain intact (`BR-06`).
 - API: `POST /api/v1/auth/deactivate/` (`accounts:deactivate`), exposed on `/app/profile` alongside the member own-data download (`GET /api/v1/me/export/`).
-

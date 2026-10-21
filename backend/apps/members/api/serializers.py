@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from .. import selectors
 from ..models import MemberProfile, VoiceSection
 
 
@@ -16,7 +17,8 @@ class RegisterSerializer(serializers.Serializer):
         max_length=150,
         error_messages={
             "invalid": (
-                "Username must contain only lowercase letters (a-z), numbers (0-9), and underscores (_)."
+                "Username must contain only lowercase letters (a-z), numbers (0-9), "
+                "and underscores (_)."
             )
         },
     )
@@ -35,9 +37,7 @@ class RegisterSerializer(serializers.Serializer):
     def validate(self, attrs):
         confirm = attrs.pop("confirm_password", None)
         if confirm is not None and confirm != attrs.get("password"):
-            raise serializers.ValidationError(
-                {"confirm_password": ["The passwords don't match."]}
-            )
+            raise serializers.ValidationError({"confirm_password": ["The passwords don't match."]})
         is_officer = bool(attrs.get("is_officer", False))
         position = str(attrs.get("officer_position", "")).strip()
         if is_officer and not position:
@@ -106,9 +106,7 @@ class MemberDetailSerializer(DirectoryEntrySerializer):
         return bool(request and request.user.pk == obj.user_id)
 
     def get_self_evaluation(self, obj: MemberProfile) -> dict | None:
-        from apps.evaluations import selectors as evaluation_selectors
-
-        return evaluation_selectors.get_public_self_evaluation(user=obj.user)
+        return selectors.get_public_self_evaluation(user=obj.user)
 
 
 class OwnProfileUpdateSerializer(serializers.Serializer):

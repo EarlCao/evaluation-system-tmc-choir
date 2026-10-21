@@ -57,9 +57,7 @@ class PasswordChangeSerializer(serializers.Serializer):
     def validate(self, attrs):
         confirm = attrs.pop("confirm_password", None)
         if confirm is not None and confirm != attrs.get("new_password"):
-            raise serializers.ValidationError(
-                {"confirm_password": ["The passwords don't match."]}
-            )
+            raise serializers.ValidationError({"confirm_password": ["The passwords don't match."]})
         return attrs
 
 
@@ -80,9 +78,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     def validate(self, attrs):
         confirm = attrs.pop("confirm_password", None)
         if confirm is not None and confirm != attrs.get("new_password"):
-            raise serializers.ValidationError(
-                {"confirm_password": ["The passwords don't match."]}
-            )
+            raise serializers.ValidationError({"confirm_password": ["The passwords don't match."]})
         return attrs
 
 
@@ -100,4 +96,3 @@ class DetailSerializer(serializers.Serializer):
 class DeactivateAccountSerializer(serializers.Serializer):
     password = serializers.CharField(max_length=128, trim_whitespace=False, write_only=True)
     reason = serializers.CharField(max_length=200, required=False, allow_blank=True, default="")
-

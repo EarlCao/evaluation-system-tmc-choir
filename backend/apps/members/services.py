@@ -179,9 +179,7 @@ def update_own_profile(
             changed_fields.append("bio")
     if is_officer is not None or officer_position is not None:
         next_flag = profile.is_officer if is_officer is None else bool(is_officer)
-        next_pos = (
-            profile.officer_position if officer_position is None else str(officer_position)
-        )
+        next_pos = profile.officer_position if officer_position is None else str(officer_position)
         flag, pos = _clean_officer(next_flag, next_pos)
         if flag != profile.is_officer:
             profile.is_officer = flag

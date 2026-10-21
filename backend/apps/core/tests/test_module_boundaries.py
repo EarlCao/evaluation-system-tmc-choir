@@ -20,7 +20,7 @@ ALLOWED_SURFACE = {"selectors", "services", "events", "constants"}
 # Dependency direction (Module Boundaries + ADR-020): module -> allowed `apps.<target>` imports
 ALLOWED_DEPENDENCIES: dict[str, set[str]] = {
     "core": set(),
-    "system": {"core"},
+    "system": {"core", "audit"},  # synchronous record() for sensitive backup access (§2.3)
     "audit": {"core"},
     "accounts": {"core", "system"},
     "members": {"core", "accounts", "system"},
@@ -84,9 +84,7 @@ def _iter_apps_imports(path: Path) -> list[tuple[int, list[str]]]:
 
 
 def test_every_installed_module_is_registered_in_boundary_map():
-    discovered = {
-        d.name for d in APPS_DIR.iterdir() if d.is_dir() and (d / "__init__.py").exists()
-    }
+    discovered = {d.name for d in APPS_DIR.iterdir() if d.is_dir() and (d / "__init__.py").exists()}
     assert discovered == set(ALLOWED_DEPENDENCIES), (
         f"Unmapped modules: {discovered ^ set(ALLOWED_DEPENDENCIES)}"
     )

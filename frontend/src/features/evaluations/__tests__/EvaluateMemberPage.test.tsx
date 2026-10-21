@@ -113,7 +113,9 @@ describe("EvaluateMemberPage", () => {
     expect(screen.getByText("Rating Scale Guide & Explanations")).toBeVisible();
     expect(screen.getByText("5 — Excellent")).toBeVisible();
     expect(screen.getByText("1 — Needs Improvement")).toBeVisible();
-    expect(screen.getByText("Scale reference: 1 = Needs improvement · 5 = Excellent")).toBeVisible();
+    expect(
+      screen.getByText("Scale reference: 1 = Needs improvement · 5 = Excellent"),
+    ).toBeVisible();
     expect(within(attendance).getByRole("button", { name: "5: Excellent" })).toBeVisible();
     expect(screen.getByRole("group", { name: "Solo work (optional)" })).toBeVisible();
     expect(screen.getByRole("slider")).toBeVisible();
@@ -306,7 +308,9 @@ describe("EvaluateMemberPage", () => {
     await waitFor(() => {
       expect(screen.queryByRole("dialog", { name: "Remove Comment" })).not.toBeInTheDocument();
     });
-    expect(screen.getByLabelText(/6\. Additional comment/i)).toHaveValue("Special note for this member");
+    expect(screen.getByLabelText(/6\. Additional comment/i)).toHaveValue(
+      "Special note for this member",
+    );
 
     // Click remove again and confirm deletion
     await user.click(screen.getByRole("button", { name: "Remove comment" }));
@@ -340,7 +344,9 @@ describe("EvaluateMemberPage", () => {
     // "Stay & Continue" keeps the user on the evaluation form
     await user.click(within(dialog).getByRole("button", { name: /stay & continue/i }));
     await waitFor(() => {
-      expect(screen.queryByRole("dialog", { name: "Unsaved Evaluation Progress" })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("dialog", { name: "Unsaved Evaluation Progress" }),
+      ).not.toBeInTheDocument();
     });
     expect(router.state.location.pathname).toBe(`/app/members/${RECIPIENT}/evaluate`);
 
@@ -357,7 +363,9 @@ describe("EvaluateMemberPage", () => {
     // When the member returns to evaluate the same member, the draft is restored!
     renderRoute(`/app/members/${RECIPIENT}/evaluate`);
     expect(await screen.findByText(/draft restored/i)).toBeVisible();
-    expect(await screen.findByRole("button", { name: "4" })).toHaveAttribute("aria-pressed", "true");
+    expect(await screen.findByRole("button", { name: "4" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 });
-

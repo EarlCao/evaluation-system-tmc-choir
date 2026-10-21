@@ -377,4 +377,3 @@ def own_data_export(*, user) -> dict:
             "summary": feedback_selectors.summary(recipient=user),
         },
     }
-

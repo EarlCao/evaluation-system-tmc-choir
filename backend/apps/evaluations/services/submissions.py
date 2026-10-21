@@ -17,6 +17,7 @@ from ..defaults import DEFAULT_COMMENT_PROMPTS
 from ..models import (
     Evaluation,
     EvaluationComment,
+    EvaluationCycle,
     EvaluationRating,
     EvaluationRevision,
     FormVersion,
@@ -176,9 +177,7 @@ def build_snapshot(*, evaluation: Evaluation, ratings, texts: dict[str, str]) ->
         "comment": texts.get("comment", ""),
         "suggestion": texts.get("suggestion", ""),
     }
-    extra_keys = [
-        k for k, v in texts.items() if k not in ("comment", "suggestion") and v
-    ]
+    extra_keys = [k for k, v in texts.items() if k not in ("comment", "suggestion") and v]
     if extra_keys:
         snap["comments"] = {k: v for k, v in texts.items() if v}
     return snap
@@ -281,6 +280,13 @@ def submit_evaluation(
     now = timezone.now()
     try:
         with transaction.atomic():
+            # Serialize against close/resubmission races and recheck authoritative state.
+            cycle = EvaluationCycle.objects.select_for_update().get(pk=cycle.pk)
+            verdict = rules.eligibility(
+                evaluator=evaluator, recipient_profile=recipient_profile, cycle=cycle
+            )
+            if not verdict.can_evaluate:
+                raise BusinessRuleViolation(verdict.message)
             previous = (
                 Evaluation.objects.filter(
                     cycle=cycle, evaluator=evaluator, recipient_id=recipient_profile.user_id

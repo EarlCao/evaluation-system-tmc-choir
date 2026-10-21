@@ -35,9 +35,7 @@ def _walk(patterns, namespace=None):
 
 
 def all_api_routes() -> set[str]:
-    return {
-        name for ns, name in _walk(get_resolver().url_patterns) if ns != "admin"
-    }
+    return {name for ns, name in _walk(get_resolver().url_patterns) if ns != "admin"}
 
 
 # Routes open to unauthenticated callers (AllowAny)
@@ -126,6 +124,11 @@ ADMIN_ROUTES: dict[str, str] = {
     "audit-admin:export": "get",
     "audit-admin:log": "get",
     "system-admin:settings": "get",
+    "system-admin:backup-list": "get",
+    "system-admin:backup-download": "get",
+    "system-admin:backup-delete": "delete",
+    "system-admin:backup-restore": "post",
+    "system-admin:data-cleanup": "post",
 }
 
 
@@ -139,7 +142,8 @@ def matrix_world():
     suspended = UserFactory(suspended=True)
     deactivated = UserFactory(deactivated=True)
 
-    criterion = make_criterion(super_admin, name="Pitch")
+    category = evaluation_services.create_category(actor=super_admin, name="Musicianship")
+    criterion = make_criterion(super_admin, name="Pitch", category_id=category.pk)
     form = make_form(super_admin, criteria=[criterion])
     cycle = make_cycle(super_admin, form=form, open=True)
     cv_id = form.items.get().criterion_version_id
@@ -187,6 +191,8 @@ def matrix_world():
             "evaluations-admin:evaluation-moderate": {"public_id": evaluation.public_id},
             "reports-admin:member": {"public_id": recipient.public_id},
             "audit-admin:log": {"pk": 1},
+            "system-admin:backup-download": {"filename": "missing.json.gz"},
+            "system-admin:backup-delete": {"filename": "missing.json.gz"},
         }
         return reverse(route_name, kwargs=kwargs_by_route.get(route_name, {}))
 
@@ -237,7 +243,8 @@ def test_non_active_accounts_are_rejected_with_403_on_every_protected_route(
 ):
     method = MEMBER_ROUTES.get(route_name) or ADMIN_ROUTES[route_name]
     client = APIClient()
-    client.force_login(matrix_world[status_role])
+    # Isolate the permission guard; real inactive Django sessions are dropped (accounts tests).
+    client.force_authenticate(matrix_world[status_role])
     response = getattr(client, method)(matrix_world["url_for"](route_name), {})
     assert response.status_code == 403, (status_role, route_name, method, response.status_code)
 

@@ -53,7 +53,8 @@ export function EvaluationsTable({
         </TableHead>
         <TableBody>
           {rows.map((e) => {
-            const isSelf = e.is_self ?? (e.evaluator.public_id === e.recipient.public_id);
+            const firstComment = e.comments?.[0];
+            const isSelf = e.is_self ?? e.evaluator.public_id === e.recipient.public_id;
             const displayedRatings = selectedCriterion
               ? e.ratings.filter((r) => r.criterion_public_id === selectedCriterion)
               : e.ratings;
@@ -122,25 +123,30 @@ export function EvaluationsTable({
                   )}
                 </TableCell>
                 <TableCell sx={{ maxWidth: 260, verticalAlign: "top" }}>
-                  {e.comments && e.comments.length > 0 ? (
+                  {firstComment ? (
                     <Box>
                       <Box sx={{ maxHeight: 44, overflow: "hidden" }}>
                         <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>
                           <strong>
-                            {e.comments[0].label ||
-                              (e.comments[0].key === "comment"
+                            {firstComment.label ||
+                              (firstComment.key === "comment"
                                 ? "Comment"
-                                : e.comments[0].key === "suggestion"
+                                : firstComment.key === "suggestion"
                                   ? "Suggestion"
-                                  : e.comments[0].key)}
+                                  : firstComment.key)}
                             :
                           </strong>{" "}
-                          {excerpt(e.comments[0].body, 70)}
+                          {excerpt(firstComment.body, 70)}
                         </Typography>
                       </Box>
-                      {e.comments.length > 1 ? (
-                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25 }}>
-                          +{e.comments.length - 1} more comment{e.comments.length > 2 ? "s" : ""}
+                      {(e.comments?.length ?? 0) > 1 ? (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ display: "block", mt: 0.25 }}
+                        >
+                          +{(e.comments?.length ?? 1) - 1} more comment
+                          {(e.comments?.length ?? 0) > 2 ? "s" : ""}
                         </Typography>
                       ) : null}
                     </Box>

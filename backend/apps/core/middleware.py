@@ -8,6 +8,8 @@ from contextvars import ContextVar
 from dataclasses import dataclass
 
 from django.conf import settings
+from django.http import HttpResponse
+from django.utils.cache import patch_vary_headers
 
 USER_AGENT_MAX_LENGTH = 512
 
@@ -70,9 +72,6 @@ class RequestContextMiddleware:
         return response
 
 
-from django.http import HttpResponse
-
-
 class CorsMiddleware:
     """Allow credentialed cross-origin requests from configured frontend origins (e.g. Vercel)."""
 
@@ -81,9 +80,7 @@ class CorsMiddleware:
 
     def __call__(self, request):
         origin = request.META.get("HTTP_ORIGIN", "")
-        allowed_origins = set(getattr(settings, "CORS_ALLOWED_ORIGINS", ())) | set(
-            getattr(settings, "CSRF_TRUSTED_ORIGINS", ())
-        )
+        allowed_origins = set(getattr(settings, "CORS_ALLOWED_ORIGINS", ()))
         is_allowed = bool(origin and origin in allowed_origins)
 
         if request.method == "OPTIONS" and is_allowed:
@@ -96,11 +93,10 @@ class CorsMiddleware:
             response["Access-Control-Allow-Credentials"] = "true"
             response["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
             response["Access-Control-Allow-Headers"] = (
-                "Accept, Authorization, Content-Type, Origin, X-CSRFToken, X-Requested-With"
+                "Accept, Content-Type, Origin, X-CSRFToken, X-Requested-With, "
+                "X-Defer-Account-Creation"
             )
-            vary = response.get("Vary", "")
-            if "Origin" not in vary:
-                response["Vary"] = f"{vary}, Origin".strip(", ")
+        patch_vary_headers(response, ("Origin",))
         return response
 
 

@@ -5,6 +5,55 @@ tags: [roadmap, log]
 
 Newest entry first. Use [[Phase Log Template]] for each completed step.
 
+## 2026-10-21 · Step 7.1: Pre-deployment audit and remediation ✅
+
+**Scope:** all application modules, permission/privacy coverage, frontend build,
+deployment artifacts, backups, migrations, dependency scanning, and the developer host.
+See [[Deployment Readiness 2026-10-20]] for the findings and live-hosting launch gates.
+
+**Fixed:** unsafe pending-registration cleanup/plain-text passwords/approval bypass;
+OTP guess budget and SMTP-secret fallback; separate-origin CSRF/CORS and WS origins;
+distinct-contributor aggregate suppression and edit ownership; historical-rating
+deletion and audit deletion; draft storage; backup persistence/checksums/safety snapshots;
+production health/build/worker/header configuration; missing notification migration;
+schema, TypeScript, lint/format, and test-fixture defects. Added GitHub Actions checks.
+
+**Verified:** full backend suite **1090 passed** on fresh MySQL (88.15 s), including
+the new shell recovery checksum/portability regression tests; production
+backend image built; production `check --deploy --fail-level WARNING` has zero issues;
+read-only production-image health request **200**, login POST without CSRF **403**.
+All **five Playwright browser tests passed together** (39.6 s). Local Nginx/TLS checks
+passed for SPA/assets/security headers, health, CSRF, allowed hosts, cookies and redirect;
+Chromium rendered the final production bundle through TLS/CSP without page errors.
+SQL recovery matched source/recovery at 6 users, 1 evaluation and 35 migrations, with
+a verified safety snapshot and migration check. Concurrent backups had unique names,
+mode 0600 and valid checksums. OpenAPI validation, Ruff and migration drift checks passed.
+Repository commit hooks cover secret scanning, whitespace/YAML/JSON/TOML, Ruff,
+ESLint, Prettier and TypeScript. An earlier manual hook run noticed concurrent vault
+edits; the final commit runs the hooks against the frozen staged files.
+
+Frontend rerun completed: **179 passed / 30 files** in 166.47 s. Added author-specific
+draft keys so account changes across tabs cannot load another author's draft, and
+preserved the login skip link as the first tab stop. Final frontend image built.
+
+**Dependencies:** no new application packages. Render Python updated to 3.12.15 and
+production Nginx to 1.30.6 after checking upstream releases. A temporary Python audit
+tool reported an unpatched Twisted IMAP advisory; the application has no IMAP server.
+Production npm audit reported zero known vulnerabilities. See the review for sources.
+
+**Files:** backend accounts/core/evaluations/feedback/members/notifications/system,
+matching regression tests, frontend auth/admin/evaluation/client code, formatting
+corrections, `deploy/`, `scripts/`, `.env.example`, Render config, CI, and vault notes.
+No public deployment or remote write performed. No developer database reset/restore.
+
+**Follow-ups:** production domain/TLS/SMTP/datastores, off-host backups and recovery
+drill, production smoke test, monitoring, and self-evaluation policy reconciliation.
+The local recovery drill used only the throwaway E2E database. Test containers/volumes
+and captured mail were removed; ignored diagnostic logs and recovery archives remain.
+
+**Commit:** `fix(deploy): step 7.1 pre-deployment readiness hardening` + tag `phase-7`.
+This completes the local review, not the infrastructure-dependent live launch gates.
+
 > [!note] Commits
 > From step 1.5 on, every step is its own commit, and every completed phase gets a `phase-N` tag.
 > Steps 0.1–1.4 were committed together in the repository's **initial commit**, because later steps

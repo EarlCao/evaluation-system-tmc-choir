@@ -52,4 +52,3 @@ DEFAULT_COMMENT_PROMPTS = [
         "is_required": False,
     },
 ]
-

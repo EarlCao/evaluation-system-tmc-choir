@@ -1,4 +1,4 @@
-import { apiClient } from "@/lib/apiClient";
+import { apiClient, apiUrl } from "@/lib/apiClient";
 import type { Paginated } from "@/lib/pagination";
 
 import type { AdminSettings, AuditEntry, AuditFilters, SettingsInput } from "./systemTypes";
@@ -41,7 +41,7 @@ export async function clearAuditLogs(f?: AuditFilters): Promise<{ deleted: numbe
 /** Plain download link (session cookie); the export is itself audited (AUD-04). */
 export function auditExportUrl(fileType: "csv" | "xlsx", f: AuditFilters): string {
   const params = new URLSearchParams({ file_type: fileType, ...auditParams(f) });
-  return `/api/v1/admin/audit-logs/export/?${params.toString()}`;
+  return apiUrl(`/admin/audit-logs/export/?${params.toString()}`);
 }
 
 export async function fetchBackups(): Promise<import("./systemTypes").BackupItem[]> {
@@ -51,9 +51,8 @@ export async function fetchBackups(): Promise<import("./systemTypes").BackupItem
 export async function createBackup(
   input?: import("./systemTypes").BackupCreateInput,
 ): Promise<import("./systemTypes").BackupItem> {
-  return (
-    await apiClient.post<import("./systemTypes").BackupItem>("/admin/backups/", input ?? {})
-  ).data;
+  return (await apiClient.post<import("./systemTypes").BackupItem>("/admin/backups/", input ?? {}))
+    .data;
 }
 
 export async function deleteBackup(filename: string): Promise<void> {
@@ -61,7 +60,7 @@ export async function deleteBackup(filename: string): Promise<void> {
 }
 
 export function backupDownloadUrl(filename: string): string {
-  return `/api/v1/admin/backups/${encodeURIComponent(filename)}/download/`;
+  return apiUrl(`/admin/backups/${encodeURIComponent(filename)}/download/`);
 }
 
 export async function restoreBackup(params: {
@@ -72,9 +71,13 @@ export async function restoreBackup(params: {
     const formData = new FormData();
     formData.append("file", params.file);
     return (
-      await apiClient.post<import("./systemTypes").RestoreResult>("/admin/backups/restore/", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      })
+      await apiClient.post<import("./systemTypes").RestoreResult>(
+        "/admin/backups/restore/",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      )
     ).data;
   }
   return (
@@ -94,4 +97,3 @@ export async function runRetentionCleanup(): Promise<
     )
   ).data;
 }
-

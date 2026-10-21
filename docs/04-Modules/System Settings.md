@@ -6,6 +6,13 @@ status: implemented (1.3, 2.3, 4.6, 6.4)
 ---
 # Module: System Settings
 
+Deployment review (2026-10-21): Redis backs shared settings/OTP/throttle state.
+Admin backups have unique names, private permissions, checksums, persistent storage,
+download auditing, bounded expansion, and pre-restore safety snapshots. JSON recovery
+merges records; SQL recovery is the full recovery mechanism. Existing immutable history
+cannot be overwritten. SQL scripts select `BACKUP_COMPOSE_FILE`, validate database
+names, require checksums, and take safety backups. See [[Deployment Readiness 2026-10-20]].
+
 **Backend:** `apps/system` · **Frontend:** `features/admin` (settings), `/privacy` page
 **Requirements:** SET-01..06
 
@@ -73,4 +80,3 @@ Related: [[Privacy Model]] · [[Accounts]]
   public settings query so the new privacy notice shows everywhere at once. Retention values are stored now and applied in 6.4.
 - Public `/privacy` page (`features/auth`): the choir's notice plus a fixed "who sees what" table describing what the software
   guarantees; `components/SiteFooter` links to it from the member and admin layouts (removed from the public sign-in pages on request, 2026-10-18).
-

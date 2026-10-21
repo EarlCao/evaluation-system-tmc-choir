@@ -2,6 +2,16 @@
 # "choir-eval-e2e", its own volumes and ports). The frontend serves the PRODUCTION build
 # through `vite preview`, which proxies /api and /ws like the dev server.
 services:
+  backend:
+    environment:
+      EMAIL_BACKEND: django.core.mail.backends.filebased.EmailBackend
+      EMAIL_FILE_PATH: /e2e-mail
+      EMAIL_HOST_USER: ""
+      EMAIL_HOST_PASSWORD: ""
+      CSRF_TRUSTED_ORIGINS: http://localhost:5281
+      FRONTEND_URL: http://localhost:5281
+    volumes:
+      - ${E2E_MAIL_DIR:?Set by scripts/e2e.sh}:/e2e-mail
   frontend:
     command: ["sh", "-c", "npm run build && npx vite preview --host 0.0.0.0 --port 5280 --strictPort"]
     environment:

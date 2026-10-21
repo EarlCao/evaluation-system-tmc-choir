@@ -13,7 +13,7 @@ import Stack from "@mui/material/Stack";
 import SvgIcon from "@mui/material/SvgIcon";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useBlocker } from "react-router";
 
@@ -59,7 +59,7 @@ function normalizeInitialDraft(form: CycleForm, initial?: EvaluationDraft): Eval
   if (!initial) return base;
   const comments: Record<string, string> = {
     ...base.comments,
-    ...(initial.comments ?? {}),
+    ...initial.comments,
   };
   if (initial.comment && !comments.comment) {
     comments.comment = initial.comment;
@@ -69,8 +69,8 @@ function normalizeInitialDraft(form: CycleForm, initial?: EvaluationDraft): Eval
   }
   return {
     ratings: { ...base.ratings, ...initial.ratings },
-    comment: comments.comment ?? initial.comment ?? "",
-    suggestion: comments.suggestion ?? initial.suggestion ?? "",
+    comment: comments.comment ?? initial.comment,
+    suggestion: comments.suggestion ?? initial.suggestion,
     comments,
   };
 }
@@ -123,22 +123,22 @@ export function EvaluationForm({
   const watchedRatings = useWatch({ control, name: "ratings" });
   const watchedComments = useWatch({ control, name: "comments" });
   const me = useCurrentUser().data;
-  const allCommentTexts = Object.values(watchedComments ?? {}).join("\n");
+  const ownerId = me?.public_id ?? "";
+  const allCommentTexts = Object.values(watchedComments).join("\n");
   const ownNames = isSelf ? [] : ownNameMentions(allCommentTexts, me);
 
   const hasRestoredDraft = useMemo(() => {
     if (mode !== "create" || !initial) return false;
-    const hasRating = Object.values(initial.ratings ?? {}).some((v) => v !== null);
-    const hasComment = Object.values(initial.comments ?? {}).some(
+    const hasRating = Object.values(initial.ratings).some((v) => v !== null);
+    const hasComment = Object.values(initial.comments).some(
       (c) => typeof c === "string" && c.trim().length > 0,
     );
     return hasRating || hasComment;
   }, [mode, initial]);
 
   const hasProgress = useMemo(() => {
-    if (!watchedRatings && !watchedComments) return false;
-    const hasAnyRating = Object.values(watchedRatings ?? {}).some((v) => v !== null);
-    const hasAnyComment = Object.values(watchedComments ?? {}).some(
+    const hasAnyRating = Object.values(watchedRatings).some((v) => v !== null);
+    const hasAnyComment = Object.values(watchedComments).some(
       (c) => typeof c === "string" && c.trim().length > 0,
     );
     return hasAnyRating || hasAnyComment;
@@ -147,16 +147,9 @@ export function EvaluationForm({
   const submittedRef = useRef(false);
 
   useEffect(() => {
-    if (mode === "create" && cycleId && recipientId && hasProgress) {
-      saveEvaluationDraft(cycleId, recipientId, buildNormalizedDraft());
-    }
-  }, [watchedRatings, watchedComments, mode, cycleId, recipientId, hasProgress]);
-
-  useEffect(() => {
     if (mode !== "create" || !hasProgress || pending || submittedRef.current) return;
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
-      e.returnValue = "";
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
@@ -175,14 +168,14 @@ export function EvaluationForm({
 
   const handleSaveDraftAndLeave = () => {
     if (cycleId && recipientId) {
-      saveEvaluationDraft(cycleId, recipientId, buildNormalizedDraft());
+      saveEvaluationDraft(cycleId, recipientId, buildNormalizedDraft(), ownerId);
     }
     blocker.proceed?.();
   };
 
   const handleDiscardDraftAndLeave = () => {
     if (cycleId && recipientId) {
-      clearEvaluationDraft(cycleId, recipientId);
+      clearEvaluationDraft(cycleId, recipientId, ownerId);
     }
     blocker.proceed?.();
   };
@@ -227,22 +220,37 @@ export function EvaluationForm({
     setPromptToDelete(null);
   }
 
-  function buildNormalizedDraft(): EvaluationDraft {
+  const buildNormalizedDraft = useCallback((): EvaluationDraft => {
     const raw = getValues();
     const activeKeys = new Set(prompts.map((p) => p.key));
     const comments: Record<string, string> = {};
-    for (const [k, v] of Object.entries(raw.comments ?? {})) {
+    for (const [k, v] of Object.entries(raw.comments)) {
       if (activeKeys.has(k)) {
-        comments[k] = (v ?? "").trim();
+        comments[k] = v.trim();
       }
     }
     return {
       ratings: raw.ratings,
-      comment: (comments.comment ?? raw.comment ?? "").trim(),
-      suggestion: (comments.suggestion ?? raw.suggestion ?? "").trim(),
+      comment: (comments.comment ?? raw.comment).trim(),
+      suggestion: (comments.suggestion ?? raw.suggestion).trim(),
       comments,
     };
-  }
+  }, [getValues, prompts]);
+
+  useEffect(() => {
+    if (mode === "create" && cycleId && recipientId && hasProgress) {
+      saveEvaluationDraft(cycleId, recipientId, buildNormalizedDraft(), ownerId);
+    }
+  }, [
+    watchedRatings,
+    watchedComments,
+    mode,
+    cycleId,
+    recipientId,
+    ownerId,
+    hasProgress,
+    buildNormalizedDraft,
+  ]);
 
   async function confirm() {
     setPending(true);
@@ -250,7 +258,7 @@ export function EvaluationForm({
       const result = await onConfirm(buildNormalizedDraft(), changeSummary.trim());
       submittedRef.current = true;
       if (cycleId && recipientId) {
-        clearEvaluationDraft(cycleId, recipientId);
+        clearEvaluationDraft(cycleId, recipientId, ownerId);
       }
       onDone(result);
     } catch (error) {
@@ -322,8 +330,8 @@ export function EvaluationForm({
           ) : null}
           {isSelf ? (
             <Alert severity="info">
-              <strong>Public Self-Evaluation:</strong> Your self-evaluation ratings and comments will
-              be visible publicly on your member profile so all choir members can see them.
+              <strong>Public Self-Evaluation:</strong> Your self-evaluation ratings and comments
+              will be visible publicly on your member profile so all choir members can see them.
             </Alert>
           ) : (
             <PrivacyNotice />
@@ -385,7 +393,7 @@ export function EvaluationForm({
           <FormAlert message={formState.errors.root?.server?.message} />
           {prompts.map((prompt, idx) => {
             const isExtraPrompt = !baseKeys.has(prompt.key);
-            const textValue = watchedComments?.[prompt.key] ?? "";
+            const textValue = watchedComments[prompt.key] ?? "";
             const words = countWords(textValue);
             const numberedLabel = `${String(idx + 1)}. ${prompt.label}${prompt.is_required ? "" : " (optional)"}`;
             return (
@@ -407,7 +415,9 @@ export function EvaluationForm({
                       type="button"
                       size="small"
                       color="error"
-                      onClick={() => setPromptToDelete(prompt)}
+                      onClick={() => {
+                        setPromptToDelete(prompt);
+                      }}
                       startIcon={
                         <SvgIcon fontSize="small">
                           <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
@@ -438,7 +448,7 @@ export function EvaluationForm({
                     <TextField
                       {...field}
                       id={`comment-field-${prompt.key}`}
-                      value={field.value ?? ""}
+                      value={field.value}
                       onChange={(e) => {
                         field.onChange(e.target.value);
                         if (prompt.key === "comment") {
@@ -485,25 +495,28 @@ export function EvaluationForm({
 
         <Dialog
           open={promptToDelete !== null}
-          onClose={() => setPromptToDelete(null)}
+          onClose={() => {
+            setPromptToDelete(null);
+          }}
           aria-labelledby="remove-comment-dialog-title"
           aria-describedby="remove-comment-dialog-description"
         >
           <DialogTitle id="remove-comment-dialog-title">Remove Comment</DialogTitle>
           <DialogContent>
             <DialogContentText id="remove-comment-dialog-description">
-              Are you sure you want to remove &ldquo;{promptToDelete?.label}&rdquo;? Any comments written
-              in this field will be permanently deleted.
+              Are you sure you want to remove &ldquo;{promptToDelete?.label}&rdquo;? Any comments
+              written in this field will be permanently deleted.
             </DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setPromptToDelete(null)}>Cancel</Button>
             <Button
-              color="error"
-              variant="contained"
-              onClick={confirmDeletePrompt}
-              autoFocus
+              onClick={() => {
+                setPromptToDelete(null);
+              }}
             >
+              Cancel
+            </Button>
+            <Button color="error" variant="contained" onClick={confirmDeletePrompt} autoFocus>
               Remove
             </Button>
           </DialogActions>
@@ -590,7 +603,12 @@ function StepIndicator({ step }: { step: Step }) {
     { key: "review", label: "Step 3: Review & Submit" },
   ];
   return (
-    <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }} aria-label="Evaluation steps">
+    <Stack
+      direction="row"
+      spacing={1}
+      sx={{ flexWrap: "wrap", gap: 1 }}
+      aria-label="Evaluation steps"
+    >
       {steps.map((s) => (
         <Chip
           key={s.key}
@@ -679,7 +697,9 @@ function RatingScaleGuide() {
             cursor: "pointer",
             userSelect: "none",
           }}
-          onClick={() => setOpen((prev) => !prev)}
+          onClick={() => {
+            setOpen((prev) => !prev);
+          }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <SvgIcon fontSize="small" color="primary">

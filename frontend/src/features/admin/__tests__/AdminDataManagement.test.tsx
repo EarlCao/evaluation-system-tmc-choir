@@ -10,6 +10,7 @@ import { server } from "@/test/server";
 import type { AdminSettings, BackupItem } from "../systemTypes";
 
 const settings: AdminSettings = {
+  min_comment_prompts: 5,
   system_name: "Choir Member Evaluation System",
   choir_name: "Test Choir",
   choir_description: "",
@@ -129,7 +130,7 @@ describe("Admin Data Management Page", () => {
       expect(screen.getByText("Database backup created successfully.")).toBeInTheDocument();
     });
     expect(createCalls).toHaveLength(1);
-    expect(createCalls[0].note).toBe("Pre-deployment snapshot");
+    expect(createCalls[0]?.note).toBe("Pre-deployment snapshot");
     expect(screen.getByText("choir_eval_backup_20261019T110000Z.json.gz")).toBeInTheDocument();
   });
 
@@ -177,7 +178,9 @@ describe("Admin Data Management Page", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Backup choir_eval_backup_20261019T100000Z\.json\.gz deleted successfully\./i),
+        screen.getByText(
+          /Backup choir_eval_backup_20261019T100000Z\.json\.gz deleted successfully\./i,
+        ),
       ).toBeInTheDocument();
     });
     expect(deleteCalls).toEqual(["choir_eval_backup_20261019T100000Z.json.gz"]);
@@ -198,7 +201,9 @@ describe("Admin Data Management Page", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Retention cleanup complete: purged 2 evaluations, 5 revisions, and 10 audit logs\./i),
+        screen.getByText(
+          /Retention cleanup complete: purged 2 evaluations, 5 revisions, and 10 audit logs\./i,
+        ),
       ).toBeInTheDocument();
     });
     expect(cleanupCalls).toBe(1);

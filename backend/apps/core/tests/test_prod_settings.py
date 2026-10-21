@@ -15,15 +15,21 @@ REPO_ROOT = Path(__file__).resolve().parents[4]
 
 def _load_prod_module(monkeypatch, **env_overrides):
     defaults = {
-        "DJANGO_SECRET_KEY": "prod-test-secret-key-at-least-thirty-two-characters-long-alpha",  # gitleaks:allow (fake test key)
-        "FEEDBACK_ID_KEY": "prod-test-feedback-hmac-key-at-least-thirty-two-chars-bravo",  # gitleaks:allow (fake test key)
+        "DJANGO_SECRET_KEY": "prod-test-secret-key-at-least-fifty-characters-long-alpha",
+        "FEEDBACK_ID_KEY": "prod-test-feedback-hmac-key-at-least-fifty-characters-bravo",
         "DJANGO_ALLOWED_HOSTS": "eval.choir.example.org",
         "CSRF_TRUSTED_ORIGINS": "https://eval.choir.example.org",
         "DATABASE_URL": "mysql://choir:pw@127.0.0.1:3307/choir_eval",
+        "FRONTEND_URL": "https://eval.choir.example.org",
+        "REDIS_URL": "redis://127.0.0.1:6380/0",
+        "EMAIL_BACKEND": "django.core.mail.backends.smtp.EmailBackend",
     }
     defaults.update(env_overrides)
     for k, v in defaults.items():
         monkeypatch.setenv(k, v)
+    import config.settings.base as base_settings
+
+    importlib.reload(base_settings)
     import config.settings.prod as prod_settings
 
     return importlib.reload(prod_settings)
@@ -70,10 +76,12 @@ def test_prod_settings_flags_and_deploy_check_are_clean(monkeypatch):
         {"DJANGO_ALLOWED_HOSTS": ""},
         {"DJANGO_ALLOWED_HOSTS": "*"},
         {"DJANGO_SECRET_KEY": "short"},  # gitleaks:allow
-        {"DJANGO_SECRET_KEY": "change-me-please-replace-with-a-real-secret-value"},  # gitleaks:allow
         {
-            "DJANGO_SECRET_KEY": "identical-thirty-two-character-secret-key-value-1234",  # gitleaks:allow
-            "FEEDBACK_ID_KEY": "identical-thirty-two-character-secret-key-value-1234",  # gitleaks:allow
+            "DJANGO_SECRET_KEY": "change-me-please-replace-with-a-real-secret-value"
+        },  # gitleaks:allow
+        {
+            "DJANGO_SECRET_KEY": "identical-thirty-two-character-secret-key-value-1234",
+            "FEEDBACK_ID_KEY": "identical-thirty-two-character-secret-key-value-1234",
         },
     ],
 )
@@ -100,7 +108,9 @@ def test_production_deployment_artefacts_exist():
         path = REPO_ROOT / rel
         assert path.is_file(), f"Missing {rel}"
     nginx_conf = (REPO_ROOT / "deploy/nginx/default.conf").read_text(encoding="utf-8")
-    assert "Content-Security-Policy" in nginx_conf
-    assert "Strict-Transport-Security" in nginx_conf
+    headers = (REPO_ROOT / "deploy/nginx/security-headers.conf").read_text(encoding="utf-8")
+    assert "Content-Security-Policy" in headers
+    assert "Strict-Transport-Security" in headers
+    assert nginx_conf.count("include /etc/nginx/snippets/security-headers.conf;") == 4
     assert "location /ws/" in nginx_conf
     assert "location ~ ^/(api|django-admin)/" in nginx_conf

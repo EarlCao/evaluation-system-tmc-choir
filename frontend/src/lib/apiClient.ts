@@ -3,6 +3,7 @@ import axios, { isAxiosError } from "axios";
 import { ApiError, isErrorBody } from "./errors";
 
 export const CSRF_COOKIE = "csrftoken";
+let csrfToken: string | null = null;
 
 /**
  * The only HTTP client in the app (ADR-006).
@@ -49,10 +50,34 @@ apiClient.interceptors.response.use(undefined, (error: unknown) =>
   Promise.reject(toApiError(error)),
 );
 
+apiClient.interceptors.request.use((config) => {
+  if (csrfToken && !["get", "head", "options"].includes(config.method ?? "get")) {
+    config.headers.set("X-CSRFToken", csrfToken);
+  }
+  return config;
+});
+
+apiClient.interceptors.response.use((response) => {
+  const data: unknown = response.data;
+  if (
+    data &&
+    typeof data === "object" &&
+    "csrf_token" in data &&
+    typeof data.csrf_token === "string"
+  ) {
+    csrfToken = data.csrf_token;
+  }
+  return response;
+});
+
 export function readCookie(name: string): string | null {
   const prefix = `${name}=`;
   const match = document.cookie.split("; ").find((part) => part.startsWith(prefix));
   return match ? decodeURIComponent(match.slice(prefix.length)) : null;
+}
+
+export function apiUrl(path: string): string {
+  return `${apiClient.defaults.baseURL ?? "/api/v1"}${path}`;
 }
 
 /** Make sure the CSRF cookie exists before the first unsafe request (login, register...). */

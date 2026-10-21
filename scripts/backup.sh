@@ -4,7 +4,7 @@
 # optional AES-256 GPG encryption (when BACKUP_PASSPHRASE is set), and retention rotation.
 #
 # Usage:
-#   scripts/backup.sh [output_dir]
+#   scripts/backup.sh [output_dir] [database]
 set -euo pipefail
 umask 077
 
@@ -20,12 +20,21 @@ fi
 
 BACKUP_DIR="${1:-${BACKUP_DIR:-$REPO_ROOT/backups}}"
 RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-30}"
-DB_NAME="${MYSQL_DATABASE:-choir_eval}"
+DB_NAME="${2:-${MYSQL_DATABASE:-choir_eval}}"
+if [[ ! "$DB_NAME" =~ ^[a-zA-Z0-9_]+$ || ! "$RETENTION_DAYS" =~ ^[0-9]+$ ]]; then
+  echo "ERROR: invalid database name or backup retention days." >&2
+  exit 1
+fi
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$BACKUP_DIR"
+BACKUP_DIR=$(realpath "$BACKUP_DIR")
+if [[ "$BACKUP_DIR" == / || "$BACKUP_DIR" == "$REPO_ROOT" ]]; then
+  echo "ERROR: use a dedicated backup subdirectory." >&2
+  exit 1
+fi
 chmod 700 "$BACKUP_DIR"
 
-ARCHIVE="$BACKUP_DIR/${DB_NAME}_${TIMESTAMP}.sql.gz"
+ARCHIVE="$(mktemp --suffix=.sql.gz "$BACKUP_DIR/${DB_NAME}_${TIMESTAMP}_XXXXXXXX")"
 
 dump_mysql() {
   if [ -n "${MYSQL_HOST:-}" ]; then
@@ -34,13 +43,17 @@ dump_mysql() {
       --single-transaction --routines --triggers --events --set-gtid-purged=OFF \
       --default-character-set=utf8mb4 "$DB_NAME"
   else
-    docker compose exec -T mysql sh -c \
-      'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysqldump -h 127.0.0.1 -uroot --single-transaction --routines --triggers --events --set-gtid-purged=OFF --default-character-set=utf8mb4 "$MYSQL_DATABASE"'
+    docker compose -f "${BACKUP_COMPOSE_FILE:-docker-compose.yml}" --env-file .env exec -T mysql sh -c \
+      'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysqldump -h 127.0.0.1 -uroot --single-transaction --routines --triggers --events --set-gtid-purged=OFF --default-character-set=utf8mb4 "$1"' -- "$DB_NAME"
   fi
 }
 
 echo "› Dumping database '${DB_NAME}' to ${ARCHIVE}..."
-dump_mysql | gzip -9 > "$ARCHIVE"
+if ! dump_mysql | gzip -9 > "$ARCHIVE"; then
+  rm -f "$ARCHIVE"
+  echo "ERROR: database backup failed; partial archive removed." >&2
+  exit 1
+fi
 
 if [ ! -s "$ARCHIVE" ]; then
   echo "ERROR: backup archive is empty: $ARCHIVE" >&2
@@ -55,7 +68,7 @@ if [ -n "${BACKUP_PASSPHRASE:-}" ]; then
   ARCHIVE="${ARCHIVE}.gpg"
 fi
 
-sha256sum "$ARCHIVE" > "${ARCHIVE}.sha256"
+(cd "$BACKUP_DIR" && sha256sum "$(basename "$ARCHIVE")") > "${ARCHIVE}.sha256"
 chmod 600 "$ARCHIVE" "${ARCHIVE}.sha256"
 
 # Rotate backups older than RETENTION_DAYS

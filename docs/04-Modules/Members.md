@@ -6,6 +6,11 @@ status: registration (1.4) + directory, detail, own profile (2.1) implemented; a
 ---
 # Module: Members
 
+Deployment review (2026-10-21): evaluations registers directory/self-review readers
+at startup; members no longer imports evaluation models or serializers. Progress
+fields describe only the viewer's own submissions. Registration retries preserve
+existing accounts. See [[Deployment Readiness 2026-10-20]].
+
 **Backend:** `apps/members` · **Frontend:** `features/members`
 **Requirements:** MEM-01..05, AUTH-04
 

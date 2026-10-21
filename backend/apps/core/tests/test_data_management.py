@@ -89,7 +89,7 @@ def test_apply_retention_purges_expired_closed_evaluations_and_audit_logs(
         submitted_at=timezone.now() - timedelta(days=45)
     )
 
-    open_cycle = make_cycle(super_admin, form=form, open=True, name="Open Period")
+    make_cycle(super_admin, form=form, open=True, name="Open Period")
     open_eval = evaluation_services.submit_evaluation(
         evaluator=evaluator,
         recipient_public_id=recipient.public_id,
@@ -227,10 +227,15 @@ def test_own_data_export_includes_own_records_and_anonymises_evaluators(super_ad
 
 
 def test_backup_and_restore_scripts_exist():
+    for name in ("backup.sh", "restore.sh"):
+        assert (REPO_ROOT / "scripts" / name).stat().st_mode & 0o111
     backup = (REPO_ROOT / "scripts" / "backup.sh").read_text(encoding="utf-8")
     restore = (REPO_ROOT / "scripts" / "restore.sh").read_text(encoding="utf-8")
     assert "mysqldump" in backup
     assert "--single-transaction" in backup
     assert "sha256sum" in backup
+    assert "mktemp --suffix=.sql.gz" in backup
     assert "sha256sum -c" in restore
     assert "migrate --check" in restore
+    assert '-e RESTORE_CHECK_DATABASE="$TARGET_DB"' in restore
+    assert 'os.environ["RESTORE_CHECK_DATABASE"]' in restore

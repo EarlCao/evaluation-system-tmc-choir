@@ -19,7 +19,9 @@ function assertAccessibleControls(container: HTMLElement) {
     // MUI Select uses a hidden native input next to a labelled combobox button
     if (el.classList.contains("MuiSelect-nativeInput")) continue;
     const id = el.getAttribute("id");
-    const hasForLabel = id ? Boolean(container.querySelector(`label[for="${CSS.escape(id)}"]`)) : false;
+    const hasForLabel = id
+      ? Boolean(container.querySelector(`label[for="${CSS.escape(id)}"]`))
+      : false;
     const hasWrappingLabel = Boolean(el.closest("label"));
     const hasAriaLabel = Boolean(
       el.getAttribute("aria-label") || el.getAttribute("aria-labelledby"),
@@ -32,7 +34,7 @@ function assertAccessibleControls(container: HTMLElement) {
 
   for (const button of container.querySelectorAll<HTMLElement>('button, [role="button"]')) {
     const name =
-      button.textContent?.trim() ||
+      button.textContent.trim() ||
       button.getAttribute("aria-label") ||
       button.getAttribute("aria-labelledby");
     expect(Boolean(name), "Every button must have an accessible name").toBe(true);

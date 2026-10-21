@@ -115,5 +115,3 @@ export function AuthCard({ title, subtitle, badge, showLogo = true, children }: 
     </Paper>
   );
 }
-
-

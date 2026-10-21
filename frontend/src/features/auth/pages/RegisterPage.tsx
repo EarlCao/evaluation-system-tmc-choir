@@ -69,7 +69,13 @@ export function RegisterPage() {
   });
 
   const onSubmit = handleSubmit(
-    async ({ confirm_password: _confirm, voice_section, is_officer, officer_position, ...rest }) => {
+    async ({
+      confirm_password: _confirm,
+      voice_section,
+      is_officer,
+      officer_position,
+      ...rest
+    }) => {
       try {
         const response = await register.mutateAsync({
           ...rest,
@@ -125,11 +131,7 @@ export function RegisterPage() {
               autoComplete="one-time-code"
               helperText="Your account will only be created after you verify this 6-digit OTP."
             />
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={otpForm.formState.isSubmitting}
-            >
+            <Button type="submit" variant="contained" disabled={otpForm.formState.isSubmitting}>
               {otpForm.formState.isSubmitting ? "Verifying OTP…" : "Verify OTP"}
             </Button>
             <Button
@@ -217,7 +219,7 @@ export function RegisterPage() {
             <FormControlLabel
               control={
                 <Checkbox
-                  checked={Boolean(field.value)}
+                  checked={field.value}
                   onChange={(e) => {
                     const checked = e.target.checked;
                     field.onChange(checked);

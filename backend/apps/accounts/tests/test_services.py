@@ -237,7 +237,8 @@ def test_reset_rejects_weak_password():
 
 
 # --------------------------------------------------------------------------- email verification
-def test_verify_email_activates_pending_user_once():
+def test_verify_email_activates_pending_user_once(registration_mode):
+    registration_mode("EMAIL_VERIFICATION")
     user = UserFactory(pending=True)
     uid, token = encode_uid(user), email_verification_token.make_token(user)
 
@@ -285,7 +286,9 @@ def test_password_reset_with_otp(django_capture_on_commit_callbacks):
     user = UserFactory(email="otp.reset@example.org")
     with django_capture_on_commit_callbacks(execute=True):
         services.request_password_reset(email=user.email)
-    otp_match = re.search(r"Your 6-digit OTP password reset code is:\s*(\d{6})", mail.outbox[-1].body)
+    otp_match = re.search(
+        r"Your 6-digit OTP password reset code is:\s*(\d{6})", mail.outbox[-1].body
+    )
     assert otp_match is not None
     otp = otp_match.group(1)
 

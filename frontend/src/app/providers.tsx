@@ -62,4 +62,3 @@ export function AppProviders({ children, queryClient }: AppProvidersProps) {
     </QueryClientProvider>
   );
 }
-

@@ -302,4 +302,3 @@ def export_own_data(*, user) -> dict:
         },
     )
     return data
-

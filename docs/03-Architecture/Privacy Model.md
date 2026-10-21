@@ -3,6 +3,11 @@ tags: [architecture, privacy, critical]
 ---
 # Privacy Model
 
+Deployment review (2026-10-21): thresholds count **distinct evaluators**; trends omit
+undersized criterion/cycle buckets. Drafts use tab-scoped storage cleared on account
+changes. The existing public self-reflection feature needs policy reconciliation;
+see [[Deployment Readiness 2026-10-20]].
+
 > [!danger] Core guarantee
 > A member must never be able to determine **who** evaluated them. Only the
 > **Super Admin** can see evaluator identities, and every such access is audit-logged.

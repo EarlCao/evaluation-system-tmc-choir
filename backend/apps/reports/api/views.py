@@ -18,4 +18,3 @@ class MyDataExportView(APIView):
     def get(self, request):
         data = services.export_own_data(user=request.user)
         return Response(data)
-

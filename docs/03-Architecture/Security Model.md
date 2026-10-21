@@ -6,13 +6,15 @@ tags: [architecture, security]
 ## Authentication
 - **Django session authentication** (same-site SPA). Cookies: `HttpOnly`, `SameSite=Lax`,
   `Secure` in prod. Session lifetime is configurable. Sessions rotate on login.
-- **CSRF:** `GET /api/v1/auth/csrf/` sets the `csrftoken` cookie. axios sends
+- **CSRF:** `GET /api/v1/auth/csrf/` sets the `csrftoken` cookie and returns a masked
+  `csrf_token` for explicitly configured separate-origin clients. axios sends
   `X-CSRFToken` on unsafe methods. `CSRF_TRUSTED_ORIGINS` is set in prod. DRF checks CSRF only for
   authenticated sessions, so the **anonymous** state-changing endpoints (login, register, password
   reset/confirm, verify-email) call `core.authentication.enforce_csrf`. The token **rotates on
-  login**, so the SPA must re-read the cookie afterwards.
+  login**, so the login response supplies the new masked token and the SPA updates
+  its in-memory token. CORS and WebSocket origins use explicit configured allowlists.
 - **Passwords:** Argon2 (`argon2-cffi`) as the first hasher, plus Django
-  `AUTH_PASSWORD_VALIDATORS` (min length 10, common, numeric, similarity).
+  `AUTH_PASSWORD_VALIDATORS` (min length 8, common, numeric, similarity).
 - **Login:** accepts email **or** username. Failures return one generic message
   ("Invalid credentials or account not active") so the response does not reveal which
   accounts exist.
@@ -20,6 +22,11 @@ tags: [architecture, security]
   the email exists. Email backend is console in dev, SMTP in prod.
 - **Registration gating** (`system.registration_mode`): `OPEN` | `APPROVAL` (default) |
   `EMAIL_VERIFICATION` | `CLOSED`.
+- Pending registration keeps password hashes, challenge nonces and expiry in shared
+  Redis, never plain-text passwords or a process-local fallback. Email verification
+  is single-use, limited to five guesses per challenge/user state, and never bypasses
+  approval. SMTP errors never fall back to printing secrets. Password-reset responses
+  remain generic during delivery failures; a durable mail outbox is a future improvement.
 
 ## Authorisation
 - Global DRF default: `IsAuthenticated` plus `IsActiveMember` (status `ACTIVE`).
@@ -60,10 +67,13 @@ tags: [architecture, security]
 - Required prod settings: `DEBUG=False`, `SECRET_KEY`, `FEEDBACK_ID_KEY`,
   `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, `SECURE_SSL_REDIRECT`, HSTS,
   `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`.
+- Production rejects Django keys shorter than 50 characters, feedback keys shorter
+  than 32 characters, identical keys, non-HTTPS frontend URLs, and missing shared
+  Redis or SMTP configuration. Runtime connectivity still needs a deployment smoke test.
 - `python manage.py check --deploy` must be clean before release.
 
 ## Database
 - The app user has least privilege (no `DROP`/`GRANT`). A separate migration user is optional.
 - MySQL strict mode, `utf8mb4`.
 
-Related: [[Privacy Model]] · [[Roles and Permissions]] · [[Accounts]]
+Related: [[Privacy Model]] · [[Roles and Permissions]] · [[Accounts]] · [[Deployment Readiness 2026-10-20]]

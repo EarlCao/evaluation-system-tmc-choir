@@ -202,7 +202,17 @@ def test_profile_of_an_evaluator_says_nothing_about_evaluating_you(world):
         "bio",
         "joined_choir_on",
         "is_self",
+        "is_officer",
+        "officer_position",
+        "has_self_evaluation",
+        "self_evaluation_summary",
+        "self_evaluation",
+        "is_evaluated",
+        "evaluation_id",
     }
+    assert body["is_evaluated"] is False
+    assert body["evaluation_id"] is None
+    assert body["self_evaluation"] is None
 
 
 def test_probing_someone_elses_evaluation_is_a_generic_404(world):
@@ -224,11 +234,11 @@ def test_probing_someone_elses_evaluation_is_a_generic_404(world):
 def test_every_admin_route_is_closed_to_members(world):
     """BR-04: permission is checked before any lookup, so 403 never depends on existence."""
     client = world["client"]
-    dummy = {"public_id": uuid.uuid4(), "pk": 1}
+    dummy = {"public_id": uuid.uuid4(), "pk": 1, "filename": "missing.json.gz"}
     for name in sorted(admin_routes()):
         pattern = next(p for ns, p in _walk(get_resolver().url_patterns) if p == name)
         kwargs = {}
-        for key in ("public_id", "pk"):
+        for key in ("public_id", "pk", "filename"):
             try:
                 reverse(pattern, kwargs={key: dummy[key]})
                 kwargs = {key: dummy[key]}

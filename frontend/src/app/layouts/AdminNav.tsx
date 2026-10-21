@@ -48,7 +48,9 @@ const ADMIN_LINKS: { to: string; label: string; end: boolean; icon: ReactNode }[
     to: "/admin/reports",
     label: "Reports",
     end: false,
-    icon: <NavIcon d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />,
+    icon: (
+      <NavIcon d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />
+    ),
   },
   {
     to: "/admin/cycles",
@@ -62,19 +64,25 @@ const ADMIN_LINKS: { to: string; label: string; end: boolean; icon: ReactNode }[
     to: "/admin/criteria",
     label: "Criteria",
     end: false,
-    icon: <NavIcon d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />,
+    icon: (
+      <NavIcon d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+    ),
   },
   {
     to: "/admin/forms",
     label: "Forms",
     end: false,
-    icon: <NavIcon d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />,
+    icon: (
+      <NavIcon d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+    ),
   },
   {
     to: "/admin/audit",
     label: "Audit log",
     end: false,
-    icon: <NavIcon d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />,
+    icon: (
+      <NavIcon d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
+    ),
   },
   {
     to: "/admin/data-management",
@@ -120,10 +128,7 @@ export function AdminNav({ onNavigate }: AdminNavProps = {}) {
       >
         Super Admin Console
       </Typography>
-      <Stack
-        direction="column"
-        spacing={0.5}
-      >
+      <Stack direction="column" spacing={0.5}>
         {ADMIN_LINKS.map((link) => (
           <Button
             key={link.to}
@@ -161,5 +166,3 @@ export function AdminNav({ onNavigate }: AdminNavProps = {}) {
     </Box>
   );
 }
-
-

@@ -101,14 +101,14 @@ export function createLuxuryTheme(mode: ThemeMode): Theme {
             borderRadius: 10,
             paddingInline: 18,
             transition: "all 160ms ease",
-          },
-          containedPrimary: {
-            backgroundImage: isDark
-              ? "linear-gradient(135deg, #d4af37 0%, #f3d266 50%, #b89024 100%)"
-              : "linear-gradient(135deg, #1e1b4b 0%, #312e81 60%, #4338ca 100%)",
-            boxShadow: isDark
-              ? "0 4px 16px rgba(212, 175, 55, 0.25)"
-              : "0 4px 14px rgba(30, 27, 75, 0.22)",
+            "&.MuiButton-contained.MuiButton-colorPrimary": {
+              backgroundImage: isDark
+                ? "linear-gradient(135deg, #d4af37 0%, #f3d266 50%, #b89024 100%)"
+                : "linear-gradient(135deg, #1e1b4b 0%, #312e81 60%, #4338ca 100%)",
+              boxShadow: isDark
+                ? "0 4px 16px rgba(212, 175, 55, 0.25)"
+                : "0 4px 14px rgba(30, 27, 75, 0.22)",
+            },
           },
         },
       },
@@ -145,5 +145,3 @@ export function createLuxuryTheme(mode: ThemeMode): Theme {
 }
 
 export const theme = createLuxuryTheme("light");
-
-

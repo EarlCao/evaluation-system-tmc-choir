@@ -13,7 +13,7 @@ export const member = (n: number) => ({
 });
 
 export async function logIn(page: Page, identifier: string, password: string) {
-  await page.goto("/login");
+  await page.goto(identifier === ADMIN.identifier ? "/admin/login" : "/login");
   await page.getByLabel("Username or email").fill(identifier);
   await page.getByRole("textbox", { name: "Password", exact: true }).fill(password);
   await page.getByRole("button", { name: "Log in" }).click();

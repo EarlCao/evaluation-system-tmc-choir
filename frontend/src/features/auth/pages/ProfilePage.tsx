@@ -157,4 +157,3 @@ export function ProfilePage() {
     </Stack>
   );
 }
-

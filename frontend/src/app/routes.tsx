@@ -2,6 +2,7 @@ import type { RouteObject } from "react-router";
 
 import { NotFoundPage } from "@/components/NotFoundPage";
 import { RouteErrorPage } from "@/components/RouteErrorPage";
+import { FullPageSpinner } from "@/components/FullPageSpinner";
 import { adminRoutes } from "@/features/admin";
 import { guestAuthRoutes, memberAuthRoutes, publicAuthRoutes } from "@/features/auth";
 import { dashboardRoutes } from "@/features/dashboard";
@@ -22,6 +23,7 @@ import { PublicLayout } from "./layouts/PublicLayout";
 export const routes: RouteObject[] = [
   {
     errorElement: <RouteErrorPage />,
+    hydrateFallbackElement: <FullPageSpinner label="Loading page" />,
     children: [
       {
         element: <PublicLayout />,
@@ -58,4 +60,3 @@ export const routes: RouteObject[] = [
     ],
   },
 ];
-

@@ -18,5 +18,3 @@ describe("WelcomePage (root / Member Login)", () => {
     expect(screen.queryByText(/api online/i)).not.toBeInTheDocument();
   });
 });
-
-

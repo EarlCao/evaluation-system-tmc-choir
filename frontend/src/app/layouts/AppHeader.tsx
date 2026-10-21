@@ -192,5 +192,3 @@ export function AppHeader({ home, badge, nav, children, onOpenMobileNav }: AppHe
     </AppBar>
   );
 }
-
-

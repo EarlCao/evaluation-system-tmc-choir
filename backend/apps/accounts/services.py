@@ -2,15 +2,17 @@
 
 import hashlib
 import hmac
+import logging
 import re
+import secrets
 
 from django.conf import settings
 from django.contrib import auth
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.password_validation import validate_password
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
-from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status as http_status
 
@@ -33,8 +35,8 @@ from .tokens import (
 EDITABLE_PROFILE_FIELDS = ("first_name", "last_name", "display_name")
 USERNAME_PATTERN = re.compile(r"^[a-z0-9_]+\Z")
 INVALID_OTP_MESSAGE = "Invalid or expired OTP code."
+logger = logging.getLogger(__name__)
 
-_PENDING_REGISTRATIONS: dict[str, dict] = {}
 _profile_creator_callback = None
 
 
@@ -65,40 +67,15 @@ def _check_password_strength(password: str, user: User) -> None:
         raise ValidationError(fields={"password": exc.messages}) from exc
 
 
-import uuid
-
-
 # ---------------------------------------------------------------------------
 # Registration
 # ---------------------------------------------------------------------------
-def cleanup_unverified_registration(*, email: str, username: str) -> None:
-    """Remove or release any unverified member record that never completed OTP verification
-    or logged in. Handles AuditLog.actor PROTECT foreign keys gracefully."""
-    stale_users = list(
-        User.objects.filter(
-            Q(email__iexact=email) | Q(username__iexact=username),
-            role=UserRole.MEMBER,
-            email_verified_at__isnull=True,
-            approved_at__isnull=True,
-            last_login__isnull=True,
-        )
-    )
-    for stale in stale_users:
-        try:
-            with transaction.atomic():
-                stale.delete()
-        except Exception:
-            if hasattr(stale, "member_profile"):
-                stale.member_profile.delete()
-            suffix = f"{stale.pk}_{uuid.uuid4().hex[:8]}"
-            stale.username = f"_unverified_{suffix}"
-            stale.email = f"_unverified_{suffix}@invalid.local"
-            stale.status = UserStatus.DEACTIVATED
-            stale.save(update_fields=["username", "email", "status", "updated_at"])
+def pending_registration_key(email: str) -> str:
+    return f"pending_reg:{identifier_hash(email)}"
 
 
 def _validate_registration_inputs(
-    *, email: str, username: str, password: str, first_name: str, last_name: str
+    *, email: str, username: str, password: str | None, first_name: str, last_name: str
 ) -> tuple[str, str, str]:
     mode = get_settings().registration_mode
     if mode == RegistrationMode.CLOSED:
@@ -111,7 +88,8 @@ def _validate_registration_inputs(
         errors["email"] = ["An account with this email already exists."]
     if not USERNAME_PATTERN.match(username):
         errors["username"] = [
-            "Username must contain only lowercase letters (a-z), numbers (0-9), and underscores (_)."
+            "Username must contain only lowercase letters (a-z), numbers (0-9), "
+            "and underscores (_)."
         ]
     elif User.objects.filter(username__iexact=username).exists():
         errors["username"] = ["This username is already taken."]
@@ -119,7 +97,8 @@ def _validate_registration_inputs(
         raise ValidationError(fields=errors)
 
     candidate = User(email=email, username=username, first_name=first_name, last_name=last_name)
-    _check_password_strength(password, candidate)
+    if password is not None:
+        _check_password_strength(password, candidate)
     return mode, email, username
 
 
@@ -138,7 +117,6 @@ def stage_pending_registration(
     in the database until the OTP is verified."""
     clean_email = User.objects.normalize_email(email).strip().lower()
     clean_username = User.normalize_username(username.strip())
-    cleanup_unverified_registration(email=clean_email, username=clean_username)
     _mode, clean_email, clean_username = _validate_registration_inputs(
         email=clean_email,
         username=clean_username,
@@ -149,20 +127,18 @@ def stage_pending_registration(
     record = {
         "email": clean_email,
         "username": clean_username,
-        "password": password,
+        "password_hash": make_password(password),
+        "nonce": secrets.token_urlsafe(32),
+        "registration_mode": _mode,
         "first_name": first_name.strip(),
         "last_name": last_name.strip(),
         "voice_section_id": voice_section_id,
         "is_officer": bool(is_officer),
         "officer_position": officer_position.strip() if is_officer else "",
     }
-    _PENDING_REGISTRATIONS[clean_email] = record
-    try:
-        cache.set(f"pending_reg:{clean_email}", record, timeout=1800)
-    except Exception:
-        pass
+    cache.set(pending_registration_key(clean_email), record, timeout=1800)
     emails.send_pending_registration_otp_email(
-        email=clean_email, username=clean_username, first_name=first_name
+        email=clean_email, username=clean_username, first_name=first_name, nonce=record["nonce"]
     )
     return {
         "status": UserStatus.PENDING,
@@ -187,24 +163,50 @@ def create_user(
         last_name=last_name,
     )
 
-    status = UserStatus.ACTIVE if mode == RegistrationMode.OPEN else UserStatus.PENDING
+    return _create_registered_user(
+        mode=mode,
+        email=email,
+        username=username,
+        password_hash=make_password(password),
+        first_name=first_name,
+        last_name=last_name,
+    )
+
+
+def _create_registered_user(
+    *,
+    mode: str,
+    email: str,
+    username: str,
+    password_hash: str,
+    first_name: str,
+    last_name: str,
+    verified: bool = False,
+) -> User:
+    status = (
+        UserStatus.ACTIVE
+        if mode == RegistrationMode.OPEN
+        or (verified and mode == RegistrationMode.EMAIL_VERIFICATION)
+        else UserStatus.PENDING
+    )
     try:
         with transaction.atomic():
-            user = User.objects.create_user(
+            user = User.objects.create(
                 email=email,
                 username=username,
-                password=password,
+                password=password_hash,
                 first_name=first_name.strip(),
                 last_name=last_name.strip(),
                 role=UserRole.MEMBER,
                 status=status,
+                email_verified_at=timezone.now() if verified else None,
             )
     except IntegrityError as exc:  # lost a race with a concurrent registration
         raise ValidationError(
             fields={"username": ["This username or email is already in use."]}
         ) from exc
 
-    if mode == RegistrationMode.EMAIL_VERIFICATION:
+    if mode == RegistrationMode.EMAIL_VERIFICATION and not verified:
         transaction.on_commit(lambda: emails.send_verification_email(user))
     publish(
         events.UserRegistered(
@@ -331,7 +333,15 @@ def request_password_reset(*, email: str) -> None:
     """Always succeeds silently (no account enumeration). Only ACTIVE users get an email."""
     user = User.objects.filter(email__iexact=email.strip(), status=UserStatus.ACTIVE).first()
     if user is not None:
-        transaction.on_commit(lambda: emails.send_password_reset_email(user))
+
+        def deliver():
+            try:
+                emails.send_password_reset_email(user)
+            except DomainError:
+                # Availability must not turn this public endpoint into an account oracle.
+                logger.warning("Password-reset delivery unavailable; request remains generic.")
+
+        transaction.on_commit(deliver)
     publish(
         events.PasswordResetRequested(
             target_id=user.pk if user else None, identifier_hash=identifier_hash(email)
@@ -376,57 +386,63 @@ def confirm_password_reset(
 # ---------------------------------------------------------------------------
 # Email verification & profile
 # ---------------------------------------------------------------------------
-def verify_email(
-    *, uidb64: str = "", token: str = "", email: str = "", otp: str = ""
-) -> User:
+def verify_email(*, uidb64: str = "", token: str = "", email: str = "", otp: str = "") -> User:
     """AUTH-03: confirms the address via 6-digit OTP or verification link and creates/activates
     a PENDING account. Single-use."""
     if email or otp:
         clean_email = User.objects.normalize_email(email).strip().lower()
-        pending = _PENDING_REGISTRATIONS.get(clean_email)
-        if pending is None:
-            try:
-                pending = cache.get(f"pending_reg:{clean_email}")
-            except Exception:
-                pending = None
+        pending = cache.get(pending_registration_key(clean_email))
         if pending is not None:
-            if not verify_pending_registration_otp(clean_email, pending["username"], otp):
+            if not verify_pending_registration_otp(
+                clean_email, pending["username"], otp, nonce=pending["nonce"]
+            ):
                 raise ValidationError(INVALID_OTP_MESSAGE, fields={"otp": [INVALID_OTP_MESSAGE]})
-            cleanup_unverified_registration(email=clean_email, username=pending["username"])
+            mode, _, _ = _validate_registration_inputs(
+                email=clean_email,
+                username=pending["username"],
+                password=None,
+                first_name=pending["first_name"],
+                last_name=pending["last_name"],
+            )
+            # Approval is required if it was required when staged OR is required now.
+            if pending["registration_mode"] == RegistrationMode.APPROVAL:
+                mode = RegistrationMode.APPROVAL
             with transaction.atomic():
-                user = create_user(
+                user = _create_registered_user(
+                    mode=mode,
+                    verified=True,
                     email=pending["email"],
                     username=pending["username"],
-                    password=pending["password"],
+                    password_hash=pending["password_hash"],
                     first_name=pending["first_name"],
                     last_name=pending["last_name"],
                 )
-                if _profile_creator_callback is not None:
-                    _profile_creator_callback(
-                        user,
-                        pending["voice_section_id"],
-                        is_officer=bool(pending.get("is_officer", False)),
-                        officer_position=str(pending.get("officer_position", "")),
-                    )
-                user.email_verified_at = timezone.now()
-                if user.status == UserStatus.PENDING:
-                    user.status = UserStatus.ACTIVE
-                user.save(update_fields=["email_verified_at", "status", "updated_at"])
-            _PENDING_REGISTRATIONS.pop(clean_email, None)
-            try:
-                cache.delete(f"pending_reg:{clean_email}")
-            except Exception:
-                pass
+                if _profile_creator_callback is None:
+                    raise RuntimeError("Member profile creator is not registered.")
+                _profile_creator_callback(
+                    user,
+                    pending["voice_section_id"],
+                    is_officer=bool(pending.get("is_officer", False)),
+                    officer_position=str(pending.get("officer_position", "")),
+                )
+            cache.delete(pending_registration_key(clean_email))
             publish(events.EmailVerified(actor_id=user.pk, target_id=user.pk))
             return user
 
         user = User.objects.filter(email__iexact=clean_email).first()
-        if user is None or not verify_email_otp(user, otp, purpose="verify_email"):
+        if (
+            user is None
+            or user.email_verified_at is not None
+            or not verify_email_otp(user, otp, purpose="verify_email")
+        ):
             raise ValidationError(INVALID_OTP_MESSAGE, fields={"otp": [INVALID_OTP_MESSAGE]})
     else:
         user = _user_from_link(uidb64, token, email_verification_token)
     user.email_verified_at = timezone.now()
-    if user.status == UserStatus.PENDING:
+    if (
+        user.status == UserStatus.PENDING
+        and get_settings().registration_mode == RegistrationMode.EMAIL_VERIFICATION
+    ):
         user.status = UserStatus.ACTIVE
     user.save(update_fields=["email_verified_at", "status", "updated_at"])
     publish(events.EmailVerified(actor_id=user.pk, target_id=user.pk))

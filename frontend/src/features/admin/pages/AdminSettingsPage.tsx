@@ -47,7 +47,7 @@ function toDraft(s: AdminSettings): Draft {
     time_zone: s.time_zone,
     registration_mode: s.registration_mode,
     min_aggregate_group_size: String(s.min_aggregate_group_size),
-    min_comment_prompts: String(s.min_comment_prompts ?? 5),
+    min_comment_prompts: String(s.min_comment_prompts),
     feedback_notification_debounce_minutes: String(s.feedback_notification_debounce_minutes),
     privacy_notice: s.privacy_notice,
     retention_evaluations_days: text(s.retention_evaluations_days),

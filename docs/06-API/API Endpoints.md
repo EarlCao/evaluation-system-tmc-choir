@@ -3,6 +3,11 @@ tags: [api]
 ---
 # API Endpoints
 
+Deployment review (2026-10-21): CSRF/login responses also return a masked `csrf_token`.
+Audit list/detail reject DELETE (405). Backup download/restore/cleanup routes have
+schema and permission-matrix coverage. Email verification reports approval-pending
+status accurately. See [[Deployment Readiness 2026-10-20]].
+
 Status legend: 📝 planned · 🚧 in progress · ✅ implemented (update as steps complete)
 Perm: **P** public · **M** active member · **A** super admin
 

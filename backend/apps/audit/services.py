@@ -149,23 +149,3 @@ def purge_expired_logs(*, retention_days: int | None, now=None) -> int:
     qs = AuditLog.objects.filter(occurred_at__lt=cutoff)
     deleted, _ = models.QuerySet.delete(qs)
     return deleted
-
-
-def delete_log(*, log: AuditLog) -> None:
-    """Delete a single audit log entry (Super Admin action)."""
-    models.QuerySet.delete(AuditLog.objects.filter(pk=log.pk))
-
-
-def delete_logs(*, filters: dict | None = None) -> int:
-    """Delete matching (or all) audit log entries (Super Admin action)."""
-    has_filters = bool(filters and any(v not in (None, "") for v in filters.values()))
-    if has_filters and filters is not None:
-        ids = list(selectors.list_logs(**filters).values_list("id", flat=True))
-        if not ids:
-            return 0
-        deleted, _ = models.QuerySet.delete(AuditLog.objects.filter(id__in=ids))
-        return deleted
-    deleted, _ = models.QuerySet.delete(AuditLog.objects.all())
-    return deleted
-
-

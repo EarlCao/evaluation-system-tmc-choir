@@ -45,8 +45,8 @@ class CsrfView(APIView):
 
     @extend_schema(auth=[], responses=DetailSerializer)
     def get(self, request):
-        get_token(request)
-        return Response({"detail": "CSRF cookie set."})
+        token = get_token(request)
+        return Response({"detail": "CSRF cookie set.", "csrf_token": token})
 
 
 class LoginView(PublicCsrfProtectedView):
@@ -59,7 +59,7 @@ class LoginView(PublicCsrfProtectedView):
         user = services.authenticate_and_login(
             request=request._request, **serializer.validated_data
         )
-        return Response(MeSerializer(user).data)
+        return Response({**MeSerializer(user).data, "csrf_token": get_token(request)})
 
 
 class LogoutView(APIView):
@@ -132,13 +132,18 @@ class EmailVerificationView(PublicCsrfProtectedView):
         serializer = EmailVerificationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        services.verify_email(
+        user = services.verify_email(
             uidb64=data.get("uid", ""),
             token=data.get("token", ""),
             email=data.get("email", ""),
             otp=data.get("otp", ""),
         )
-        return Response({"detail": "Your email address is confirmed. You can now log in."})
+        detail = (
+            "Your email address is confirmed. Your account is waiting for Super Admin approval."
+            if user.status == "PENDING"
+            else "Your email address is confirmed. You can now log in."
+        )
+        return Response({"detail": detail})
 
 
 class DeactivateAccountView(APIView):
@@ -150,4 +155,3 @@ class DeactivateAccountView(APIView):
             request=request._request, user=request.user, **serializer.validated_data
         )
         return Response({"detail": "Your account has been deactivated."})
-

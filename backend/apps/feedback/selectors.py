@@ -82,9 +82,7 @@ def list_received(
             if key == "suggestion"
             else key
         )
-        entries_by_eval[c["evaluation_id"]].append(
-            {"key": key, "label": label, "body": c["body"]}
-        )
+        entries_by_eval[c["evaluation_id"]].append({"key": key, "label": label, "body": c["body"]})
 
     items = []
     for row in rows:
@@ -134,6 +132,9 @@ def summary(*, recipient, cycle_public_id=None, criterion_public_id=None) -> dic
     rows, cycles = _visible_rows(recipient, cycle_public_id)
     cycle_of = {r["id"]: r["cycle_id"] for r in rows}
     ratings = evaluation_selectors.received_rating_rows(evaluation_ids=list(cycle_of))
+    contributor_counts, bucket_counts = evaluation_selectors.received_contributor_counts(
+        evaluation_ids=list(cycle_of)
+    )
     versions = evaluation_selectors.criterion_versions_info(
         ids={r["criterion_version_id"] for r in ratings}
     )
@@ -147,6 +148,11 @@ def summary(*, recipient, cycle_public_id=None, criterion_public_id=None) -> dic
         if criterion_public_id and str(info["criterion__public_id"]) != str(criterion_public_id):
             continue
         values_by_version[r["criterion_version_id"]].append(r["value"])
+        if (
+            bucket_counts.get((cycle_of[r["evaluation_id"]], r["criterion_version_id"]), 0)
+            < threshold
+        ):
+            continue  # trends include only criterion/cycle buckets that meet the privacy floor
         span = info["max_value"] - info["min_value"]
         percents_by_cycle[cycle_of[r["evaluation_id"]]].append(
             (r["value"] - info["min_value"]) / span * 100
@@ -165,7 +171,7 @@ def summary(*, recipient, cycle_public_id=None, criterion_public_id=None) -> dic
                 "step": info["step"],
             },
             "n": len(values),
-            "suppressed": len(values) < threshold,
+            "suppressed": contributor_counts.get(version_id, 0) < threshold,
             "average": None,
             "distribution": None,
         }

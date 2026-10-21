@@ -4,7 +4,6 @@ from django.http import HttpResponse
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -42,14 +41,6 @@ class AuditLogListView(ListAPIView):
     def get_queryset(self):
         return selectors.list_logs(**_filters(self.request.query_params))
 
-    @extend_schema(
-        parameters=FILTER_PARAMS,
-        responses={200: {"type": "object", "properties": {"deleted": {"type": "integer"}}}},
-    )
-    def delete(self, request, *args, **kwargs):
-        deleted = services.delete_logs(filters=_filters(request.query_params))
-        return Response({"deleted": deleted}, status=status.HTTP_200_OK)
-
 
 class AuditLogDetailView(APIView):
     permission_classes = [IsSuperAdmin]
@@ -57,11 +48,6 @@ class AuditLogDetailView(APIView):
     @extend_schema(responses=s.AuditLogSerializer)
     def get(self, request, pk: int):
         return Response(s.AuditLogSerializer(selectors.get_log(pk=pk)).data)
-
-    @extend_schema(request=None, responses={204: None})
-    def delete(self, request, pk: int):
-        services.delete_log(log=selectors.get_log(pk=pk))
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class AuditEventTypesView(APIView):

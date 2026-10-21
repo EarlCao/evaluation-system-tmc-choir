@@ -129,7 +129,12 @@ function PublishedView({ form }: { form: FormVersion }) {
         <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
           Step 2: Comment Prompts (unlimited words)
         </Typography>
-        <Stack component="ol" spacing={0.5} sx={{ m: 0, pl: 3 }} aria-label="Comment prompts in this form">
+        <Stack
+          component="ol"
+          spacing={0.5}
+          sx={{ m: 0, pl: 3 }}
+          aria-label="Comment prompts in this form"
+        >
           {prompts.map((p) => (
             <li key={p.key}>
               <Typography component="span" sx={{ fontWeight: 600 }}>

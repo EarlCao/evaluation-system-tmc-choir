@@ -2,6 +2,7 @@
 (the author chose them) but never another evaluator. Recipient-facing feedback lives in
 ``apps.feedback`` (Privacy Model)."""
 
+from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
 from .. import rules
@@ -75,6 +76,7 @@ class FormCriterionSerializer(serializers.ModelSerializer):
         ]
 
 
+@extend_schema_serializer(component_name="MemberFormCommentPrompt")
 class FormCommentPromptSerializer(serializers.Serializer):
     key = serializers.CharField()
     label = serializers.CharField()

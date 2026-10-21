@@ -147,6 +147,12 @@ docs/                    Obsidian documentation vault
 > **Note:** `docker/mysql/init/` scripts run only when the MySQL volume is first created.
 > After changing them, recreate the volume with `docker compose down -v`.
 
+## Deployment readiness
+
+Read the [pre-deployment review](docs/10-Testing/Deployment%20Readiness%202026-10-20.md)
+for verified fixes, the production procedure, and the remaining live-hosting launch gates.
+The quick start above is a development stack. Production uses `deploy/docker-compose.prod.yml`.
+
 ## Security
 
 Never commit `.env`, credentials, tokens or database dumps. `.gitignore` excludes them,

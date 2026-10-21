@@ -216,7 +216,12 @@ def test_member_otp_verification_notifies_super_admin(super_admin, run_events):
         is_officer=True,
         officer_position="Choir President",
     )
-    otp = make_pending_registration_otp("soprano@example.org", "soprano_star")
+    from django.core.cache import cache
+
+    pending = cache.get(account_services.pending_registration_key("soprano@example.org"))
+    otp = make_pending_registration_otp(
+        "soprano@example.org", "soprano_star", nonce=pending["nonce"]
+    )
 
     user = run_events(
         account_services.verify_email,

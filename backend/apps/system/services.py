@@ -10,6 +10,20 @@ from .events import SettingsChanged
 from .models import SINGLETON_PK, SystemSettings
 from .selectors import invalidate_settings_cache
 
+_retention_handler = None
+
+
+def register_retention_handler(handler) -> None:
+    global _retention_handler
+    _retention_handler = handler
+
+
+def apply_retention(*, actor=None) -> dict[str, int]:
+    if _retention_handler is None:
+        raise RuntimeError("Retention handler is not registered.")
+    return _retention_handler(actor=actor)
+
+
 EDITABLE_FIELDS = frozenset(
     {
         "system_name",

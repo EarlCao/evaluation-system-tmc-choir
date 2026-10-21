@@ -11,7 +11,6 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
@@ -97,7 +96,7 @@ export function AdminDataManagementPage() {
   }
 
   const settings = settingsQuery.data;
-  const backups = backupsQuery.data ?? [];
+  const backups = backupsQuery.data;
 
   const handleCreate = async () => {
     try {
@@ -246,7 +245,12 @@ export function AdminDataManagementPage() {
 
       {/* Global alert */}
       {notification ? (
-        <Alert severity={notification.severity} onClose={() => setNotification(null)}>
+        <Alert
+          severity={notification.severity}
+          onClose={() => {
+            setNotification(null);
+          }}
+        >
           {notification.message}
         </Alert>
       ) : null}
@@ -290,7 +294,9 @@ export function AdminDataManagementPage() {
             <Button
               variant="outlined"
               color="warning"
-              onClick={() => setCleanupOpen(true)}
+              onClick={() => {
+                setCleanupOpen(true);
+              }}
               disabled={retentionCleanupMutation.isPending}
               startIcon={
                 <SvgIcon fontSize="small">
@@ -343,8 +349,13 @@ export function AdminDataManagementPage() {
             <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
               No backups generated yet
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, maxWidth: 420, mx: "auto" }}>
-              Take a snapshot of all choir accounts, evaluations, ratings, comments, and settings to preserve your data.
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mb: 2.5, maxWidth: 420, mx: "auto" }}
+            >
+              Take a snapshot of all choir accounts, evaluations, ratings, comments, and settings to
+              preserve your data.
             </Typography>
             <Button
               variant="contained"
@@ -379,7 +390,11 @@ export function AdminDataManagementPage() {
                         {item.filename}
                       </Typography>
                       {item.note ? (
-                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25 }}>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ display: "block", mt: 0.25 }}
+                        >
                           {item.note}
                         </Typography>
                       ) : null}
@@ -449,7 +464,9 @@ export function AdminDataManagementPage() {
                           <IconButton
                             size="small"
                             color="error"
-                            onClick={() => setDeleteTarget(item)}
+                            onClick={() => {
+                              setDeleteTarget(item);
+                            }}
                             aria-label={`Delete ${item.filename}`}
                           >
                             <SvgIcon fontSize="small">
@@ -470,14 +487,17 @@ export function AdminDataManagementPage() {
       {/* Create Backup Dialog */}
       <Dialog
         open={createOpen}
-        onClose={() => !createBackupMutation.isPending && setCreateOpen(false)}
+        onClose={() => {
+          if (!createBackupMutation.isPending) setCreateOpen(false);
+        }}
         maxWidth="sm"
         fullWidth
       >
         <DialogTitle sx={{ fontWeight: 700 }}>Create New Database Backup</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 2 }}>
-            This generates a portable, gzipped snapshot of all database tables (excluding sessions and cache).
+            This generates a portable, gzipped snapshot of all database tables (excluding sessions
+            and cache).
           </DialogContentText>
           <TextField
             autoFocus
@@ -485,19 +505,28 @@ export function AdminDataManagementPage() {
             placeholder="e.g. Before semester transition or cycle close"
             fullWidth
             value={backupNote}
-            onChange={(e) => setBackupNote(e.target.value)}
+            onChange={(e) => {
+              setBackupNote(e.target.value);
+            }}
             disabled={createBackupMutation.isPending}
             multiline
             rows={2}
           />
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={() => setCreateOpen(false)} disabled={createBackupMutation.isPending}>
+          <Button
+            onClick={() => {
+              setCreateOpen(false);
+            }}
+            disabled={createBackupMutation.isPending}
+          >
             Cancel
           </Button>
           <Button
             variant="contained"
-            onClick={() => void handleCreate()}
+            onClick={() => {
+              void handleCreate();
+            }}
             disabled={createBackupMutation.isPending}
           >
             {createBackupMutation.isPending ? "Generating..." : "Generate Backup"}
@@ -508,7 +537,9 @@ export function AdminDataManagementPage() {
       {/* Restore Backup Dialog */}
       <Dialog
         open={Boolean(restoreTarget)}
-        onClose={() => !restoreBackupMutation.isPending && setRestoreTarget(null)}
+        onClose={() => {
+          if (!restoreBackupMutation.isPending) setRestoreTarget(null);
+        }}
         maxWidth="sm"
         fullWidth
       >
@@ -517,9 +548,9 @@ export function AdminDataManagementPage() {
         </DialogTitle>
         <DialogContent>
           <Alert severity="warning" sx={{ mb: 2 }}>
-            <strong>Caution:</strong> Restoring will update database records with data from the backup
-            snapshot (<strong>{restoreTarget?.filename}</strong>). Any changes made since this backup
-            was generated may be overwritten.
+            <strong>Caution:</strong> Restoring will update database records with data from the
+            backup snapshot (<strong>{restoreTarget?.filename}</strong>). Any changes made since
+            this backup was generated may be overwritten.
           </Alert>
           <DialogContentText sx={{ mb: 2 }}>
             Backup created on: {restoreTarget ? formatDateTime(restoreTarget.created_at) : ""}
@@ -530,7 +561,9 @@ export function AdminDataManagementPage() {
             control={
               <Checkbox
                 checked={restoreConfirmed}
-                onChange={(e) => setRestoreConfirmed(e.target.checked)}
+                onChange={(e) => {
+                  setRestoreConfirmed(e.target.checked);
+                }}
                 disabled={restoreBackupMutation.isPending}
               />
             }
@@ -539,7 +572,9 @@ export function AdminDataManagementPage() {
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
           <Button
-            onClick={() => setRestoreTarget(null)}
+            onClick={() => {
+              setRestoreTarget(null);
+            }}
             disabled={restoreBackupMutation.isPending}
           >
             Cancel
@@ -547,7 +582,9 @@ export function AdminDataManagementPage() {
           <Button
             variant="contained"
             color="warning"
-            onClick={() => void handleRestore()}
+            onClick={() => {
+              void handleRestore();
+            }}
             disabled={!restoreConfirmed || restoreBackupMutation.isPending}
           >
             {restoreBackupMutation.isPending ? "Restoring..." : "Confirm & Restore"}
@@ -558,7 +595,9 @@ export function AdminDataManagementPage() {
       {/* Upload and Restore Dialog */}
       <Dialog
         open={uploadOpen}
-        onClose={() => !restoreBackupMutation.isPending && setUploadOpen(false)}
+        onClose={() => {
+          if (!restoreBackupMutation.isPending) setUploadOpen(false);
+        }}
         maxWidth="sm"
         fullWidth
       >
@@ -586,7 +625,9 @@ export function AdminDataManagementPage() {
             control={
               <Checkbox
                 checked={uploadConfirmed}
-                onChange={(e) => setUploadConfirmed(e.target.checked)}
+                onChange={(e) => {
+                  setUploadConfirmed(e.target.checked);
+                }}
                 disabled={restoreBackupMutation.isPending || !selectedFile}
               />
             }
@@ -594,13 +635,20 @@ export function AdminDataManagementPage() {
           />
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={() => setUploadOpen(false)} disabled={restoreBackupMutation.isPending}>
+          <Button
+            onClick={() => {
+              setUploadOpen(false);
+            }}
+            disabled={restoreBackupMutation.isPending}
+          >
             Cancel
           </Button>
           <Button
             variant="contained"
             color="warning"
-            onClick={() => void handleUploadRestore()}
+            onClick={() => {
+              void handleUploadRestore();
+            }}
             disabled={!uploadConfirmed || !selectedFile || restoreBackupMutation.isPending}
           >
             {restoreBackupMutation.isPending ? "Restoring..." : "Upload & Restore"}
@@ -611,24 +659,34 @@ export function AdminDataManagementPage() {
       {/* Delete Backup Dialog */}
       <Dialog
         open={Boolean(deleteTarget)}
-        onClose={() => !deleteBackupMutation.isPending && setDeleteTarget(null)}
+        onClose={() => {
+          if (!deleteBackupMutation.isPending) setDeleteTarget(null);
+        }}
         maxWidth="xs"
         fullWidth
       >
         <DialogTitle sx={{ fontWeight: 700 }}>Delete Backup?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to permanently delete <strong>{deleteTarget?.filename}</strong>? This action cannot be undone.
+            Are you sure you want to permanently delete <strong>{deleteTarget?.filename}</strong>?
+            This action cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setDeleteTarget(null)} disabled={deleteBackupMutation.isPending}>
+          <Button
+            onClick={() => {
+              setDeleteTarget(null);
+            }}
+            disabled={deleteBackupMutation.isPending}
+          >
             Cancel
           </Button>
           <Button
             variant="contained"
             color="error"
-            onClick={() => void handleDelete()}
+            onClick={() => {
+              void handleDelete();
+            }}
             disabled={deleteBackupMutation.isPending}
           >
             {deleteBackupMutation.isPending ? "Deleting..." : "Delete"}
@@ -639,7 +697,9 @@ export function AdminDataManagementPage() {
       {/* Retention Cleanup Confirm Dialog */}
       <Dialog
         open={cleanupOpen}
-        onClose={() => !retentionCleanupMutation.isPending && setCleanupOpen(false)}
+        onClose={() => {
+          if (!retentionCleanupMutation.isPending) setCleanupOpen(false);
+        }}
         maxWidth="xs"
         fullWidth
       >
@@ -652,7 +712,9 @@ export function AdminDataManagementPage() {
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button
-            onClick={() => setCleanupOpen(false)}
+            onClick={() => {
+              setCleanupOpen(false);
+            }}
             disabled={retentionCleanupMutation.isPending}
           >
             Cancel
@@ -660,7 +722,9 @@ export function AdminDataManagementPage() {
           <Button
             variant="contained"
             color="warning"
-            onClick={() => void handleCleanup()}
+            onClick={() => {
+              void handleCleanup();
+            }}
             disabled={retentionCleanupMutation.isPending}
           >
             {retentionCleanupMutation.isPending ? "Cleaning up..." : "Execute Cleanup"}

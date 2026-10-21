@@ -102,6 +102,7 @@ class MyEvaluationDetailView(APIView):
 
     @extend_schema(request=EditEvaluationSerializer, responses=MyEvaluationSerializer)
     def patch(self, request, public_id):
+        selectors.get_my_evaluation(user=request.user, public_id=public_id)
         data = EditEvaluationSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         values = data.validated_data

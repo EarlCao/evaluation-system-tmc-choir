@@ -206,6 +206,67 @@ def list_my_revisions(*, user, public_id: UUID | str) -> QuerySet[EvaluationRevi
 FEEDBACK_ROW_FIELDS = ("id", "cycle_id", "submitted_at", "is_edited")
 
 
+def enrich_member_directory(qs, viewer):
+    """Own submission progress and deliberately public self-reviews; never peer activity."""
+    from django.db.models import (
+        BooleanField,
+        Exists,
+        OuterRef,
+        Subquery,
+        TextField,
+        UUIDField,
+        Value,
+    )
+    from django.db.models.functions import Coalesce
+
+    self_evals = (
+        Evaluation.objects.filter(
+            evaluator_id=OuterRef("user_id"),
+            recipient_id=OuterRef("user_id"),
+            status=EvaluationStatus.SUBMITTED,
+        )
+        .exclude(moderation_status=ModerationStatus.HIDDEN)
+        .exclude(cycle__status=CycleStatus.DRAFT)
+    )
+    self_comments = (
+        EvaluationComment.objects.filter(
+            evaluation__evaluator_id=OuterRef("user_id"),
+            evaluation__recipient_id=OuterRef("user_id"),
+            evaluation__status=EvaluationStatus.SUBMITTED,
+        )
+        .exclude(evaluation__moderation_status=ModerationStatus.HIDDEN)
+        .exclude(evaluation__cycle__status=CycleStatus.DRAFT)
+        .exclude(moderation_status=ModerationStatus.HIDDEN)
+        .order_by("-evaluation__cycle__is_current", "-evaluation__submitted_at", "order", "id")
+        .values("body")[:1]
+    )
+    qs = qs.annotate(
+        has_self_evaluation=Exists(self_evals),
+        self_evaluation_summary=Coalesce(
+            Subquery(self_comments), Value(""), output_field=TextField()
+        ),
+    )
+    if viewer and viewer.is_authenticated and not viewer.is_super_admin:
+        own = Evaluation.objects.filter(
+            evaluator=viewer,
+            recipient_id=OuterRef("user_id"),
+            status=EvaluationStatus.SUBMITTED,
+        )
+        cycle = get_open_cycle()
+        own = own.filter(cycle=cycle) if cycle else own.exclude(cycle__status=CycleStatus.DRAFT)
+        return qs.annotate(
+            is_evaluated_by_viewer=Exists(own),
+            evaluation_id_by_viewer=Subquery(
+                own.order_by("-submitted_at").values("public_id")[:1],
+                output_field=UUIDField(),
+            ),
+        )
+    return qs.annotate(
+        is_evaluated_by_viewer=Value(False, output_field=BooleanField()),
+        evaluation_id_by_viewer=Value(None, output_field=UUIDField(null=True)),
+    )
+
+
 def get_public_self_evaluation(*, user) -> dict | None:
     """Latest visible self-evaluation (evaluator == recipient == user) for public display."""
     evaluation = (
@@ -304,6 +365,24 @@ def received_rating_rows(*, evaluation_ids) -> list[dict]:
         EvaluationRating.objects.filter(evaluation_id__in=evaluation_ids).values(
             "evaluation_id", "criterion_version_id", "value"
         )
+    )
+
+
+def received_contributor_counts(*, evaluation_ids) -> tuple[dict[int, int], dict[tuple, int]]:
+    """Anonymous contributor counts, never contributor identities (PRIV-02).
+
+    Resubmissions from one person cannot satisfy the minimum group size.
+    """
+    ratings = EvaluationRating.objects.filter(evaluation_id__in=evaluation_ids, value__isnull=False)
+    versions = ratings.values("criterion_version_id").annotate(
+        n=Count("evaluation__evaluator_id", distinct=True)
+    )
+    buckets = ratings.values("evaluation__cycle_id", "criterion_version_id").annotate(
+        n=Count("evaluation__evaluator_id", distinct=True)
+    )
+    return (
+        {r["criterion_version_id"]: r["n"] for r in versions},
+        {(r["evaluation__cycle_id"], r["criterion_version_id"]): r["n"] for r in buckets},
     )
 
 

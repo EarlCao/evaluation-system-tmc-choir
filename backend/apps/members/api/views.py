@@ -60,9 +60,7 @@ class RegisterView(APIView):
         data = dict(serializer.validated_data)
         voice_section_id = data.pop("voice_section")
         if request.headers.get("X-Defer-Account-Creation") == "1":
-            result = services.stage_member_registration(
-                voice_section_id=voice_section_id, **data
-            )
+            result = services.stage_member_registration(voice_section_id=voice_section_id, **data)
             return Response(result, status=status.HTTP_201_CREATED)
         user = services.register_member(voice_section_id=voice_section_id, **data)
         mode = get_settings().registration_mode
@@ -92,9 +90,7 @@ class DirectoryView(ListAPIView):
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        return selectors.list_directory(
-            params=self.request.query_params, viewer=self.request.user
-        )
+        return selectors.list_directory(params=self.request.query_params, viewer=self.request.user)
 
 
 class MemberDetailView(APIView):

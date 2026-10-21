@@ -98,7 +98,11 @@ export function AdminEvaluationsPage() {
               gap: 1.5,
             }}
           >
-            <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+            <Stack
+              direction="row"
+              spacing={1.5}
+              sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}
+            >
               <Typography variant="subtitle1" component="h2" sx={{ fontWeight: 700 }}>
                 Filter Evaluations
               </Typography>
@@ -114,7 +118,9 @@ export function AdminEvaluationsPage() {
                   clickable
                   color={!filters.evaluation_type ? "primary" : "default"}
                   variant={!filters.evaluation_type ? "filled" : "outlined"}
-                  onClick={() => update("evaluation_type", "")}
+                  onClick={() => {
+                    update("evaluation_type", "");
+                  }}
                 />
                 <Chip
                   size="small"
@@ -122,7 +128,9 @@ export function AdminEvaluationsPage() {
                   clickable
                   color={filters.evaluation_type === "peer" ? "primary" : "default"}
                   variant={filters.evaluation_type === "peer" ? "filled" : "outlined"}
-                  onClick={() => update("evaluation_type", "peer")}
+                  onClick={() => {
+                    update("evaluation_type", "peer");
+                  }}
                 />
                 <Chip
                   size="small"
@@ -130,7 +138,9 @@ export function AdminEvaluationsPage() {
                   clickable
                   color={filters.evaluation_type === "self" ? "primary" : "default"}
                   variant={filters.evaluation_type === "self" ? "filled" : "outlined"}
-                  onClick={() => update("evaluation_type", "self")}
+                  onClick={() => {
+                    update("evaluation_type", "self");
+                  }}
                 />
               </Stack>
             </Stack>
@@ -235,7 +245,10 @@ export function AdminEvaluationsPage() {
                 <MenuItem value="">All members (About)</MenuItem>
                 {memberList.map((m) => (
                   <MenuItem key={m.public_id} value={m.public_id}>
-                    {m.first_name} {m.last_name}{m.display_name && m.display_name !== `${m.first_name} ${m.last_name}` ? ` (${m.display_name})` : ""}
+                    {m.first_name} {m.last_name}
+                    {m.display_name && m.display_name !== `${m.first_name} ${m.last_name}`
+                      ? ` (${m.display_name})`
+                      : ""}
                   </MenuItem>
                 ))}
               </TextField>
@@ -255,7 +268,10 @@ export function AdminEvaluationsPage() {
                 <MenuItem value="">All members (From)</MenuItem>
                 {memberList.map((m) => (
                   <MenuItem key={m.public_id} value={m.public_id}>
-                    {m.first_name} {m.last_name}{m.display_name && m.display_name !== `${m.first_name} ${m.last_name}` ? ` (${m.display_name})` : ""}
+                    {m.first_name} {m.last_name}
+                    {m.display_name && m.display_name !== `${m.first_name} ${m.last_name}`
+                      ? ` (${m.display_name})`
+                      : ""}
                   </MenuItem>
                 ))}
               </TextField>

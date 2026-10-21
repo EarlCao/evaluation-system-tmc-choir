@@ -1,3 +1,5 @@
+import { apiUrl } from "./apiClient";
+
 export type ReportKind = "choir" | "member" | "participation" | "evaluations";
 export type FileType = "csv" | "xlsx" | "pdf";
 
@@ -8,5 +10,5 @@ export function exportUrl(report: ReportKind, fileType: FileType, filters: objec
   for (const [key, value] of Object.entries(filters)) {
     if (typeof value === "string" && value) params.set(key, value);
   }
-  return `/api/v1/admin/reports/export/?${params.toString()}`;
+  return apiUrl(`/admin/reports/export/?${params.toString()}`);
 }

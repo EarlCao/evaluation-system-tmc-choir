@@ -58,3 +58,5 @@ Thumbs.db
 desktop.ini
 .agents/
 
+# Local verification logs (never deployment input).
+.readiness/

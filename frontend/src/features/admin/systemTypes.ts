@@ -78,4 +78,3 @@ export interface RetentionCleanupResult {
   purged_revisions: number;
   purged_audit_logs: number;
 }
-

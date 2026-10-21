@@ -6,6 +6,10 @@ status: backend (3.2) + UI (3.3) implemented
 ---
 # Module: Feedback (anonymised read model)
 
+Deployment review (2026-10-21): aggregate thresholds count **distinct evaluators**.
+Trends exclude criterion/cycle buckets below the threshold; missing ratings and
+resubmissions cannot satisfy a privacy floor. See [[Deployment Readiness 2026-10-20]].
+
 **Backend:** `apps/feedback` (**no models**) · **Frontend:** `features/feedback`
 **Requirements:** FB-01..06, MINE-05, MINE-06, REP-02, REP-04, REP-06 · **Rules:** BR-03, BR-06, BR-15, BR-16
 

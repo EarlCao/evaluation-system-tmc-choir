@@ -49,8 +49,8 @@ export default defineConfig({
     include: ["src/**/*.test.{ts,tsx}"],
     restoreMocks: true,
     testTimeout: 15_000, // form tests type into many fields
-    // Half the cores: jsdom + MUI tests starve on busy machines when every core runs a worker.
-    maxWorkers: "50%",
+    // One worker keeps jsdom + MUI within the shared developer host's memory budget.
+    maxWorkers: 1,
     css: false,
   },
 });

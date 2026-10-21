@@ -74,10 +74,7 @@ export function MemberNav({ onNavigate }: MemberNavProps = {}) {
       >
         Member Workspace
       </Typography>
-      <Stack
-        direction="column"
-        spacing={0.5}
-      >
+      <Stack direction="column" spacing={0.5}>
         {LINKS.map((link) => (
           <Button
             key={link.to}
@@ -115,5 +112,3 @@ export function MemberNav({ onNavigate }: MemberNavProps = {}) {
     </Box>
   );
 }
-
-

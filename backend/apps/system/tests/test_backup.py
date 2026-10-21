@@ -1,4 +1,3 @@
-import io
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
@@ -29,9 +28,7 @@ def test_backup_create_list_download_delete(
     assert (tmp_path / filename).exists()
     assert (tmp_path / f"{filename}.sha256").exists()
     assert (tmp_path / f"{filename}.meta.json").exists()
-    assert AuditLog.objects.filter(
-        event_type="system.backup.created", target_id=filename
-    ).exists()
+    assert AuditLog.objects.filter(event_type="system.backup.created", target_id=filename).exists()
 
     # 2. List backups
     list_resp = admin_client_api.get(reverse("system-admin:backup-list"))
@@ -77,9 +74,7 @@ def test_backup_create_list_download_delete(
     )
     assert del_resp.status_code == 204
     assert not (tmp_path / filename).exists()
-    assert AuditLog.objects.filter(
-        event_type="system.backup.deleted", target_id=filename
-    ).exists()
+    assert AuditLog.objects.filter(event_type="system.backup.deleted", target_id=filename).exists()
 
 
 def test_backup_restore_invalid_inputs(admin_client_api, tmp_path, monkeypatch):
@@ -127,3 +122,20 @@ def test_member_forbidden_from_backup_endpoints(member_client):
     assert member_client.post(reverse("system-admin:backup-restore")).status_code == 403
     assert member_client.post(reverse("system-admin:data-cleanup")).status_code == 403
 
+
+def test_backup_without_metadata_can_be_listed(tmp_path, monkeypatch):
+    monkeypatch.setattr(backup, "get_backup_dir", lambda: tmp_path)
+    (tmp_path / "legacy.json.gz").write_bytes(b"placeholder")
+    assert backup.list_backups()[0]["created_at"].endswith("+00:00")
+
+
+def test_restore_rejects_checksum_changes_before_writing(super_admin, tmp_path, monkeypatch):
+    from apps.core.exceptions import ValidationError
+
+    monkeypatch.setattr(backup, "get_backup_dir", lambda: tmp_path)
+    metadata = backup.create_backup(actor=super_admin)
+    archive = tmp_path / metadata["filename"]
+    archive.write_bytes(archive.read_bytes() + b"tampered")
+    with pytest.raises(ValidationError, match="highlighted"):
+        backup.restore_backup(filename=metadata["filename"], actor=super_admin)
+    assert not AuditLog.objects.filter(event_type="system.database.restored").exists()

@@ -42,9 +42,7 @@ class SettingsUpdateSerializer(serializers.Serializer):
     min_aggregate_group_size = serializers.IntegerField(
         min_value=MIN_AGGREGATE_GROUP_SIZE_FLOOR, max_value=50, required=False
     )
-    min_comment_prompts = serializers.IntegerField(
-        min_value=1, max_value=50, required=False
-    )
+    min_comment_prompts = serializers.IntegerField(min_value=1, max_value=50, required=False)
     feedback_notification_debounce_minutes = serializers.IntegerField(
         min_value=0, max_value=1440, required=False
     )
@@ -76,8 +74,14 @@ class RestoreRequestSerializer(serializers.Serializer):
     file = serializers.FileField(required=False)
 
 
+class RestoreResultSerializer(serializers.Serializer):
+    status = serializers.CharField()
+    message = serializers.CharField()
+    records_count = serializers.IntegerField()
+    sha256 = serializers.CharField()
+
+
 class RetentionCleanupResponseSerializer(serializers.Serializer):
     purged_evaluations = serializers.IntegerField()
     purged_revisions = serializers.IntegerField()
     purged_audit_logs = serializers.IntegerField()
-

@@ -85,7 +85,9 @@ def on_email_verified(event: account_events.EmailVerified) -> None:
         and user.member_profile.officer_position
     ):
         officer_label = f" ({user.member_profile.officer_position})"
-    message = f"{name} (@{user.username}){officer_label} has verified their OTP and created an account."
+    message = (
+        f"{name} (@{user.username}){officer_label} has verified their OTP and created an account."
+    )
     if len(message) > 200:
         message = f"{name} (@{user.username}) has verified their OTP and created an account."
     if len(message) > 200:

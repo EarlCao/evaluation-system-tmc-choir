@@ -180,9 +180,7 @@ class CommentPromptDetailView(AdminView):
             **data.validated_data,
         )
         return Response(
-            s.CommentPromptSerializer(
-                selectors.get_comment_prompt(public_id=prompt.public_id)
-            ).data
+            s.CommentPromptSerializer(selectors.get_comment_prompt(public_id=prompt.public_id)).data
         )
 
     @extend_schema(request=None, responses={204: None})
@@ -210,9 +208,7 @@ class CommentPromptReorderView(AdminView):
         services.reorder_comment_prompts(
             actor=request.user, ordered_public_ids=[str(u) for u in data.validated_data["order"]]
         )
-        return Response(
-            s.CommentPromptSerializer(selectors.list_comment_prompts(), many=True).data
-        )
+        return Response(s.CommentPromptSerializer(selectors.list_comment_prompts(), many=True).data)
 
 
 # Form versions -----------------------------------------------------------------

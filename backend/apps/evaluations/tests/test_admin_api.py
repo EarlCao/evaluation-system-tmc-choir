@@ -210,6 +210,6 @@ def test_create_and_delete_category(admin_client_api, super_admin):
     deleted = admin_client_api.delete(url("category", cat_id))
     assert deleted.status_code == 204
     criterion.refresh_from_db()
-    assert criterion.category_id is None
+    assert criterion.category_id == cat_id
+    assert criterion.category.is_archived is True
     assert not any(c["id"] == cat_id for c in admin_client_api.get(url("categories")).json())
-

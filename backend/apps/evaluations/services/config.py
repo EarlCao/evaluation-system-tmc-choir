@@ -104,13 +104,7 @@ def update_category(*, actor, category: CriterionCategory, **changes) -> Criteri
 
 
 def delete_category(*, actor, category: CriterionCategory) -> None:
-    target_id = category.pk
-    with transaction.atomic():
-        category.criteria.update(category=None)
-        category.delete()
-        publish(
-            events.CategoryChanged(actor_id=_pk(actor), target_id=target_id, action="deleted")
-        )
+    update_category(actor=actor, category=category, is_archived=True)
 
 
 # ---------------------------------------------------------------------------
@@ -349,23 +343,7 @@ def archive_criterion(*, actor, criterion: RatingCriterion) -> RatingCriterion:
 
 
 def delete_criterion(*, actor, criterion: RatingCriterion) -> None:
-    target_id = str(criterion.public_id)
-    with transaction.atomic():
-        version_ids = list(criterion.versions.values_list("id", flat=True))
-        if version_ids:
-            models.QuerySet.delete(
-                EvaluationRating.objects.filter(criterion_version_id__in=version_ids)
-            )
-            models.QuerySet.delete(
-                FormVersionItem.objects.filter(criterion_version_id__in=version_ids)
-            )
-        RatingCriterion.objects.filter(pk=criterion.pk).update(current_version=None)
-        if version_ids:
-            models.QuerySet.delete(CriterionVersion.objects.filter(id__in=version_ids))
-        criterion.delete()
-        publish(
-            events.CriterionChanged(actor_id=_pk(actor), target_id=target_id, action="deleted")
-        )
+    archive_criterion(actor=actor, criterion=criterion)
 
 
 # ---------------------------------------------------------------------------
@@ -383,9 +361,7 @@ FORM_FIELDS = (
 
 def _clean_comment_prompts(raw: Sequence[dict]) -> list[dict]:
     if not isinstance(raw, Sequence) or isinstance(raw, str | bytes) or len(raw) == 0:
-        raise ValidationError(
-            fields={"comment_prompts": ["Include at least one comment prompt."]}
-        )
+        raise ValidationError(fields={"comment_prompts": ["Include at least one comment prompt."]})
     cleaned: list[dict] = []
     seen_keys: set[str] = set()
     for i, item in enumerate(raw, start=1):
@@ -496,9 +472,10 @@ def create_form_version(*, actor, criteria: Sequence[str], **fields) -> FormVers
     if unknown:
         raise ValidationError(fields={f: ["Unknown field."] for f in sorted(unknown)})
     fields = _clean_form_fields({"title": fields.pop("title", ""), **fields})
-    if "comment_prompts" not in fields and CommentPrompt.objects.filter(
-        is_archived=False, is_active=True
-    ).exists():
+    if (
+        "comment_prompts" not in fields
+        and CommentPrompt.objects.filter(is_archived=False, is_active=True).exists()
+    ):
         active_prompts = list(
             CommentPrompt.objects.filter(is_archived=False, is_active=True).order_by(
                 "sort_order", "id"
@@ -828,7 +805,9 @@ def apply_retention(*, actor=None, now=None) -> dict[str, int]:
         if cfg.retention_revisions_days is not None and cfg.retention_revisions_days > 0:
             rev_cutoff = moment - timedelta(days=int(cfg.retention_revisions_days))
             purged_revisions, _ = models.QuerySet.delete(
-                EvaluationRevision.objects.filter(created_at__lt=rev_cutoff)
+                EvaluationRevision.objects.filter(created_at__lt=rev_cutoff).exclude(
+                    revision_number=models.F("evaluation__current_revision_number")
+                )
             )
 
         purged_audit_logs = audit_services.purge_expired_logs(
@@ -856,5 +835,3 @@ def apply_retention(*, actor=None, now=None) -> dict[str, int]:
         "purged_revisions": purged_revisions,
         "purged_audit_logs": purged_audit_logs,
     }
-
-

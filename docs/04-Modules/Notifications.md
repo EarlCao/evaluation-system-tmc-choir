@@ -6,6 +6,11 @@ status: implemented (5.1 model + REST, 5.2 handlers + delivery + consumers, 5.3 
 ---
 # Module: Notifications
 
+Deployment review (2026-10-21): migration `0004_alter_notification_type` reconciles
+notification choices. Docker and Render production configurations include a worker
+and require shared Redis. WebSocket origins use explicit `CSRF_TRUSTED_ORIGINS`.
+See [[Deployment Readiness 2026-10-20]].
+
 **Backend:** `apps/notifications` · **Frontend:** `features/notifications`
 **Requirements:** RT-01..06
 

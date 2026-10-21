@@ -48,6 +48,13 @@ async function fillAndSubmit(identifier: string, password: string) {
 }
 
 describe("LoginPage", () => {
+  it("keeps the skip link as the first keyboard tab stop", async () => {
+    renderRoute("/login");
+    await screen.findByRole("heading", { name: /^Log in$/ });
+    await userEvent.tab();
+    expect(screen.getByRole("link", { name: "Skip to content" })).toHaveFocus();
+  });
+
   it("validates required fields on the client", async () => {
     renderRoute("/login");
     await userEvent.click(await screen.findByRole("button", { name: /^log in$/i }));
@@ -147,5 +154,3 @@ describe("LoginPage", () => {
     expect(screen.getByRole("button", { name: /switch to light mode/i })).toBeVisible();
   });
 });
-
-

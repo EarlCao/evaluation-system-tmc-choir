@@ -57,4 +57,3 @@ class MyDataExportSerializer(serializers.Serializer):
     member_profile = serializers.DictField(allow_null=True)
     evaluations_given = serializers.ListField(child=serializers.DictField())
     feedback_received = serializers.DictField()
-

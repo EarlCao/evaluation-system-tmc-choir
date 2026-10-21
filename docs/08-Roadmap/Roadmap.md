@@ -92,3 +92,9 @@ tags: [roadmap]
   member data export and deactivation workflow.
 - [x] **6.5 Final acceptance**: walk through [[Acceptance Checklist]] with evidence.
 
+## Phase 7: Deployment readiness review
+- [x] **7.1 Pre-deployment audit and remediation** (user request 2026-10-20): review all
+  modules, fix verified security and deployment defects, reconcile migrations and
+  acceptance evidence, and run backend, frontend, browser, and production checks.
+  - Done when: checks pass and [[Deployment Readiness 2026-10-20]] records the actual
+    results, deployment procedure, and any infrastructure-dependent launch gates.

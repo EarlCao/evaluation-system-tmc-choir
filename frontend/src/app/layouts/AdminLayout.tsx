@@ -34,7 +34,9 @@ export function AdminLayout() {
       <AppHeader
         home="/admin"
         badge="Super Admin"
-        onOpenMobileNav={() => setMobileNavOpen(true)}
+        onOpenMobileNav={() => {
+          setMobileNavOpen(true);
+        }}
       >
         <NotificationBell base="/admin" />
         <AccountMenu />
@@ -44,7 +46,9 @@ export function AdminLayout() {
       <Drawer
         anchor="left"
         open={mobileNavOpen}
-        onClose={() => setMobileNavOpen(false)}
+        onClose={() => {
+          setMobileNavOpen(false);
+        }}
         ModalProps={{ keepMounted: true }}
         slotProps={{
           paper: {
@@ -82,7 +86,9 @@ export function AdminLayout() {
             </Typography>
           </Box>
           <IconButton
-            onClick={() => setMobileNavOpen(false)}
+            onClick={() => {
+              setMobileNavOpen(false);
+            }}
             aria-label="Close navigation menu"
             size="small"
           >
@@ -92,7 +98,11 @@ export function AdminLayout() {
           </IconButton>
         </Box>
         <Box sx={{ flexGrow: 1, overflowY: "auto", overscrollBehavior: "contain" }}>
-          <AdminNav onNavigate={() => setMobileNavOpen(false)} />
+          <AdminNav
+            onNavigate={() => {
+              setMobileNavOpen(false);
+            }}
+          />
         </Box>
       </Drawer>
 
@@ -141,4 +151,3 @@ export function AdminLayout() {
     </Box>
   );
 }
-

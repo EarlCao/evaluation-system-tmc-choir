@@ -52,8 +52,10 @@ services:
       DJANGO_DEBUG: "False"
       DATABASE_URL: mysql://${MYSQL_USER:-choir}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-choir_eval}
       REDIS_URL: redis://redis:6379/0
+      BACKUP_DIR: /app/backups
     volumes:
       - static_files:/app/backend/staticfiles
+      - backup_files:/app/backups
 
   worker:
     build:
@@ -74,6 +76,8 @@ services:
       - sh
       - -c
       - while true; do python manage.py close_expired_cycles; python manage.py deliver_notifications; python manage.py apply_retention; sleep 60; done
+    healthcheck:
+      disable: true
 
   nginx:
     build:
@@ -94,3 +98,4 @@ volumes:
   mysql_data:
   redis_data:
   static_files:
+  backup_files:

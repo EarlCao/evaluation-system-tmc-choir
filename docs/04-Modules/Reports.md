@@ -82,4 +82,3 @@ Step 2.3: the dashboard adds `open_cycle {public_id, name, ends_at, evaluations_
   returns `{account, member_profile, evaluations_given, feedback_received}` for the authenticated member. `feedback_received`
   comes exclusively from `feedback.selectors.{list_received, summary}` so evaluator identities of other members never appear
   (verified by `test_privacy_sweep.py` and `test_data_management.py`). Records `accounts.data_export.generated` in the audit log.
-

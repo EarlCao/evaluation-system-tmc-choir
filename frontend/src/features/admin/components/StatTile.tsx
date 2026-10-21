@@ -69,4 +69,3 @@ export function StatTile({ label, value, hint, to }: StatTileProps) {
     </Card>
   );
 }
-

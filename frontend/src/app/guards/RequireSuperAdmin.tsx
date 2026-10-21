@@ -19,4 +19,3 @@ export function RequireSuperAdmin() {
   if (!state.user.is_super_admin) return <Navigate to="/app" replace />;
   return <Outlet />;
 }
-

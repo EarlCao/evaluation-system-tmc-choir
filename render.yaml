@@ -4,15 +4,15 @@ services:
     runtime: python
     rootDir: backend
     buildCommand: "./build.sh"
-    startCommand: "daphne -b 0.0.0.0 -p $PORT config.asgi:application"
-    healthCheckPath: /api/v1/health/live/
+    startCommand: "python manage.py migrate --noinput && daphne -b 0.0.0.0 -p $PORT config.asgi:application"
+    healthCheckPath: /api/v1/health/
     envVars:
       - key: PYTHON_VERSION
-        value: "3.12.7"
+        value: "3.12.15"
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings.prod
       - key: DJANGO_SECRET_KEY
-        generateValue: true
+        sync: false # Generate at least 50 characters (see the deployment guide).
       - key: FEEDBACK_ID_KEY
         generateValue: true
       - key: DJANGO_ALLOWED_HOSTS
@@ -34,7 +34,9 @@ services:
       - key: DB_SSL_CA_CERT
         sync: false
       - key: REDIS_URL
-        value: "memory://"
+        sync: false
+      - key: BACKUP_DIR
+        value: /var/data/backups
       - key: EMAIL_BACKEND
         value: django.core.mail.backends.smtp.EmailBackend
       - key: EMAIL_HOST
@@ -49,3 +51,59 @@ services:
         sync: false
       - key: DEFAULT_FROM_EMAIL
         sync: false
+    disk:
+      name: choir-backups
+      mountPath: /var/data
+      sizeGB: 1
+
+  # Worker shares the web service's keys and datastore configuration.
+  - type: worker
+    name: tmc-choir-eval-worker
+    runtime: python
+    rootDir: backend
+    buildCommand: "pip install -r requirements/prod.txt"
+    startCommand: "sh -c 'while true; do python manage.py close_expired_cycles; python manage.py deliver_notifications; python manage.py apply_retention; sleep 60; done'"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.15"
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: EMAIL_BACKEND
+        value: django.core.mail.backends.smtp.EmailBackend
+      - key: DB_SSL_REQUIRED
+        value: "True"
+      - key: DJANGO_SECRET_KEY
+        fromService:
+          name: tmc-choir-eval-backend
+          type: web
+          envVarKey: DJANGO_SECRET_KEY
+      - key: FEEDBACK_ID_KEY
+        fromService:
+          name: tmc-choir-eval-backend
+          type: web
+          envVarKey: FEEDBACK_ID_KEY
+      - key: DJANGO_ALLOWED_HOSTS
+        fromService:
+          name: tmc-choir-eval-backend
+          type: web
+          envVarKey: DJANGO_ALLOWED_HOSTS
+      - key: FRONTEND_URL
+        fromService:
+          name: tmc-choir-eval-backend
+          type: web
+          envVarKey: FRONTEND_URL
+      - key: DATABASE_URL
+        fromService:
+          name: tmc-choir-eval-backend
+          type: web
+          envVarKey: DATABASE_URL
+      - key: DB_SSL_CA_CERT
+        fromService:
+          name: tmc-choir-eval-backend
+          type: web
+          envVarKey: DB_SSL_CA_CERT
+      - key: REDIS_URL
+        fromService:
+          name: tmc-choir-eval-backend
+          type: web
+          envVarKey: REDIS_URL

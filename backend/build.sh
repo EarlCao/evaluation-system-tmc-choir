@@ -2,8 +2,7 @@
 # Render build script for TMC Choir Evaluation System backend (Django + Daphne + Aiven MySQL)
 set -o errexit
 
-pip install --upgrade pip
-pip install -r requirements.txt
+pip install -r requirements/prod.txt
 
 python manage.py collectstatic --no-input
-python manage.py migrate --no-input
+# Migrations run as a release step, never while building an image.

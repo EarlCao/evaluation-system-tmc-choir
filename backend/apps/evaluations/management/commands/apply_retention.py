@@ -10,11 +10,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         result = services.apply_retention()
-        if (
-            result["purged_evaluations"]
-            or result["purged_audit_logs"]
-            or options["verbosity"] > 1
-        ):
+        if result["purged_evaluations"] or result["purged_audit_logs"] or options["verbosity"] > 1:
             self.stdout.write(
                 f"Retention applied: purged {result['purged_evaluations']} evaluation(s) "
                 f"and {result['purged_audit_logs']} audit log entry/entries."
