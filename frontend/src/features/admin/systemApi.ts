@@ -1,7 +1,13 @@
 import { apiClient, apiUrl } from "@/lib/apiClient";
 import type { Paginated } from "@/lib/pagination";
 
-import type { AdminSettings, AuditEntry, AuditFilters, SettingsInput } from "./systemTypes";
+import type {
+  AdminSettings,
+  AuditDeleteInput,
+  AuditEntry,
+  AuditFilters,
+  SettingsInput,
+} from "./systemTypes";
 
 export async function fetchAdminSettings(): Promise<AdminSettings> {
   return (await apiClient.get<AdminSettings>("/admin/settings/")).data;
@@ -29,13 +35,16 @@ export async function fetchAuditEventTypes(): Promise<string[]> {
   return (await apiClient.get<string[]>("/admin/audit-logs/event-types/")).data;
 }
 
-export async function deleteAuditLog(id: number): Promise<void> {
-  await apiClient.delete(`/admin/audit-logs/${String(id)}/`);
+export async function deleteAuditLog(
+  input: AuditDeleteInput & { id: number },
+): Promise<{ deleted: number }> {
+  const { id, ...data } = input;
+  return (await apiClient.delete<{ deleted: number }>(`/admin/audit-logs/${String(id)}/`, { data }))
+    .data;
 }
 
-export async function clearAuditLogs(f?: AuditFilters): Promise<{ deleted: number }> {
-  const params = f ? auditParams(f) : undefined;
-  return (await apiClient.delete<{ deleted: number }>("/admin/audit-logs/", { params })).data;
+export async function clearAuditLogs(data: AuditDeleteInput): Promise<{ deleted: number }> {
+  return (await apiClient.delete<{ deleted: number }>("/admin/audit-logs/", { data })).data;
 }
 
 /** Plain download link (session cookie); the export is itself audited (AUD-04). */

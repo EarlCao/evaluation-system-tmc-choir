@@ -3,6 +3,12 @@ tags: [testing, deployment, security]
 ---
 # Deployment readiness review · 20–21 October 2026
 
+Subsequent user-approved change: step 7.2 / ADR-022 adds password/reason-confirmed
+Super Admin audit deletion and typed Clear All with retained deletion receipts.
+That narrowly supersedes this review's original removal of manual deletion. See
+[[Audit]] and [[Progress Log]] for current behavior and verification; the original
+test counts below describe the completed step 7.1 snapshot.
+
 ## Decision
 
 The original checkout was **not ready to deploy**. Its checked roadmap did not match the

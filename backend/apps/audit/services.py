@@ -11,15 +11,17 @@ from datetime import timedelta
 from typing import Any
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import check_password
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
-from apps.core.exceptions import ValidationError
+from apps.core.exceptions import BusinessRuleViolation, NotFound, PermissionDenied, ValidationError
 from apps.core.exports import CONTENT_TYPES, Document, Table, render
 from apps.core.middleware import get_request_context
 
 from . import selectors
+from .constants import CLEAR_CONFIRMATION, DELETION_EVENTS
 from .models import AuditLog
 
 REDACTED = "[REDACTED]"
@@ -148,4 +150,42 @@ def purge_expired_logs(*, retention_days: int | None, now=None) -> int:
     cutoff = (now or timezone.now()) - timedelta(days=int(retention_days))
     qs = AuditLog.objects.filter(occurred_at__lt=cutoff)
     deleted, _ = models.QuerySet.delete(qs)
+    return deleted
+
+
+@transaction.atomic
+def delete_logs(
+    *, actor: Any, password: str, reason: str, pk: int | None = None, confirmation: str = ""
+) -> int:
+    """AUD-03 / ADR-022: explicit privileged exception, never ordinary ORM deletion."""
+    if not getattr(actor, "is_authenticated", False) or not getattr(actor, "is_super_admin", False):
+        raise PermissionDenied()
+    # No setter: password verification must not modify an account owned by another module.
+    if not check_password(password, actor.password):
+        raise ValidationError(fields={"password": ["Your password is incorrect."]})
+    reason = reason.strip()
+    if not reason or len(reason) > 500:
+        raise ValidationError(fields={"reason": ["Enter a reason of 1-500 characters."]})
+    if pk is None and confirmation != CLEAR_CONFIRMATION:
+        raise ValidationError(fields={"confirmation": [f"Type {CLEAR_CONFIRMATION} to confirm."]})
+
+    entries = AuditLog.objects.all()
+    if pk is not None:
+        entry = entries.filter(pk=pk).first()
+        if entry is None:
+            raise NotFound()
+        if entry.event_type in DELETION_EVENTS:
+            raise BusinessRuleViolation("Deletion receipts cannot be removed manually.")
+        entries = entries.filter(pk=pk)
+    else:
+        entries = entries.exclude(event_type__in=DELETION_EVENTS)
+
+    deleted, _ = models.QuerySet.delete(entries)
+    record(
+        actor=actor,
+        event_type=DELETION_EVENTS[0] if pk is not None else DELETION_EVENTS[1],
+        target_type="audit.AuditLog",
+        target_id=pk,
+        metadata={"deleted_count": deleted, "reason": reason},
+    )
     return deleted

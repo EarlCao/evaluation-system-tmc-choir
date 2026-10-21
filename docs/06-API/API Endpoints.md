@@ -98,8 +98,15 @@ Export query: `report` = `choir` | `member` (+ `member`) | `participation` (+ `c
 |---|---|---|---|---|---|
 | GET | `/api/v1/admin/audit-logs/` (filters: search, event_type (exact or `prefix.`), actor, target_type, target_id, occurred_from/to) | A | AUD-04 | 4 | ✅ |
 | GET | `/api/v1/admin/audit-logs/event-types/` | A | AUD-04 | 4 | ✅ |
-| GET | `/api/v1/admin/audit-logs/{id}/` (read-only: PUT/PATCH/DELETE → 405) | A | AUD-03, AUD-04 | 4 | ✅ |
+| GET | `/api/v1/admin/audit-logs/{id}/` (PUT/PATCH → 405) | A | AUD-03, AUD-04 | 4 | ✅ |
+| DELETE | `/api/v1/admin/audit-logs/{id}/` (password + reason; protected receipts → 409) | A | AUD-03 / ADR-022 | 7 | ✅ |
+| DELETE | `/api/v1/admin/audit-logs/` (password + reason + confirmation=`DELETE ALL LOGS`; clears ordinary entries across all filters, retains receipts) | A | AUD-03 / ADR-022 | 7 | ✅ |
 | GET | `/api/v1/admin/audit-logs/export/?file_type=csv\|xlsx` (+ filters; max 50 000 rows; audited as `audit.export.generated`) | A | AUD-04 | 4 | ✅ |
+
+Audit deletion bodies are JSON; both return `{ "deleted": count }` (200). Required
+session CSRF protection applies. Five attempts/minute/user across both DELETE methods;
+wrong/missing confirmations return 400, missing records 404, unauthorized callers
+401/403. The deletion and its retained receipt commit or roll back together.
 
 ## System (`apps/system`)
 | Method | Path | Perm | Req | Phase | Status |

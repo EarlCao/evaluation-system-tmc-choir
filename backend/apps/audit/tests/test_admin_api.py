@@ -49,11 +49,13 @@ def test_only_super_admins(api_client, member_client, name):
 
 
 def test_read_only(logs, admin_client_api):
-    """AUD-03: there is no way to change or delete an entry through the API."""
+    """AUD-03: updates remain forbidden; deletion requires explicit confirmation (ADR-022)."""
     entry = logs.first()
-    for method in ("put", "patch", "delete"):
+    for method in ("put", "patch"):
         assert getattr(admin_client_api, method)(url("log", entry.pk), {}).status_code == 405
     assert admin_client_api.post(url("logs"), {}).status_code == 405
+    assert admin_client_api.delete(url("log", entry.pk), {}).status_code == 400
+    assert logs.filter(pk=entry.pk).exists()
 
 
 def test_list_newest_first_with_actor(logs, admin_client_api, member):

@@ -33,8 +33,28 @@ Format: [[ADR Template]]. Status: Proposed · Accepted · Superseded.
 | ADR-019 | Containerised dev stack (backend + frontend services in docker-compose) | Accepted | 2026-10-18 |
 | ADR-020 | Feedback notices: pending rows + worker/lazy delivery; enriched events; best-effort WS push | Accepted | 2026-10-18 |
 | ADR-021 | Deployment hardening: shared challenges, explicit origins, immutable history and recovery | Accepted | 2026-10-21 |
+| ADR-022 | Explicitly confirmed Super Admin audit deletion with retained receipts | Accepted (user request) | 2026-10-21 |
 
 ---
+
+### ADR-022: Controlled audit-log deletion
+**Context:** after being told that deletion changes the append-only policy, the user
+explicitly requested single-entry deletion and Clear All. This is step 7.2 and
+supersedes ADR-021's absolute prohibition on manual audit deletion only.
+**Decision:** keep model-level append-only guards and immutable evaluation revisions.
+Only active Super Admins may call a dedicated atomic deletion service/API, supplying
+their current password and a reason; bulk clearing also requires the exact phrase
+`DELETE ALL LOGS`. Session CSRF and five deletion attempts/minute/user apply. Clear
+All affects ordinary entries across every filter, explicitly stated in the dialog.
+Each action records actor, target where applicable, reason and deleted count in a
+new receipt. Manual deletion excludes/rejects receipt events; policy-based age
+retention remains available. Failure to record the receipt rolls back the deletion.
+**Consequences:** Super Admins can intentionally erase ordinary historical activity;
+the audit is no longer an undeletable record of all actions. Minimal deletion receipts
+remain, but do not reconstruct removed content. Export/back up first; recovering
+removed entries requires a prior backup. This feature does not delete any existing
+logs during implementation or tests; destructive browser tests enforce the isolated
+E2E environment. No new packages or schema migrations are required.
 
 ### ADR-021: Deployment hardening and recovery
 **Context:** the readiness audit found process-local registration state, approval and

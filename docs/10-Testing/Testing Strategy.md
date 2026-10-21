@@ -51,6 +51,11 @@ stays strict without false positives. Integer PKs are additionally checked by ke
 - [x] Every `/admin/` endpoint returns 403 for members and 401 for anonymous users (`apps/core/tests/test_permission_matrix.py`)
 - [x] Privacy test on: feedback list/summary/count, dashboard, notifications list + WS messages, member directory/profile, own data export (`apps/feedback/tests/test_privacy_sweep.py`, `apps/core/tests/test_data_management.py`)
 - [x] Append-only: AuditLog, EvaluationRevision, ModerationAction (`apps/core/tests/test_models.py`, `apps/evaluations/tests/test_moderation.py`)
+- [x] ADR-022 audit deletion exception: active-admin permission matrix, password/reason/typed
+  confirmation, CSRF rejection and success, rate limits, retained receipts and transactional
+  rollback (`apps/audit/tests/test_deletion.py`). UI cancellation/errors/refetch and bulk
+  scope in `AdminAuditDeletion.test.tsx`; browser coverage in `06-audit-deletion.spec.ts`
+  runs only with the isolated-stack authorization flag.
 - [x] Thresholds: suppression with n=0,1,2 and display at n=3 (`apps/feedback/tests/test_feedback.py`, `test_contributor_privacy.py`)
 - [x] Averages exclude missing ratings (`apps/feedback/tests/test_feedback.py`, `test_contributor_privacy.py`)
 - [x] Module boundary & dependency DAG enforcement (`apps/core/tests/test_module_boundaries.py`)

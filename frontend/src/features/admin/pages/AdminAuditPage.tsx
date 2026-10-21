@@ -1,3 +1,4 @@
+import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Collapse from "@mui/material/Collapse";
@@ -18,13 +19,19 @@ import { Fragment, useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 
 import { ErrorState } from "@/components/ErrorState";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { formatDateTime } from "@/lib/datetime";
-import { isApiError } from "@/lib/errors";
+import { flattenFieldErrors, isApiError } from "@/lib/errors";
 import { pageCount } from "@/lib/pagination";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
 
 import { auditExportUrl } from "../systemApi";
-import { useAuditEventTypes, useAuditLogs } from "../systemQueries";
+import {
+  useAuditEventTypes,
+  useAuditLogs,
+  useClearAuditLogs,
+  useDeleteAuditLog,
+} from "../systemQueries";
 import type { AuditEntry, AuditFilters } from "../systemTypes";
 
 const FILTER_KEYS = ["event_type", "actor", "occurred_from", "occurred_to"] as const;
@@ -48,7 +55,13 @@ function Json({ label, value }: { label: string; value: unknown }) {
   );
 }
 
-function EntryRow({ entry }: { entry: AuditEntry }) {
+function EntryRow({
+  entry,
+  onDelete,
+}: {
+  entry: AuditEntry;
+  onDelete: (entry: AuditEntry) => void;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <Fragment>
@@ -89,6 +102,18 @@ function EntryRow({ entry }: { entry: AuditEntry }) {
           >
             {open ? "Hide" : "Details"}
           </Button>
+          {!["audit.entry.deleted", "audit.logs.cleared"].includes(entry.event_type) ? (
+            <Button
+              size="small"
+              color="error"
+              aria-label={`Delete entry ${String(entry.id)}`}
+              onClick={() => {
+                onDelete(entry);
+              }}
+            >
+              Delete
+            </Button>
+          ) : null}
         </TableCell>
       </TableRow>
       <TableRow>
@@ -109,7 +134,7 @@ function EntryRow({ entry }: { entry: AuditEntry }) {
   );
 }
 
-/** AUD-03 / AUD-04: append-only audit log with filters and audited exports. */
+/** AUD-03 / AUD-04: guarded audit deletion, filters and audited exports (ADR-022). */
 export function AdminAuditPage() {
   const [params, setParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState(params.get("search") ?? "");
@@ -124,6 +149,58 @@ export function AdminAuditPage() {
   }
   const logs = useAuditLogs(filters);
   const eventTypes = useAuditEventTypes();
+  const deleteLog = useDeleteAuditLog();
+  const clearLogs = useClearAuditLogs();
+  const [target, setTarget] = useState<AuditEntry | "all" | null>(null);
+  const [password, setPassword] = useState("");
+  const [reason, setReason] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const [success, setSuccess] = useState("");
+  const mutation = target === "all" ? clearLogs : deleteLog;
+  const pending = deleteLog.isPending || clearLogs.isPending;
+  const deletionFields = isApiError(mutation.error)
+    ? flattenFieldErrors(mutation.error.fields)
+    : {};
+
+  function closeDeletion() {
+    if (pending) return;
+    setTarget(null);
+    setPassword("");
+    setReason("");
+    setConfirmation("");
+    deleteLog.reset();
+    clearLogs.reset();
+  }
+
+  async function confirmDeletion() {
+    if (target === null || pending) return;
+    try {
+      const input = { password, reason, confirmation };
+      const result =
+        target === "all"
+          ? await clearLogs.mutateAsync(input)
+          : await deleteLog.mutateAsync({ ...input, id: target.id });
+      setSuccess(
+        `${String(result.deleted)} audit ${result.deleted === 1 ? "entry deleted" : "entries deleted"}. Deletion receipts are retained.`,
+      );
+      if (target === "all") {
+        setSearchInput("");
+        setParams({});
+      } else {
+        update("page", "");
+      }
+      // mutateAsync has completed; discard password and all dialog state immediately.
+      setTarget(null);
+      setPassword("");
+      setReason("");
+      setConfirmation("");
+      deleteLog.reset();
+      clearLogs.reset();
+    } catch {
+      // Mutation error stays in the dialog; never report success on a rejected request.
+      setPassword("");
+    }
+  }
 
   const urlSearch = params.get("search") ?? "";
   useEffect(() => {
@@ -161,11 +238,22 @@ export function AdminAuditPage() {
         <Typography variant="h4" component="h1">
           Audit log
         </Typography>
+        <Button
+          color="error"
+          variant="outlined"
+          onClick={() => {
+            setSuccess("");
+            setTarget("all");
+          }}
+        >
+          Clear all logs
+        </Button>
       </Stack>
       <Typography color="text.secondary">
         Every sign-in, account change, evaluation, setting change, moderation decision, export and
         view of evaluator identities.
       </Typography>
+      {success ? <Alert severity="success">{success}</Alert> : null}
 
       {filters.actor ? (
         <Stack direction="row">
@@ -275,7 +363,14 @@ export function AdminAuditPage() {
               </TableHead>
               <TableBody>
                 {logs.data.results.map((entry) => (
-                  <EntryRow key={entry.id} entry={entry} />
+                  <EntryRow
+                    key={entry.id}
+                    entry={entry}
+                    onDelete={(entry) => {
+                      setSuccess("");
+                      setTarget(entry);
+                    }}
+                  />
                 ))}
               </TableBody>
             </Table>
@@ -292,6 +387,67 @@ export function AdminAuditPage() {
           ) : null}
         </>
       )}
+      <ConfirmDialog
+        open={target !== null}
+        title={target === "all" ? "Clear all audit logs?" : "Delete this audit entry?"}
+        description={
+          target === "all"
+            ? "This permanently deletes all ordinary audit entries, including entries outside the current filters. Deletion receipts are retained. Export or back up first; recovery requires an existing backup."
+            : "This permanently deletes the selected audit entry and keeps a deletion receipt. Recovery requires an existing backup."
+        }
+        confirmLabel={target === "all" ? "Clear all logs" : "Delete entry"}
+        destructive
+        pending={pending}
+        confirmDisabled={
+          !password || !reason.trim() || (target === "all" && confirmation !== "DELETE ALL LOGS")
+        }
+        onClose={closeDeletion}
+        onConfirm={() => void confirmDeletion()}
+      >
+        <Stack spacing={2} sx={{ mt: 2 }}>
+          {mutation.isError ? (
+            <Alert severity="error">
+              {Object.values(deletionFields).join(" ") ||
+                (mutation.error instanceof Error
+                  ? mutation.error.message
+                  : "Deletion failed. Please try again.")}
+            </Alert>
+          ) : null}
+          <TextField
+            label="Reason for deletion"
+            value={reason}
+            onChange={(event) => {
+              setReason(event.target.value);
+            }}
+            disabled={pending}
+            required
+            slotProps={{ htmlInput: { maxLength: 500 } }}
+          />
+          <TextField
+            label="Your password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => {
+              setPassword(event.target.value);
+            }}
+            disabled={pending}
+            required
+          />
+          {target === "all" ? (
+            <TextField
+              label="Type DELETE ALL LOGS"
+              value={confirmation}
+              onChange={(event) => {
+                setConfirmation(event.target.value);
+              }}
+              disabled={pending}
+              required
+              autoComplete="off"
+            />
+          ) : null}
+        </Stack>
+      </ConfirmDialog>
     </Stack>
   );
 }

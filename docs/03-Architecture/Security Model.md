@@ -51,14 +51,18 @@ tags: [architecture, security]
   - `register`: 3/hour per IP
   - `password_reset`: 3/hour per IP
   - `evaluation_submit`: 30/hour per user
+  - `audit_delete`: 5/minute per user, shared across single deletion and Clear All
 - Repeated failed logins emit `accounts.user.login_failed`. A burst triggers an
   "unusual activity" admin notification (RT-04).
 
 ## Data integrity
 - `AuditLog`, `EvaluationRevision` and `ModerationAction` inherit `AppendOnlyModel`:
-  `save()` on an existing row and `delete()` raise. No update/delete API exists. In
-  prod, the app DB user may also have `UPDATE`/`DELETE` revoked on those tables
-  (Phase 6 hardening).
+  `save()` on an existing row and `delete()` raise. ADR-022's user-approved exception
+  allows confirmed Super Admin deletion of ordinary audit entries only: current
+  password, reason, CSRF, throttling and typed bulk confirmation. An atomic receipt
+  is retained and cannot itself be manually deleted. No revision/moderation update
+  or delete API exists. The app DB user needs DELETE permission on `audit_auditlog`
+  for this feature and retention; other history tables remain protected.
 - Soft delete or archival everywhere else.
 
 ## Secrets & config

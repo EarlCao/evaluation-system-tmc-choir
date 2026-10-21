@@ -254,7 +254,11 @@ evaluator's identity is a critical bug.
    All configuration comes from env vars through `django-environ`, and every
    variable is documented in `.env.example`.
 8. Audit log and evaluation revisions are **append-only**. Their models block
-   update and delete, and no API exposes update or delete for them.
+   ordinary update and delete. **User-approved exception (2026-10-21, step 7.2):**
+   Super Admins may delete ordinary audit entries through the dedicated service/API
+   after password and reason confirmation; bulk clearing also requires typed
+   confirmation. Each action atomically retains a deletion receipt, which cannot
+   be manually deleted. Evaluation revisions remain immutable. See ADR-022.
 9. Use soft delete or archival (`is_archived`, `status`) instead of hard deletes for
    users, criteria, cycles and evaluations.
 10. Production: HTTPS only, `DEBUG=False`, `manage.py check --deploy` clean,

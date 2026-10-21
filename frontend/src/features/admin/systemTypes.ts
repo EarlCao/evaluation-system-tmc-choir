@@ -78,3 +78,9 @@ export interface RetentionCleanupResult {
   purged_revisions: number;
   purged_audit_logs: number;
 }
+/** Password is sent only in the request body, never persisted in browser storage. */
+export interface AuditDeleteInput {
+  password: string;
+  reason: string;
+  confirmation?: string;
+}

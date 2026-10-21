@@ -98,3 +98,7 @@ tags: [roadmap]
   acceptance evidence, and run backend, frontend, browser, and production checks.
   - Done when: checks pass and [[Deployment Readiness 2026-10-20]] records the actual
     results, deployment procedure, and any infrastructure-dependent launch gates.
+
+- [x] **7.2 Controlled audit-log deletion** (user request 2026-10-21): Super Admin
+  single-entry deletion and Clear All, password/reason confirmation, typed bulk
+  confirmation, retained deletion receipts, CSRF/rate limits and regression tests.

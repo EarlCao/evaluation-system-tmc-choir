@@ -96,7 +96,7 @@ Legend: **Module** = owning module note · **Ph** = roadmap phase ([[Roadmap]])
 |---|---|---|
 | AUD-01 | Record login activity, failed logins, account/role changes, evaluation create/edit, config changes, exports, moderation, admin access to sensitive records. | 1 onward |
 | AUD-02 | Each entry: actor, action, affected record, timestamp, before/after values where appropriate. | 1 |
-| AUD-03 | Logs read-only to members; no routine deletion or alteration. | 1 |
+| AUD-03 | No ordinary ORM deletion or alteration. Only active Super Admins may explicitly delete ordinary logs with password/reason confirmation and a retained deletion receipt; Clear All also requires typed confirmation (ADR-022, user-approved step 7.2). Members have no audit access. | 1, 7 |
 | AUD-04 | Super Admin searches, filters and exports logs. | 4 |
 | AUD-05 | Evaluation version history kept **separate** from general audit logs. | 3 |
 

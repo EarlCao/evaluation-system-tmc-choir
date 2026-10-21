@@ -85,6 +85,10 @@ The current state lives on `Evaluation.moderation_status` / `EvaluationComment.m
 **AuditLog** *(append-only)*: `id`, `occurred_at` (idx), `actor_id`, `actor_role`,
 `event_type` (idx), `target_type` + `target_id` (idx), `before`, `after`, `metadata` (JSON),
 `ip_address`, `user_agent`, `request_id`. Indexes: (target_type, target_id), (actor, -occurred_at)
+Ordinary model writes/deletes remain blocked. Step 7.2 / ADR-022 adds a service-only,
+password-confirmed Super Admin deletion exception for ordinary audit entries.
+Receipts use existing rows/event types (`audit.entry.deleted`, `audit.logs.cleared`)
+with actor, reason and deleted count; manual deletion preserves them. No schema change.
 
 ### notifications
 **Notification**: `id`, `public_id`, `recipient_id`, `type`, `message` (≤ 200, safe text), `link` (relative, ≤ 200), `is_read`, `read_at`,

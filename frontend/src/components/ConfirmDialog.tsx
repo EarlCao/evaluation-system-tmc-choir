@@ -13,6 +13,7 @@ interface ConfirmDialogProps {
   confirmLabel: string;
   destructive?: boolean;
   pending?: boolean;
+  confirmDisabled?: boolean;
   children?: ReactNode;
   onConfirm: () => void;
   onClose: () => void;
@@ -26,6 +27,7 @@ export function ConfirmDialog({
   confirmLabel,
   destructive = false,
   pending = false,
+  confirmDisabled = false,
   children,
   onConfirm,
   onClose,
@@ -51,7 +53,7 @@ export function ConfirmDialog({
           variant="contained"
           color={destructive ? "error" : "primary"}
           onClick={onConfirm}
-          disabled={pending}
+          disabled={pending || confirmDisabled}
         >
           {confirmLabel}
         </Button>

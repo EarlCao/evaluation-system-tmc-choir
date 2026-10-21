@@ -91,7 +91,7 @@ describe("Audit log (AUD-03/04)", () => {
       "href",
       "/api/v1/admin/audit-logs/export/?file_type=csv&event_type=system.settings.changed",
     );
-    expect(screen.queryByRole("button", { name: /remove|delete/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Delete entry 7" })).toBeVisible();
   });
 
   it("searches (debounced) through the URL", async () => {

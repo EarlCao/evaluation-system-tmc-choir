@@ -11,6 +11,16 @@ removed to restore AUD-03. Retention remains the deletion mechanism. Backup down
 are audited; JSON recovery cannot rewrite existing immutable history.
 See [[Deployment Readiness 2026-10-20]].
 
+**Policy update (step 7.2, explicitly requested 2026-10-21):** the Super Admin may
+delete ordinary entries or clear ordinary logs through a guarded exception (ADR-022).
+The API requires the current password and a reason; Clear All additionally requires
+`DELETE ALL LOGS` and applies across filters. Each action atomically writes a retained
+`audit.entry.deleted` or `audit.logs.cleared` receipt with actor, reason and count.
+Receipts cannot be manually deleted (409); age-based retention still applies.
+Existing backups are the only recovery mechanism. Ordinary ORM deletes/updates and
+all evaluation-revision changes remain forbidden. This supersedes the read-only API
+description below only for confirmed DELETE requests.
+
 **Backend:** `apps/audit` · **Frontend:** `features/admin` (audit log viewer)
 **Requirements:** AUD-01..05 · **Rules:** BR-08
 
@@ -55,7 +65,8 @@ payload fields → `metadata`. Entries are written after commit, so rolled-back 
 
 ## API
 `GET /api/v1/admin/audit-logs/` · `GET /api/v1/admin/audit-logs/{id}/` ·
-`GET /api/v1/admin/audit-logs/export/`. **No POST/PUT/PATCH/DELETE.**
+`GET /api/v1/admin/audit-logs/export/`. No POST/PUT/PATCH. DELETE on the collection
+or detail requires the step 7.2 confirmation payload and active Super Admin role.
 
 ## Tests
 Implemented (step 1.3): append-only (instance and queryset update/delete raise; a referenced actor
@@ -69,8 +80,8 @@ Related: [[Security Model]] · [[Module Boundaries]]
 ## Implementation notes (step 4.6): viewer & export
 - `selectors.list_logs(search, event_type, actor, target_type, target_id, occurred_from, occurred_to)` (newest first;
   `event_type` ending in `.` is a prefix), `get_log(pk)`, `list_event_types()`.
-- API (namespace `audit-admin`, Super Admin only): list (paginated), detail, event types, export. **Read-only**: no write
-  methods (405), and `AppendOnlyModel` still refuses updates/deletes underneath (a test fixture that tried to back-date a row
+- API (namespace `audit-admin`, Super Admin only): list (paginated), detail, event types, export. Originally read-only;
+  step 7.2 adds the guarded DELETE exception. PUT/PATCH remain 405. `AppendOnlyModel` still refuses updates/deletes underneath (a test fixture that tried to back-date a row
   with `.update()` was refused, as designed).
 - `services.export_logs(actor, file_type, filters)`: CSV/Excel through `core.exports` (formula-safe), max 50 000 rows (else
   400: narrow the dates), then records `audit.export.generated`. Viewing the log is not itself logged (it would flood the log);

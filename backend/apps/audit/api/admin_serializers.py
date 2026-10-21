@@ -51,3 +51,15 @@ class AuditFilterSerializer(serializers.Serializer):
 
 class AuditExportSerializer(serializers.Serializer):
     file_type = serializers.ChoiceField(choices=["csv", "xlsx"])
+
+
+class AuditDeleteSerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True, trim_whitespace=False, max_length=1024)
+    reason = serializers.CharField(max_length=500)
+    confirmation = serializers.CharField(
+        required=False, default="", allow_blank=True, max_length=32
+    )
+
+
+class AuditDeleteResultSerializer(serializers.Serializer):
+    deleted = serializers.IntegerField(min_value=0)

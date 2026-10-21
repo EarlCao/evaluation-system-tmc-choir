@@ -5,6 +5,38 @@ tags: [roadmap, log]
 
 Newest entry first. Use [[Phase Log Template]] for each completed step.
 
+## 2026-10-21 · Step 7.2: Controlled audit-log deletion ✅
+
+**User decision:** explicitly requested Delete and Clear All after the append-only
+policy conflict was explained. ADR-022 and `AGENT.md` record this narrow exception.
+
+**Implemented:** active-Super-Admin-only single/collection DELETE; current password
+and reason; exact `DELETE ALL LOGS` for bulk; session CSRF; five attempts/minute/user;
+atomic deletion + receipt rollback. Existing and new deletion receipts are protected
+from manual deletion. Clear All covers all ordinary entries across filters. Model-level
+guards and evaluation-revision immutability remain unchanged. No migrations/packages.
+
+**UI:** row Delete and Clear All buttons, explicit irreversible-action dialogs,
+disabled confirmation until complete, cancellation, server error handling, password
+clearing and query refresh. Tests exercise cancellation/failures/protected receipts.
+
+**Verified:** full fresh-MySQL backend suite **1122 passed** (138.26 s); complete
+frontend suite **183 passed / 31 files** (171.40 s); production frontend bundle built.
+All **6 Playwright workflows passed** together (53.9 s), including real single/bulk
+deletion and protected receipts. ESLint, TypeScript, Ruff, migration check and OpenAPI
+validation passed; commit hooks enforce the final staged files. Browser acceptance
+caught a blank optional-confirmation rejection on single deletion; the API now accepts
+it, the regression test reproduces the original 400, and bulk still requires the exact phrase.
+
+**Data safety:** no existing development/production logs were deleted. Browser
+deletion tests require the isolated E2E stack flag and loopback test URL. They remove
+only throwaway test data. Live launch gates from step 7.1 remain unchanged.
+
+**Files:** `apps/audit/` services/API/constants/tests, shared throttle configuration,
+frontend audit page/API/types/dialog/tests, isolated E2E script/spec and matching vault notes.
+
+**Commit:** `feat(audit): step 7.2 confirmed audit-log deletion` (local only).
+
 ## 2026-10-21 · Step 7.1: Pre-deployment audit and remediation ✅
 
 **Scope:** all application modules, permission/privacy coverage, frontend build,

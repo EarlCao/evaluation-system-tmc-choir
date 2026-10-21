@@ -59,6 +59,7 @@ docker run --rm --network host --ipc host \
   -u "$(id -u):$(id -g)" -e HOME=/tmp \
   -e E2E_BASE_URL="http://localhost:${FRONTEND_HOST_PORT}" \
   -e E2E_ADMIN_PASSWORD -e E2E_MEMBER_PASSWORD \
+  -e E2E_ALLOW_AUDIT_DELETION=1 \
   -e E2E_MAIL_DIR=/e2e-mail -v "$E2E_MAIL_DIR:/e2e-mail:ro" \
   -v "$PWD/frontend:/work" -w /work \
   "$PLAYWRIGHT_IMAGE" npx playwright test "$@"

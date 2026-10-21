@@ -1,4 +1,4 @@
-"""Super Admin audit log viewer (/api/v1/admin/audit-logs/..., AUD-04). Read-only (AUD-03)."""
+"""Super Admin audit viewer and confirmed deletion exception (AUD-03/04, ADR-022)."""
 
 from django.http import HttpResponse
 from django.utils import timezone
@@ -6,6 +6,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 
 from apps.core.permissions import IsSuperAdmin
@@ -30,7 +31,18 @@ def _filters(params) -> dict:
     return dict(data.validated_data)
 
 
-class AuditLogListView(ListAPIView):
+class AuditDeletionThrottle(UserRateThrottle):
+    scope = "audit_delete"
+
+
+class AuditDeletionMixin:
+    def get_throttles(self):
+        if self.request.method == "DELETE":
+            return [AuditDeletionThrottle()]
+        return super().get_throttles()
+
+
+class AuditLogListView(AuditDeletionMixin, ListAPIView):
     permission_classes = [IsSuperAdmin]
     serializer_class = s.AuditLogSerializer
 
@@ -41,13 +53,35 @@ class AuditLogListView(ListAPIView):
     def get_queryset(self):
         return selectors.list_logs(**_filters(self.request.query_params))
 
+    @extend_schema(
+        operation_id="admin_audit_logs_clear",
+        request=s.AuditDeleteSerializer,
+        responses=s.AuditDeleteResultSerializer,
+    )
+    def delete(self, request):
+        data = s.AuditDeleteSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        deleted = services.delete_logs(actor=request.user, **data.validated_data)
+        return Response({"deleted": deleted})
 
-class AuditLogDetailView(APIView):
+
+class AuditLogDetailView(AuditDeletionMixin, APIView):
     permission_classes = [IsSuperAdmin]
 
     @extend_schema(responses=s.AuditLogSerializer)
     def get(self, request, pk: int):
         return Response(s.AuditLogSerializer(selectors.get_log(pk=pk)).data)
+
+    @extend_schema(
+        operation_id="admin_audit_log_delete",
+        request=s.AuditDeleteSerializer,
+        responses=s.AuditDeleteResultSerializer,
+    )
+    def delete(self, request, pk: int):
+        data = s.AuditDeleteSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        deleted = services.delete_logs(actor=request.user, pk=pk, **data.validated_data)
+        return Response({"deleted": deleted})
 
 
 class AuditEventTypesView(APIView):

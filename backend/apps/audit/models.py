@@ -7,8 +7,8 @@ from apps.core.models import AppendOnlyModel
 
 
 class AuditLog(AppendOnlyModel):
-    """One security-sensitive event. Never updated or deleted (AUD-03); visible to the
-    Super Admin only. Write via ``audit.services.record``."""
+    """Security event with guarded ORM writes; privileged deletion only via ADR-022's
+    explicit service exception. Super Admin only. Write via ``audit.services.record``."""
 
     occurred_at = models.DateTimeField(default=timezone.now, db_index=True)
     actor = models.ForeignKey(
