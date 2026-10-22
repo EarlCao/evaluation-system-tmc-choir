@@ -10,7 +10,7 @@ import SvgIcon from "@mui/material/SvgIcon";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
-import { Link as RouterLink, useNavigate } from "react-router";
+import { Link as RouterLink } from "react-router";
 
 import { useCurrentUser, useLogout } from "../queries";
 
@@ -18,7 +18,6 @@ import { useCurrentUser, useLogout } from "../queries";
 export function AccountMenu() {
   const { data: user } = useCurrentUser();
   const logout = useLogout();
-  const navigate = useNavigate();
   const [confirmLogout, setConfirmLogout] = useState(false);
 
   if (!user) return null;
@@ -26,12 +25,7 @@ export function AccountMenu() {
   const isSuperAdmin = user.is_super_admin || user.role === "SUPER_ADMIN";
 
   const handleConfirmLogout = () => {
-    logout.mutate(undefined, {
-      onSettled: () => {
-        setConfirmLogout(false);
-        void navigate(isSuperAdmin ? "/admin" : "/", { replace: true });
-      },
-    });
+    logout.mutate();
   };
 
   return (

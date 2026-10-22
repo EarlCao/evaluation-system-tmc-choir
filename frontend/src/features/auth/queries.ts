@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
 
 import { ApiError } from "@/lib/errors";
 
 import * as api from "./api";
 import type { ChangePasswordInput, ConfirmResetInput, LoginInput } from "./schemas";
+import type { CurrentUser } from "./types";
 
 export const authKeys = {
   all: ["auth"] as const,
@@ -78,12 +80,21 @@ export const useLogin = useMemberLogin;
 
 export function useLogout() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   return useMutation({
     mutationFn: api.logout,
-    onSettled: () => {
-      // Drop every cached server response that belonged to the previous user.
-      queryClient.clear();
+    onSettled: async () => {
+      const user = queryClient.getQueryData<CurrentUser | null>(authKeys.currentUser());
+      const loginPath = user?.is_super_admin || user?.role === "SUPER_ADMIN" ? "/admin" : "/";
+      await queryClient.cancelQueries();
+      // Keep the observed session query so mounted guards receive the signed-out state.
       queryClient.setQueryData(authKeys.currentUser(), null);
+      queryClient.removeQueries({
+        predicate: ({ queryKey }) => queryKey[0] !== "auth" || queryKey[1] !== "current-user",
+      });
+      queryClient.getMutationCache().clear();
+      // Navigate before a guard on the old route can redirect; hook callbacks survive unmounts.
+      await navigate(loginPath, { replace: true, flushSync: true });
     },
   });
 }

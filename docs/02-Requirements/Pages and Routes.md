@@ -38,3 +38,7 @@ Frontend routes (React Router). The **Guard** column is UX only. The API enforce
 > uses the React admin screens, which are audited.
 
 Related: [[Frontend Structure]] · [[API Endpoints]]
+
+Logout replaces the current route with `/admin` for Super Admins (showing their
+dedicated login form) or `/` for members. This applies from nested pages as well as
+the dashboards and clears the previous user's cached server data.

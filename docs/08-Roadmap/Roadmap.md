@@ -106,3 +106,7 @@ tags: [roadmap]
 - [x] **7.3 Vercel API routing repair** (user request 2026-10-22): reproduce the live
   trailing-slash routing failure and add explicit slash-preserving proxy rules to both
   Vercel configurations. Post-deployment endpoint verification is recorded separately.
+
+- [x] **7.4 Admin logout navigation** (user request 2026-10-22): return Super Admins
+  to `/admin` after logout even when clearing session state unmounts the account menu;
+  cover dashboard/subpage logout and member navigation with regression tests.

@@ -74,6 +74,13 @@ Pages: Welcome, Login, Register, Forgot Password, Reset Password, Profile.
 Hooks: `useCurrentUser()` (`GET /auth/me/`), `useLogin`, `useLogout`, `useRegister`.
 Guards: `RequireAuth`, `RequireSuperAdmin`, `GuestOnly`.
 
+Logout returns Super Admins to their dedicated sign-in page at `/admin`, including
+when they sign out from a nested admin page. Members return to `/`. The logout hook
+cancels in-flight requests, updates the observed current-user query to signed out,
+removes other cached queries and mutation data, and replaces the route before the
+previous route's guard can redirect. Navigation is owned by the hook rather than a
+per-call callback on the account menu, which can unmount during session cleanup.
+
 ## Tests
 Registration per `registration_mode`; pending users cannot log in; generic login error;
 throttling; password reset does not reveal whether an email exists; members cannot reach

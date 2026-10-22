@@ -5,6 +5,27 @@ tags: [roadmap, log]
 
 Newest entry first. Use [[Phase Log Template]] for each completed step.
 
+## 2026-10-22 · Step 7.4: Admin logout navigation ✅
+
+**Reproduced:** admin dashboard and settings logout tests failed to display the
+dedicated sign-in form. Clearing the entire query cache disconnected mounted guards
+from the current-user query. Account-menu per-call mutation callbacks could also
+disappear when session cleanup unmounted the menu.
+
+**Fixed:** the logout hook cancels pending queries, sets the observed current-user
+query to null, removes other cached queries and mutation data, then replaces the
+route synchronously. Super Admins return to `/admin`, members to `/`. Navigation
+lives in the hook's mutation callback so it survives account-menu unmounts.
+
+**Verification:** the added dashboard/settings regressions failed before the fix;
+all five profile/logout tests now pass. Full frontend suite: **185 passed across
+31 files** (208.75 s). Production build and its TypeScript checks pass. Commit hooks
+enforce lint, formatting, secret checks and TypeScript on the final staged change.
+Live browser login/logout from nested settings is a post-push rollout check.
+
+**Files:** auth query hook, account menu, profile/logout tests, [[Accounts]],
+[[Pages and Routes]], [[Roadmap]], this log. No backend/schema changes or packages.
+
 ## 2026-10-22 · Step 7.3: Vercel API trailing-slash routing repair
 
 **Problem reproduced live:** the Vercel `/api/v1/health` request reached Django and
