@@ -3,6 +3,16 @@ tags: [architecture, frontend]
 ---
 # Frontend Structure
 
+## Vercel deployment routing
+
+The root and frontend `vercel.json` configurations proxy `/api/` to the Render
+backend. Match `/api/:path*/` before `/api/:path*`, preserving trailing slashes:
+Django's API routes and frontend requests use them. The deployed slashless health
+URL reached Django while its slash-terminated equivalent returned Vercel 404 until
+the explicit rule was added (step 7.3). Frontend API calls use `/api/v1` so HTTP
+session cookies remain on the frontend origin. Direct Render WebSocket connections
+still need separate authentication validation when HTTP cookies use this proxy.
+
 ```
 frontend/
 ├── index.html

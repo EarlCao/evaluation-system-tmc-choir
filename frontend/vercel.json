@@ -11,6 +11,10 @@
   },
   "rewrites": [
     {
+      "source": "/api/:path*/",
+      "destination": "https://evaluation-system-tmc-choir.onrender.com/api/:path*/"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://evaluation-system-tmc-choir.onrender.com/api/:path*"
     },

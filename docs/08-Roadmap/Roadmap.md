@@ -102,3 +102,7 @@ tags: [roadmap]
 - [x] **7.2 Controlled audit-log deletion** (user request 2026-10-21): Super Admin
   single-entry deletion and Clear All, password/reason confirmation, typed bulk
   confirmation, retained deletion receipts, CSRF/rate limits and regression tests.
+
+- [x] **7.3 Vercel API routing repair** (user request 2026-10-22): reproduce the live
+  trailing-slash routing failure and add explicit slash-preserving proxy rules to both
+  Vercel configurations. Post-deployment endpoint verification is recorded separately.

@@ -5,6 +5,28 @@ tags: [roadmap, log]
 
 Newest entry first. Use [[Phase Log Template]] for each completed step.
 
+## 2026-10-22 · Step 7.3: Vercel API trailing-slash routing repair
+
+**Problem reproduced live:** the Vercel `/api/v1/health` request reached Django and
+returned a 301 to `/api/v1/health/`, but the slash-terminated URL returned Vercel
+`404 NOT_FOUND`. The frontend calls `/api/v1/auth/me/`, so its session guard displayed
+the retry error. Direct Render health returned 200 with database status OK, and
+direct anonymous session lookup returned the expected JSON 401.
+
+**Changed:** both `vercel.json` and `frontend/vercel.json` now match
+`/api/:path*/` before `/api/:path*` and preserve the slash in the Render destination.
+Existing frontend route fallback and API build variables remain in place.
+
+**Verification:** both JSON files parse and `git diff --check` passes. The live
+requests above are the regression reproduction; commit hooks check the staged change.
+Post-push rollout must be checked using Vercel health (200), anonymous session (401
+JSON), and CSRF (200 with Secure cookie). No production accounts or records changed.
+
+**Files:** both Vercel configurations, [[Frontend Structure]], [[Roadmap]], this log.
+**Follow-up:** authenticated WebSockets, Gmail delivery and cloud Super Admin setup
+remain separate deployment tasks. GitHub's existing checks/browser jobs on the previous
+commit reported failures; these are not resolved or claimed as passing by this routing fix.
+
 ## 2026-10-21 · Step 7.2: Controlled audit-log deletion ✅
 
 **User decision:** explicitly requested Delete and Clear All after the append-only
