@@ -38,7 +38,9 @@ on `core`. `core` depends on nothing in `apps/`.
 
 `email_backend.GmailEmailBackend` sends Django MIME email over HTTPS using the sender's
 OAuth refresh token. Production validates credentials; failures propagate without logging
-message bodies or tokens. See [[Gmail on Render Free]].
+message bodies or tokens. Rejected HTTP requests log only the endpoint label, status
+and an allowlisted provider error code; all other response content stays private.
+See [[Gmail on Render Free]].
 
 ## Frontend counterparts
 `lib/apiClient.ts` (axios + CSRF), `lib/queryClient.ts`, `lib/ws.ts`, `lib/format.ts`,

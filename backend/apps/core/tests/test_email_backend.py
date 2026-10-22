@@ -63,8 +63,35 @@ def test_rejection_never_reports_success_or_leaks_response(gmail, status, phase,
         send_mail("Verify", "Code: 123456", None, ["singer@example.org"])
     assert "private" not in str(error.value)
     assert "123456" not in caplog.text
-    rejected.read.assert_not_called()
+    rejected.read.assert_called_once_with(16384)
+    assert f"status={status} reason=unknown" in caplog.text
+    endpoint = "oauth_token" if phase == "token" else "send_message"
+    assert f"endpoint={endpoint}" in caplog.text
+    assert "private" not in caplog.text
     assert connection.close.called
+
+
+@pytest.mark.parametrize(
+    ("body", "expected"),
+    [
+        ({"error": "invalid_grant"}, "invalid_grant"),
+        ({"error": {"errors": [{"reason": "accessNotConfigured"}]}}, "accessNotConfigured"),
+        ({"error": {"details": [{"reason": "SERVICE_DISABLED"}]}}, "SERVICE_DISABLED"),
+        ({"error": "secret-token-123456"}, "unknown"),
+        ({"error": {"errors": [{"reason": ["invalid_grant"]}]}}, "unknown"),
+        (["secret-token-123456"], "unknown"),
+    ],
+)
+def test_provider_diagnostics_allow_only_known_codes(gmail, caplog, body, expected):
+    _, _, token, _ = gmail
+    token.status = 400
+    token.read.return_value = json.dumps(body).encode()
+    with pytest.raises(OSError, match="HTTP 400"):
+        send_mail("Verify", "Code: 123456", None, ["private@example.org"])
+    assert f"endpoint=oauth_token status=400 reason={expected}" in caplog.text
+    assert "secret-token" not in caplog.text
+    assert "123456" not in caplog.text
+    assert "private@example.org" not in caplog.text
 
 
 def test_timeout_propagates_and_closes_connection(gmail):

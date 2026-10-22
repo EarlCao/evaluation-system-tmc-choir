@@ -114,3 +114,7 @@ tags: [roadmap]
 - [x] **7.5 Gmail delivery on Render Free** (user report 2026-10-22): add a Gmail
   HTTPS API backend, explicit email backend selection, production validation, OAuth
   deployment instructions, and email delivery/security regression coverage.
+
+- [x] **7.6 Gmail delivery diagnostics** (continued user report 2026-10-22): retain
+  safe endpoint/status/provider error categories in Render logs so deployment email
+  failures can be diagnosed without exposing OAuth credentials or message content.

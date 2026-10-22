@@ -5,6 +5,29 @@ tags: [roadmap, log]
 
 Newest entry first. Use [[Phase Log Template]] for each completed step.
 
+## 2026-10-22 · Step 7.6: Safe Gmail failure diagnostics
+
+**Observed:** the user still receives registration 503 after configuring Gmail OAuth.
+Supplied production logs show only `Transactional email delivery failed (OSError)`,
+which hides whether Google rejected token refresh or message submission. The live
+provider failure remains unclassified; no claim is made that credentials are fixed.
+
+**Changed:** rejected Gmail HTTPS responses now log the endpoint label, HTTP status,
+and an allowlisted Google error code. Parsing reads at most 16 KiB. Unknown/malformed
+provider content becomes `unknown`; free-text messages, tokens, recipient addresses,
+and OTPs never enter the diagnostic log. The public error remains generic. Updated
+[[Core]] and [[Gmail on Render Free]] with log examples and troubleshooting guidance.
+No dependencies, migrations, configuration variables or production data changes.
+
+**Verified:** focused Gmail and registration tests: **42 passed**. Full backend suite
+on MySQL: **1,160 passed in 103.93 s**. Ruff lint/format, diff checks and changed-file
+pre-commit checks pass. Tests cover both failed endpoints, recognized reason formats,
+malformed responses and untrusted strings without leaking sensitive content.
+
+**Follow-up:** deploy this update, retry registration once, and inspect the new
+`Gmail API delivery failed` line to identify the actual deployment configuration issue.
+
+
 ## 2026-10-22 · Step 7.5: Gmail delivery on Render Free
 
 **Cause:** the reported registration 503 comes from transactional email delivery.

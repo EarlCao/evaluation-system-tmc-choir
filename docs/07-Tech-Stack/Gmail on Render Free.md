@@ -54,9 +54,24 @@ settings does not make the entire Blueprint a Free deployment.
 
 Submit your own registration, confirm receipt of the six-digit code (including Spam),
 and complete verification. Check the sender's Gmail Sent folder. If delivery fails,
-Render logs contain the exception type without OTPs or OAuth credentials. HTTP 400
-from the token endpoint often requires reauthorizing the sender; 401/403 can indicate
-invalid authorization, a disabled Gmail API, or missing `gmail.send` permission.
+Render logs include a safe diagnostic line, for example:
+
+```text
+Gmail API delivery failed: endpoint=oauth_token status=400 reason=invalid_grant
+```
+
+The endpoint is `oauth_token` (Google authorization) or `send_message` (Gmail submission).
+Only recognized error categories are logged; unknown response content is labeled
+`unknown`. Tokens, provider error descriptions, addresses and message bodies are never
+logged. Share this diagnostic line to investigate the failure.
+
+- `invalid_grant`: reauthorize the sender using the same OAuth client configured in Render.
+- `invalid_client`: check the OAuth client ID and secret in Render.
+- `accessNotConfigured` / `SERVICE_DISABLED`: enable Gmail API in that Google project.
+- `insufficientPermissions` / `ACCESS_TOKEN_SCOPE_INSUFFICIENT`: authorize `gmail.send`.
+- Rate/quota errors: check the sender's Google limits before retrying.
+
+These are diagnostic starting points; the actual code and endpoint determine the next check.
 The registration endpoint keeps its generic 503 error and never bypasses verification.
 Gmail sending limits still apply. An accepted API message is not proof of inbox delivery.
 

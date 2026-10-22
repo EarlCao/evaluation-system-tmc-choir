@@ -2,12 +2,61 @@
 
 import base64
 import json
+import logging
 from http.client import HTTPSConnection
 from urllib.parse import urlencode
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.core.mail.backends.base import BaseEmailBackend
+
+logger = logging.getLogger(__name__)
+
+# Only recognized provider codes may enter logs; never log Google's free-text messages.
+_SAFE_REASONS = frozenset(
+    {
+        "invalid_grant",
+        "invalid_client",
+        "unauthorized_client",
+        "invalid_request",
+        "access_denied",
+        "accessNotConfigured",
+        "insufficientPermissions",
+        "authError",
+        "forbidden",
+        "dailyLimitExceeded",
+        "rateLimitExceeded",
+        "userRateLimitExceeded",
+        "failedPrecondition",
+        "badRequest",
+        "quotaExceeded",
+        "domainPolicy",
+        "SERVICE_DISABLED",
+        "ACCESS_TOKEN_SCOPE_INSUFFICIENT",
+        "UNAUTHENTICATED",
+        "PERMISSION_DENIED",
+        "RESOURCE_EXHAUSTED",
+    }
+)
+
+
+def _failure_reason(response) -> str:
+    try:
+        data = json.loads(response.read(16384))
+        error = data.get("error") if isinstance(data, dict) else None
+        candidates = [error] if isinstance(error, str) else []
+        if isinstance(error, dict):
+            for field in ("errors", "details"):
+                entries = error.get(field)
+                if isinstance(entries, list):
+                    candidates.extend(e.get("reason") for e in entries if isinstance(e, dict))
+            candidates.append(error.get("status"))
+        for reason in candidates:
+            if isinstance(reason, str) and reason in _SAFE_REASONS:
+                return reason
+    except (OSError, ValueError):
+        pass
+    return "unknown"
 
 
 def _post(*, host: str, path: str, body: bytes, headers: dict) -> dict:
@@ -17,6 +66,12 @@ def _post(*, host: str, path: str, body: bytes, headers: dict) -> dict:
         connection.request("POST", path, body=body, headers=headers)
         response = connection.getresponse()
         if response.status != 200:
+            logger.error(
+                "Gmail API delivery failed: endpoint=%s status=%s reason=%s",
+                "oauth_token" if host == "oauth2.googleapis.com" else "send_message",
+                response.status,
+                _failure_reason(response),
+            )
             raise OSError(f"Gmail delivery request failed (HTTP {response.status}).")
         result = json.loads(response.read())
         if not isinstance(result, dict):
