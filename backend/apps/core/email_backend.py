@@ -13,6 +13,15 @@ from django.core.mail.backends.base import BaseEmailBackend
 
 logger = logging.getLogger(__name__)
 
+_MISSING_FIELDS = {
+    "sender name is missing": "sender.name",
+    "sender email is missing": "sender.email",
+    "sender is missing": "sender",
+    "to is missing": "to",
+    "subject is missing": "subject",
+    "Either of htmlContent or textContent is required": "content",
+}
+
 # Only recognized provider codes may enter logs; never log free-text error messages.
 _SAFE_REASONS = frozenset(
     {
@@ -53,6 +62,11 @@ def _failure_reason(response) -> str:
         candidates = [error] if isinstance(error, str) else []
         if isinstance(data, dict):
             candidates.append(data.get("code"))
+            if data.get("code") == "missing_parameter":
+                message = data.get("message")
+                field = _MISSING_FIELDS.get(message) if isinstance(message, str) else None
+                if field:
+                    return f"missing_parameter field={field}"
         if isinstance(error, dict):
             for field in ("errors", "details"):
                 entries = error.get(field)
@@ -174,6 +188,7 @@ class BrevoEmailBackend(BaseEmailBackend):
                         message.body
                     ),
                 }
+                payload["sender"].setdefault("name", settings.DEFAULT_FROM_NAME)
                 for field in ("to", "cc", "bcc"):
                     if addresses := getattr(message, field):
                         payload[field] = [_address(address) for address in addresses]

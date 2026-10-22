@@ -126,3 +126,7 @@ tags: [roadmap]
 - [x] **7.8 Brevo HTTPS email delivery** (user request 2026-10-22): add API-key
   delivery, production checks and Render configuration plus verified-sender/account
   setup instructions; test OTP verification and delivery failures without live mail.
+
+- [x] **7.9 Brevo sender identity repair** (live report 2026-10-22): include a sender
+  display name for plain-email From settings; cover the documented Render setup in
+  regression/registration tests and safely identify recognized missing-field errors.

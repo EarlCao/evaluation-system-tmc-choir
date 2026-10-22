@@ -43,7 +43,9 @@ and an allowlisted provider error code; all other response content stays private
 See [[Gmail on Render Free]].
 
 `email_backend.BrevoEmailBackend` supports verification/reset mail over HTTPS with
-`BREVO_API_KEY` and a verified sender. Shared API diagnostics log only allowlisted
+`BREVO_API_KEY` and a verified sender. Plain-email From settings always receive a
+sender display name from `DEFAULT_FROM_NAME` (default `TMC Choir`); explicit From
+names take precedence. Shared API diagnostics log only allowlisted
 provider codes; production validates configuration before serving. See [[Brevo on Render Free]].
 
 ## Frontend counterparts

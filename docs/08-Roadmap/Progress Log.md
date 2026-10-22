@@ -5,6 +5,33 @@ tags: [roadmap, log]
 
 Newest entry first. Use [[Phase Log Template]] for each completed step.
 
+## 2026-10-22 · Step 7.9: Brevo sender identity repair
+
+**Evidence:** user-provided production logs show repeated Brevo HTTP 400 with
+`reason=missing_parameter`. The setup guide configures a bare `DEFAULT_FROM_EMAIL`;
+`_address` omitted sender.name for that format. Existing tests used a named sender,
+so they missed this payload defect. A new plain-email regression fails on the old
+code, showing the absent sender name. The live provider message does not yet name
+the missing field, so sender-name omission is the identified defect, not independently
+confirmed proof of every cause of the live rejection.
+
+**Fixed:** always include a Brevo sender display name. Optional `DEFAULT_FROM_NAME`
+defaults to `TMC Choir`; an explicit `Name <email>` From value wins. Added fixed
+missing-field labels for recognized provider error descriptions while keeping
+unknown messages, tokens, addresses and OTPs out of logs. Updated example environment,
+[[Core]], [[Brevo on Render Free]] and [[Roadmap]]. No migrations or dependencies.
+
+**Verified:** the new plain-email regression failed before the fix. Focused Brevo,
+Gmail and production settings tests: **70 passed** after the fix. The registration
+integration now uses the documented bare sender email and completes OTP verification
+while preserving approval. Full backend suite on MySQL: **1,190 passed in 106.10 s**.
+Ruff lint/format, diff checks and changed-file pre-commit checks pass.
+
+**Rollout:** deploy the commit and retry once with the existing verified sender/API
+key. No new environment values are required. Live delivery remains to be confirmed;
+if rejection persists, inspect the diagnostic line including any fixed `field` label.
+
+
 ## 2026-10-22 · Step 7.8: Brevo HTTPS email delivery
 
 **Request:** switch registration/reset email from Gmail OAuth to Brevo on Render Free

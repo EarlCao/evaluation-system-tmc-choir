@@ -46,6 +46,10 @@ BREVO_API_KEY=<your private Brevo API key>
 DEFAULT_FROM_EMAIL=<your exact sender email verified in Brevo>
 ```
 
+The backend supplies sender name `TMC Choir` when `DEFAULT_FROM_EMAIL` contains only
+an email address. Optional `DEFAULT_FROM_NAME` changes that fallback; an explicit
+`Name <email>` From value takes precedence. This fallback requires step 7.9 or newer.
+
 Save and redeploy, then wait for Live. Existing Gmail OAuth/SMTP values are unused
 when this backend is explicitly selected and can be removed after switching. If a
 worker is configured to send email, give it the same backend, API key and sender;
@@ -66,6 +70,8 @@ A failed API request logs only safe diagnostics in Render, for example:
 Brevo API delivery failed: endpoint=send_message status=401 reason=unauthorized
 ```
 
+For recognized `missing_parameter` messages, the log may also include a fixed field
+label such as `field=sender.name`. Unknown provider descriptions remain private.
 Share that line if delivery fails. It omits API keys, addresses and OTPs. HTTP 401
 suggests checking the API key; 400/403 require checking the verified sender, account
 activation and any account/API access restrictions. Never share the key itself.

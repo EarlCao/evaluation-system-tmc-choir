@@ -191,6 +191,7 @@ GMAIL_REFRESH_TOKEN = env("GMAIL_REFRESH_TOKEN", default="").strip()
 GMAIL_CLIENT_ID = env("GMAIL_CLIENT_ID", default="").strip()
 GMAIL_CLIENT_SECRET = env("GMAIL_CLIENT_SECRET", default="").strip()
 BREVO_API_KEY = env("BREVO_API_KEY", default="").strip()
+DEFAULT_FROM_NAME = env("DEFAULT_FROM_NAME", default="TMC Choir").strip() or "TMC Choir"
 EMAIL_BACKEND = env("EMAIL_BACKEND", default="").strip() or (
     "django.core.mail.backends.smtp.EmailBackend"
     if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD
