@@ -177,7 +177,7 @@ CSRF_COOKIE_HTTPONLY = False  # the SPA reads csrftoken and sends X-CSRFToken
 CSRF_COOKIE_SAMESITE = env("CSRF_COOKIE_SAMESITE", default="Lax")
 
 # ---------------------------------------------------------------------------
-# Email & Real SMTP OTP Delivery
+# Email delivery (SMTP or HTTPS on hosts that block SMTP)
 # ---------------------------------------------------------------------------
 EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
 EMAIL_PORT = env.int("EMAIL_PORT", default=587)
@@ -187,10 +187,14 @@ EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL", default=False)
 EMAIL_TIMEOUT = env.int("EMAIL_TIMEOUT", default=15)
 EMAIL_FILE_PATH = env("EMAIL_FILE_PATH", default="")
-if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-else:
-    EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
+GMAIL_REFRESH_TOKEN = env("GMAIL_REFRESH_TOKEN", default="").strip()
+GMAIL_CLIENT_ID = env("GMAIL_CLIENT_ID", default="").strip()
+GMAIL_CLIENT_SECRET = env("GMAIL_CLIENT_SECRET", default="").strip()
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="").strip() or (
+    "django.core.mail.backends.smtp.EmailBackend"
+    if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD
+    else "django.core.mail.backends.console.EmailBackend"
+)
 _default_from = env("DEFAULT_FROM_EMAIL", default="").strip()
 DEFAULT_FROM_EMAIL = (
     EMAIL_HOST_USER

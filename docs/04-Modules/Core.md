@@ -8,8 +8,8 @@ status: implemented (step 1.2)
 
 Deployment review (2026-10-21): CORS is restricted to explicit configured origins,
 supports the registration header, and always varies by Origin. Production requires
-strong independent secrets, HTTPS URLs, SMTP and shared Redis; the permission matrix
-covers backup routes. See [[Deployment Readiness 2026-10-20]].
+strong independent secrets, HTTPS URLs, SMTP or Gmail API email, and shared Redis;
+the permission matrix covers backup routes. See [[Deployment Readiness 2026-10-20]].
 
 **Backend:** `apps/core` · **Frontend:** `src/lib`, `src/components`, `src/app`
 
@@ -35,6 +35,10 @@ on `core`. `core` depends on nothing in `apps/`.
 | `testing/privacy.py` | `assert_no_evaluator_leak` (identity keys + identifying values) |
 | `backend/conftest.py` | `api_client`, `csrf_api_client` fixtures (`member` / `super_admin` fixtures arrive with accounts in 1.4) |
 | `tests/testapp/` | test-only app (installed by `config.settings.test`) with concrete models for the abstract bases |
+
+`email_backend.GmailEmailBackend` sends Django MIME email over HTTPS using the sender's
+OAuth refresh token. Production validates credentials; failures propagate without logging
+message bodies or tokens. See [[Gmail on Render Free]].
 
 ## Frontend counterparts
 `lib/apiClient.ts` (axios + CSRF), `lib/queryClient.ts`, `lib/ws.ts`, `lib/format.ts`,

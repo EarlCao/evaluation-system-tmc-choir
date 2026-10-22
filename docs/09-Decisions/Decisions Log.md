@@ -8,10 +8,24 @@ share expiring registration/throttle state through Redis; count distinct contrib
 register public directory readers to preserve dependency direction; complete SMTP
 delivery before success without a secret-printing fallback. See [[Deployment Readiness 2026-10-20]].
 
+### ADR-023: Gmail API delivery on Render Free
+**Date:** 2026-10-22 · **Status:** Accepted
+**Context:** Render Free blocks Gmail SMTP ports, preventing registration OTP delivery.
+The user prefers Gmail as the sender.
+**Decision:** support Gmail's HTTPS API using sender-only OAuth refresh credentials
+and the `gmail.send` scope. Explicit email backend configuration wins over old SMTP
+credentials. Keep SMTP for compatible hosting. Use standard-library HTTPS and Django
+MIME serialization; no new dependencies. Delivery errors keep generic registration
+503 responses and never log tokens or message bodies.
+**Consequences:** Google sender consent and private deployment credentials are required.
+Testing-mode refresh tokens expire after seven days. Google account limits and token
+revocation still affect availability. See [[Gmail on Render Free]].
+
 Format: [[ADR Template]]. Status: Proposed · Accepted · Superseded.
 
 | ADR | Title | Status | Date |
 |---|---|---|---|
+| ADR-023 | Gmail API delivery on Render Free | Accepted | 2026-10-22 |
 | ADR-001 | Modular monolith (single Django ASGI app + SPA, module-by-module) | Accepted | 2026-10-17 |
 | ADR-002 | Services/selectors layering with in-process domain events | Accepted | 2026-10-17 |
 | ADR-003 | Session auth + CSRF, same-origin (Vite proxy / Nginx), no CORS | Accepted | 2026-10-17 |

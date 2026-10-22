@@ -5,6 +5,36 @@ tags: [roadmap, log]
 
 Newest entry first. Use [[Phase Log Template]] for each completed step.
 
+## 2026-10-22 · Step 7.5: Gmail delivery on Render Free
+
+**Cause:** the reported registration 503 comes from transactional email delivery.
+Render Free blocks Gmail SMTP port 587. The user confirmed the Free tier and prefers
+Gmail. Render documentation confirms the SMTP restriction; production logs were not
+available for direct inspection.
+
+**Changed:** added `core.email_backend.GmailEmailBackend` using HTTPS for OAuth token
+refresh and MIME message submission. Explicit backend settings now take precedence
+over existing SMTP credentials. Production rejects missing Gmail OAuth credentials;
+Render Blueprint and `.env.example` document the settings. Kept generic registration
+503/password-reset responses and secret-free delivery failure logs. No new dependencies
+or migrations. Added [[Gmail on Render Free]] with sender authorization and rollout steps.
+
+**Verified:** focused email/settings/registration suite: **49 passed**. Full backend
+suite on container MySQL: **1,154 passed in 108.67 s**. Ruff lint and formatting pass;
+pre-commit checks on the changed files pass, including YAML and secret scanning.
+Coverage includes OAuth refresh, MIME/OTP preservation, SMTP-setting precedence,
+HTTP rejections at both endpoints, timeouts, malformed responses, missing credentials,
+batch sending and Bcc. No actual emails were sent during tests.
+
+**Files:** core email backend/tests, production/base settings, accounts mail docstrings,
+Render Blueprint, example environment, [[Accounts]], [[Core]], [[Security Model]],
+[[Dev Environment Setup]], [[Decisions Log]] (ADR-023), [[Roadmap]], this log.
+
+**Rollout still required:** deploy this commit and configure the sender's Google OAuth
+client ID, client secret, refresh token and Gmail address in Render. Live registration
+and inbox delivery cannot be verified until the sender is authorized. Testing-mode
+refresh tokens expire after seven days; follow the guide for continued operation.
+
 ## 2026-10-22 · Step 7.4: Admin logout navigation ✅
 
 **Reproduced:** admin dashboard and settings logout tests failed to display the

@@ -1,0 +1,84 @@
+"""Send transactional email through the Gmail HTTPS API on Render Free."""
+
+import base64
+import json
+from http.client import HTTPSConnection
+from urllib.parse import urlencode
+
+from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
+from django.core.mail.backends.base import BaseEmailBackend
+
+
+def _post(*, host: str, path: str, body: bytes, headers: dict) -> dict:
+    # Fixed HTTPS hosts, no redirects, and no response bodies in errors or logs.
+    connection = HTTPSConnection(host, timeout=settings.EMAIL_TIMEOUT)
+    try:
+        connection.request("POST", path, body=body, headers=headers)
+        response = connection.getresponse()
+        if response.status != 200:
+            raise OSError(f"Gmail delivery request failed (HTTP {response.status}).")
+        result = json.loads(response.read())
+        if not isinstance(result, dict):
+            raise OSError("Gmail returned an invalid response.")
+        return result
+    finally:
+        connection.close()
+
+
+class GmailEmailBackend(BaseEmailBackend):
+    """Refresh the sender's OAuth token, then submit Django MIME messages over HTTPS."""
+
+    def send_messages(self, email_messages) -> int:
+        sent = 0
+        access_token = None
+        for message in email_messages or []:
+            if not message.recipients():
+                continue
+            try:
+                if not access_token:
+                    if not all(
+                        (
+                            settings.GMAIL_CLIENT_ID,
+                            settings.GMAIL_CLIENT_SECRET,
+                            settings.GMAIL_REFRESH_TOKEN,
+                        )
+                    ):
+                        raise ImproperlyConfigured("Gmail API OAuth credentials are required.")
+                    result = _post(
+                        host="oauth2.googleapis.com",
+                        path="/token",
+                        body=urlencode(
+                            {
+                                "client_id": settings.GMAIL_CLIENT_ID,
+                                "client_secret": settings.GMAIL_CLIENT_SECRET,
+                                "refresh_token": settings.GMAIL_REFRESH_TOKEN,
+                                "grant_type": "refresh_token",
+                            }
+                        ).encode("utf-8"),
+                        headers={"Content-Type": "application/x-www-form-urlencoded"},
+                    )
+                    access_token = result.get("access_token")
+                    if not access_token:
+                        raise OSError("Gmail did not authorize email delivery.")
+                mime_message = message.message()
+                # Django omits Bcc from MIME. Gmail needs it to deliver hidden recipients.
+                if message.bcc:
+                    mime_message["Bcc"] = ", ".join(message.bcc)
+                raw = base64.urlsafe_b64encode(mime_message.as_bytes()).decode("ascii")
+                result = _post(
+                    host="gmail.googleapis.com",
+                    path="/gmail/v1/users/me/messages/send",
+                    body=json.dumps({"raw": raw}).encode("utf-8"),
+                    headers={
+                        "Authorization": f"Bearer {access_token}",
+                        "Content-Type": "application/json",
+                    },
+                )
+                if not result.get("id"):
+                    raise OSError("Gmail did not accept the message.")
+                sent += 1
+            except Exception:
+                if not self.fail_silently:
+                    raise
+        return sent

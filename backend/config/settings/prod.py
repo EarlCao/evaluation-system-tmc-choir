@@ -42,8 +42,15 @@ if CACHES["default"]["BACKEND"] != "django.core.cache.backends.redis.RedisCache"
         "Production requires REDIS_URL for shared OTPs, throttles and realtime."
     )
 
-if EMAIL_BACKEND != "django.core.mail.backends.smtp.EmailBackend" or not EMAIL_HOST:
-    raise ImproperlyConfigured("Production requires a working SMTP EMAIL_BACKEND and EMAIL_HOST.")
+if EMAIL_BACKEND == "apps.core.email_backend.GmailEmailBackend":
+    if not all((GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN)) or (
+        DEFAULT_FROM_EMAIL == "no-reply@example.org"
+    ):
+        raise ImproperlyConfigured(
+            "Gmail requires OAuth client ID, client secret, refresh token and DEFAULT_FROM_EMAIL."
+        )
+elif EMAIL_BACKEND != "django.core.mail.backends.smtp.EmailBackend" or not EMAIL_HOST:
+    raise ImproperlyConfigured("Production requires SMTP or the Gmail HTTPS email backend.")
 
 if urlsplit(FRONTEND_URL).scheme != "https":
     raise ImproperlyConfigured("Production requires an HTTPS FRONTEND_URL.")

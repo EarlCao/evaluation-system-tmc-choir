@@ -105,7 +105,7 @@ npm run dev                       # http://localhost:5280 (proxies /api, /ws →
 | `MYSQL_HOST_PORT` | `3307` | host port for MySQL |
 | `REDIS_HOST_PORT` | `6380` | host port for Redis |
 | `REDIS_URL` | `redis://127.0.0.1:6380/0` | |
-| `EMAIL_BACKEND` | `django.core.mail.backends.console.EmailBackend` | SMTP in prod |
+| `EMAIL_BACKEND` | `django.core.mail.backends.console.EmailBackend` | Explicit selection wins; SMTP or Gmail API in prod. See [[Gmail on Render Free]]. |
 | `DEFAULT_FROM_EMAIL` | `no-reply@example.org` | |
 | `FRONTEND_URL` | `http://localhost:5280` | for password-reset and verification links |
 

@@ -23,6 +23,9 @@ def _load_prod_module(monkeypatch, **env_overrides):
         "FRONTEND_URL": "https://eval.choir.example.org",
         "REDIS_URL": "redis://127.0.0.1:6380/0",
         "EMAIL_BACKEND": "django.core.mail.backends.smtp.EmailBackend",
+        "GMAIL_REFRESH_TOKEN": "",
+        "GMAIL_CLIENT_ID": "",
+        "GMAIL_CLIENT_SECRET": "",
     }
     defaults.update(env_overrides)
     for k, v in defaults.items():
@@ -88,6 +91,51 @@ def test_prod_settings_flags_and_deploy_check_are_clean(monkeypatch):
 def test_prod_settings_reject_weak_secrets_or_wildcard_hosts(monkeypatch, bad_env):
     with pytest.raises(ImproperlyConfigured):
         _load_prod_module(monkeypatch, **bad_env)
+
+
+def test_gmail_backend_overrides_existing_smtp_credentials(monkeypatch):
+    prod = _load_prod_module(
+        monkeypatch,
+        EMAIL_BACKEND="apps.core.email_backend.GmailEmailBackend",
+        GMAIL_REFRESH_TOKEN="test-refresh-token",
+        GMAIL_CLIENT_ID="test-client-id",
+        GMAIL_CLIENT_SECRET="test-client-secret",
+        DEFAULT_FROM_EMAIL="sender@example.org",
+        EMAIL_HOST_USER="old-smtp@example.org",
+        EMAIL_HOST_PASSWORD="old-smtp-password",
+    )
+    assert prod.EMAIL_BACKEND == "apps.core.email_backend.GmailEmailBackend"
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [{"GMAIL_REFRESH_TOKEN": ""}, {"DEFAULT_FROM_EMAIL": "no-reply@example.org"}],
+)
+def test_gmail_requires_key_and_sender(monkeypatch, overrides):
+    env = {
+        "EMAIL_BACKEND": "apps.core.email_backend.GmailEmailBackend",
+        "GMAIL_REFRESH_TOKEN": "test-refresh-token",
+        "GMAIL_CLIENT_ID": "test-client-id",
+        "GMAIL_CLIENT_SECRET": "test-client-secret",
+        "DEFAULT_FROM_EMAIL": "sender@example.org",
+        "EMAIL_HOST_USER": "",
+        "EMAIL_HOST_PASSWORD": "",
+    }
+    env.update(overrides)
+    with pytest.raises(ImproperlyConfigured, match="Gmail requires"):
+        _load_prod_module(monkeypatch, **env)
+
+
+@pytest.mark.parametrize(
+    "backend",
+    [
+        "django.core.mail.backends.console.EmailBackend",
+        "django.core.mail.backends.locmem.EmailBackend",
+    ],
+)
+def test_production_rejects_non_delivery_backends(monkeypatch, backend):
+    with pytest.raises(ImproperlyConfigured, match="Production requires SMTP"):
+        _load_prod_module(monkeypatch, EMAIL_BACKEND=backend)
 
 
 @pytest.mark.django_db

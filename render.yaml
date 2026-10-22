@@ -38,16 +38,12 @@ services:
       - key: BACKUP_DIR
         value: /var/data/backups
       - key: EMAIL_BACKEND
-        value: django.core.mail.backends.smtp.EmailBackend
-      - key: EMAIL_HOST
-        value: smtp.gmail.com
-      - key: EMAIL_PORT
-        value: "587"
-      - key: EMAIL_USE_TLS
-        value: "True"
-      - key: EMAIL_HOST_USER
+        value: apps.core.email_backend.GmailEmailBackend
+      - key: GMAIL_REFRESH_TOKEN
         sync: false
-      - key: EMAIL_HOST_PASSWORD
+      - key: GMAIL_CLIENT_ID
+        sync: false
+      - key: GMAIL_CLIENT_SECRET
         sync: false
       - key: DEFAULT_FROM_EMAIL
         sync: false
@@ -69,7 +65,27 @@ services:
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings.prod
       - key: EMAIL_BACKEND
-        value: django.core.mail.backends.smtp.EmailBackend
+        value: apps.core.email_backend.GmailEmailBackend
+      - key: GMAIL_REFRESH_TOKEN
+        fromService:
+          name: tmc-choir-eval-backend
+          type: web
+          envVarKey: GMAIL_REFRESH_TOKEN
+      - key: GMAIL_CLIENT_ID
+        fromService:
+          name: tmc-choir-eval-backend
+          type: web
+          envVarKey: GMAIL_CLIENT_ID
+      - key: GMAIL_CLIENT_SECRET
+        fromService:
+          name: tmc-choir-eval-backend
+          type: web
+          envVarKey: GMAIL_CLIENT_SECRET
+      - key: DEFAULT_FROM_EMAIL
+        fromService:
+          name: tmc-choir-eval-backend
+          type: web
+          envVarKey: DEFAULT_FROM_EMAIL
       - key: DB_SSL_REQUIRED
         value: "True"
       - key: DJANGO_SECRET_KEY

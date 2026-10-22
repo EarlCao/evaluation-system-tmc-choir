@@ -10,9 +10,13 @@ status: implemented (step 1.4); admin API/UI in step 4.2
 
 Pending OTP registrations use expiring shared cache with a password **hash** and a
 fresh challenge nonce. Verification preserves admin approval. Registration retries
-cannot delete existing accounts. OTP guesses are limited across client IPs. SMTP
+cannot delete existing accounts. OTP guesses are limited across client IPs. Email
 failures are reported without printing secrets. CSRF/login responses return a masked
 `csrf_token` for configured separate-origin clients. See [[Deployment Readiness 2026-10-20]].
+
+Gmail API delivery over HTTPS is available for Render Free, which blocks SMTP.
+Explicit `EMAIL_BACKEND` selection takes precedence over stored SMTP credentials.
+See [[Gmail on Render Free]] for sender OAuth and deployment setup.
 
 **Backend:** `apps/accounts` · **Frontend:** `features/auth`
 **Requirements:** AUTH-01..06 ([[Functional Requirements]])

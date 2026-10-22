@@ -19,13 +19,14 @@ tags: [architecture, security]
   ("Invalid credentials or account not active") so the response does not reveal which
   accounts exist.
 - **Password reset:** Django token generator. The response is identical whether or not
-  the email exists. Email backend is console in dev, SMTP in prod.
+  the email exists. Email backend is console in dev; production supports SMTP or Gmail API over HTTPS
+  with sender OAuth credentials. See [[Gmail on Render Free]].
 - **Registration gating** (`system.registration_mode`): `OPEN` | `APPROVAL` (default) |
   `EMAIL_VERIFICATION` | `CLOSED`.
 - Pending registration keeps password hashes, challenge nonces and expiry in shared
   Redis, never plain-text passwords or a process-local fallback. Email verification
   is single-use, limited to five guesses per challenge/user state, and never bypasses
-  approval. SMTP errors never fall back to printing secrets. Password-reset responses
+  approval. Email delivery errors never fall back to printing secrets. Password-reset responses
   remain generic during delivery failures; a durable mail outbox is a future improvement.
 
 ## Authorisation

@@ -1,4 +1,4 @@
-"""Transactional emails (console backend in dev, SMTP in prod). Plain text with 6-digit OTP."""
+"""Transactional emails (SMTP or HTTPS in prod). Plain text with 6-digit OTP."""
 
 import logging
 
@@ -28,7 +28,7 @@ def _dispatch_email(deliver_fn) -> None:
 
 
 def _send_transactional_email(*, subject: str, message: str, recipient: str) -> None:
-    """Never fall back to logging password-reset tokens or OTPs when SMTP fails."""
+    """Never fall back to logging password-reset tokens or OTPs when delivery fails."""
     from apps.core.exceptions import DomainError
 
     try:

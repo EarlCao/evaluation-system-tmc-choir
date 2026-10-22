@@ -110,3 +110,7 @@ tags: [roadmap]
 - [x] **7.4 Admin logout navigation** (user request 2026-10-22): return Super Admins
   to `/admin` after logout even when clearing session state unmounts the account menu;
   cover dashboard/subpage logout and member navigation with regression tests.
+
+- [x] **7.5 Gmail delivery on Render Free** (user report 2026-10-22): add a Gmail
+  HTTPS API backend, explicit email backend selection, production validation, OAuth
+  deployment instructions, and email delivery/security regression coverage.
