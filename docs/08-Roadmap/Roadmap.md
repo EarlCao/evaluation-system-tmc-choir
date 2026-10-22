@@ -122,3 +122,7 @@ tags: [roadmap]
 - [x] **7.7 Registration delivery retry allowance** (user report 2026-10-22): prevent
   failed email delivery from consuming hourly registration allowance, bound rapid
   outage retries, and retire counters that charged users for server failures.
+
+- [x] **7.8 Brevo HTTPS email delivery** (user request 2026-10-22): add API-key
+  delivery, production checks and Render configuration plus verified-sender/account
+  setup instructions; test OTP verification and delivery failures without live mail.

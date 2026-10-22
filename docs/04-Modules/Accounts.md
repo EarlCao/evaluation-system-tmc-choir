@@ -16,7 +16,8 @@ failures are reported without printing secrets. CSRF/login responses return a ma
 
 Gmail API delivery over HTTPS is available for Render Free, which blocks SMTP.
 Explicit `EMAIL_BACKEND` selection takes precedence over stored SMTP credentials.
-See [[Gmail on Render Free]] for sender OAuth and deployment setup.
+See [[Gmail on Render Free]] for sender OAuth and deployment setup. Brevo HTTPS delivery
+is also supported using an API key and verified sender; see [[Brevo on Render Free]].
 
 **Backend:** `apps/accounts` · **Frontend:** `features/auth`
 **Requirements:** AUTH-01..06 ([[Functional Requirements]])

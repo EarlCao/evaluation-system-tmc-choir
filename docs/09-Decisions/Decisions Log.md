@@ -21,10 +21,22 @@ MIME serialization; no new dependencies. Delivery errors keep generic registrati
 Testing-mode refresh tokens expire after seven days. Google account limits and token
 revocation still affect availability. See [[Gmail on Render Free]].
 
+### ADR-024: Brevo HTTPS email option
+**Date:** 2026-10-22 · **Status:** Accepted
+**Context:** the user requests switching from Gmail OAuth to Brevo for Render Free.
+**Decision:** support Brevo API-key authentication over HTTPS with a verified sender;
+make it the Render Blueprint's email default while retaining explicitly selectable
+Gmail and SMTP backends. Require provider acceptance before reporting success and
+retain safe diagnostics and delivery-aware registration retries. No new dependencies.
+**Consequences:** Brevo onboarding, transactional activation, sender verification and
+credits remain operational prerequisites. Gmail-domain senders may be rewritten by
+Brevo; authenticating an owned domain is recommended. See [[Brevo on Render Free]].
+
 Format: [[ADR Template]]. Status: Proposed · Accepted · Superseded.
 
 | ADR | Title | Status | Date |
 |---|---|---|---|
+| ADR-024 | Brevo HTTPS email option | Accepted | 2026-10-22 |
 | ADR-023 | Gmail API delivery on Render Free | Accepted | 2026-10-22 |
 | ADR-001 | Modular monolith (single Django ASGI app + SPA, module-by-module) | Accepted | 2026-10-17 |
 | ADR-002 | Services/selectors layering with in-process domain events | Accepted | 2026-10-17 |

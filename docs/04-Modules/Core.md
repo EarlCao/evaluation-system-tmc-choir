@@ -8,7 +8,7 @@ status: implemented (step 1.2)
 
 Deployment review (2026-10-21): CORS is restricted to explicit configured origins,
 supports the registration header, and always varies by Origin. Production requires
-strong independent secrets, HTTPS URLs, SMTP or Gmail API email, and shared Redis;
+strong independent secrets, HTTPS URLs, SMTP, Gmail API or Brevo API email, and shared Redis;
 the permission matrix covers backup routes. See [[Deployment Readiness 2026-10-20]].
 
 **Backend:** `apps/core` · **Frontend:** `src/lib`, `src/components`, `src/app`
@@ -41,6 +41,10 @@ OAuth refresh token. Production validates credentials; failures propagate withou
 message bodies or tokens. Rejected HTTP requests log only the endpoint label, status
 and an allowlisted provider error code; all other response content stays private.
 See [[Gmail on Render Free]].
+
+`email_backend.BrevoEmailBackend` supports verification/reset mail over HTTPS with
+`BREVO_API_KEY` and a verified sender. Shared API diagnostics log only allowlisted
+provider codes; production validates configuration before serving. See [[Brevo on Render Free]].
 
 ## Frontend counterparts
 `lib/apiClient.ts` (axios + CSRF), `lib/queryClient.ts`, `lib/ws.ts`, `lib/format.ts`,

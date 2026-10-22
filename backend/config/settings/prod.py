@@ -49,8 +49,15 @@ if EMAIL_BACKEND == "apps.core.email_backend.GmailEmailBackend":
         raise ImproperlyConfigured(
             "Gmail requires OAuth client ID, client secret, refresh token and DEFAULT_FROM_EMAIL."
         )
+elif EMAIL_BACKEND == "apps.core.email_backend.BrevoEmailBackend":
+    if not BREVO_API_KEY or DEFAULT_FROM_EMAIL == "no-reply@example.org":
+        raise ImproperlyConfigured(
+            "Brevo requires BREVO_API_KEY and a verified DEFAULT_FROM_EMAIL."
+        )
 elif EMAIL_BACKEND != "django.core.mail.backends.smtp.EmailBackend" or not EMAIL_HOST:
-    raise ImproperlyConfigured("Production requires SMTP or the Gmail HTTPS email backend.")
+    raise ImproperlyConfigured(
+        "Production requires SMTP, Gmail HTTPS or Brevo HTTPS email delivery."
+    )
 
 if urlsplit(FRONTEND_URL).scheme != "https":
     raise ImproperlyConfigured("Production requires an HTTPS FRONTEND_URL.")

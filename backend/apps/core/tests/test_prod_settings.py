@@ -26,6 +26,7 @@ def _load_prod_module(monkeypatch, **env_overrides):
         "GMAIL_REFRESH_TOKEN": "",
         "GMAIL_CLIENT_ID": "",
         "GMAIL_CLIENT_SECRET": "",
+        "BREVO_API_KEY": "",
     }
     defaults.update(env_overrides)
     for k, v in defaults.items():
@@ -105,6 +106,34 @@ def test_gmail_backend_overrides_existing_smtp_credentials(monkeypatch):
         EMAIL_HOST_PASSWORD="old-smtp-password",
     )
     assert prod.EMAIL_BACKEND == "apps.core.email_backend.GmailEmailBackend"
+
+
+def test_brevo_backend_does_not_require_gmail_credentials(monkeypatch):
+    prod = _load_prod_module(
+        monkeypatch,
+        EMAIL_BACKEND="apps.core.email_backend.BrevoEmailBackend",
+        BREVO_API_KEY="test-brevo-key",
+        DEFAULT_FROM_EMAIL="sender@example.org",
+        EMAIL_HOST_USER="old-smtp@example.org",
+        EMAIL_HOST_PASSWORD="old-smtp-password",
+    )
+    assert prod.EMAIL_BACKEND == "apps.core.email_backend.BrevoEmailBackend"
+
+
+@pytest.mark.parametrize(
+    "overrides", [{"BREVO_API_KEY": ""}, {"DEFAULT_FROM_EMAIL": "no-reply@example.org"}]
+)
+def test_brevo_requires_api_key_and_sender(monkeypatch, overrides):
+    env = {
+        "EMAIL_BACKEND": "apps.core.email_backend.BrevoEmailBackend",
+        "BREVO_API_KEY": "test-brevo-key",
+        "DEFAULT_FROM_EMAIL": "sender@example.org",
+        "EMAIL_HOST_USER": "",
+        "EMAIL_HOST_PASSWORD": "",
+    }
+    env.update(overrides)
+    with pytest.raises(ImproperlyConfigured, match="Brevo requires"):
+        _load_prod_module(monkeypatch, **env)
 
 
 @pytest.mark.parametrize(

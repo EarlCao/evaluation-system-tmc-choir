@@ -38,12 +38,8 @@ services:
       - key: BACKUP_DIR
         value: /var/data/backups
       - key: EMAIL_BACKEND
-        value: apps.core.email_backend.GmailEmailBackend
-      - key: GMAIL_REFRESH_TOKEN
-        sync: false
-      - key: GMAIL_CLIENT_ID
-        sync: false
-      - key: GMAIL_CLIENT_SECRET
+        value: apps.core.email_backend.BrevoEmailBackend
+      - key: BREVO_API_KEY
         sync: false
       - key: DEFAULT_FROM_EMAIL
         sync: false
@@ -65,22 +61,12 @@ services:
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings.prod
       - key: EMAIL_BACKEND
-        value: apps.core.email_backend.GmailEmailBackend
-      - key: GMAIL_REFRESH_TOKEN
+        value: apps.core.email_backend.BrevoEmailBackend
+      - key: BREVO_API_KEY
         fromService:
           name: tmc-choir-eval-backend
           type: web
-          envVarKey: GMAIL_REFRESH_TOKEN
-      - key: GMAIL_CLIENT_ID
-        fromService:
-          name: tmc-choir-eval-backend
-          type: web
-          envVarKey: GMAIL_CLIENT_ID
-      - key: GMAIL_CLIENT_SECRET
-        fromService:
-          name: tmc-choir-eval-backend
-          type: web
-          envVarKey: GMAIL_CLIENT_SECRET
+          envVarKey: BREVO_API_KEY
       - key: DEFAULT_FROM_EMAIL
         fromService:
           name: tmc-choir-eval-backend

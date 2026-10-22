@@ -1,8 +1,9 @@
-"""Send transactional email through the Gmail HTTPS API on Render Free."""
+"""Send transactional email through Gmail or Brevo HTTPS APIs on Render Free."""
 
 import base64
 import json
 import logging
+from email.utils import parseaddr
 from http.client import HTTPSConnection
 from urllib.parse import urlencode
 
@@ -12,7 +13,7 @@ from django.core.mail.backends.base import BaseEmailBackend
 
 logger = logging.getLogger(__name__)
 
-# Only recognized provider codes may enter logs; never log Google's free-text messages.
+# Only recognized provider codes may enter logs; never log free-text error messages.
 _SAFE_REASONS = frozenset(
     {
         "invalid_grant",
@@ -36,6 +37,11 @@ _SAFE_REASONS = frozenset(
         "UNAUTHENTICATED",
         "PERMISSION_DENIED",
         "RESOURCE_EXHAUSTED",
+        "unauthorized",
+        "permission_denied",
+        "invalid_parameter",
+        "missing_parameter",
+        "not_enough_credits",
     }
 )
 
@@ -45,6 +51,8 @@ def _failure_reason(response) -> str:
         data = json.loads(response.read(16384))
         error = data.get("error") if isinstance(data, dict) else None
         candidates = [error] if isinstance(error, str) else []
+        if isinstance(data, dict):
+            candidates.append(data.get("code"))
         if isinstance(error, dict):
             for field in ("errors", "details"):
                 entries = error.get(field)
@@ -59,23 +67,25 @@ def _failure_reason(response) -> str:
     return "unknown"
 
 
-def _post(*, host: str, path: str, body: bytes, headers: dict) -> dict:
+def _post(*, host: str, path: str, body: bytes, headers: dict, success_status: int = 200) -> dict:
     # Fixed HTTPS hosts, no redirects, and no response bodies in errors or logs.
     connection = HTTPSConnection(host, timeout=settings.EMAIL_TIMEOUT)
     try:
         connection.request("POST", path, body=body, headers=headers)
         response = connection.getresponse()
-        if response.status != 200:
+        provider = "Brevo" if host == "api.brevo.com" else "Gmail"
+        if response.status != success_status:
             logger.error(
-                "Gmail API delivery failed: endpoint=%s status=%s reason=%s",
+                "%s API delivery failed: endpoint=%s status=%s reason=%s",
+                provider,
                 "oauth_token" if host == "oauth2.googleapis.com" else "send_message",
                 response.status,
                 _failure_reason(response),
             )
-            raise OSError(f"Gmail delivery request failed (HTTP {response.status}).")
+            raise OSError(f"{provider} delivery request failed (HTTP {response.status}).")
         result = json.loads(response.read())
         if not isinstance(result, dict):
-            raise OSError("Gmail returned an invalid response.")
+            raise OSError(f"{provider} returned an invalid response.")
         return result
     finally:
         connection.close()
@@ -132,6 +142,56 @@ class GmailEmailBackend(BaseEmailBackend):
                 )
                 if not result.get("id"):
                     raise OSError("Gmail did not accept the message.")
+                sent += 1
+            except Exception:
+                if not self.fail_silently:
+                    raise
+        return sent
+
+
+def _address(value: str) -> dict[str, str]:
+    name, email = parseaddr(value)
+    return {"email": email, **({"name": name} if name else {})}
+
+
+class BrevoEmailBackend(BaseEmailBackend):
+    """Deliver the application's plain-text verification/reset emails over HTTPS."""
+
+    def send_messages(self, email_messages) -> int:
+        sent = 0
+        for message in email_messages or []:
+            if not message.recipients():
+                continue
+            try:
+                if not settings.BREVO_API_KEY:
+                    raise ImproperlyConfigured("BREVO_API_KEY is required for email delivery.")
+                if message.attachments or getattr(message, "alternatives", None):
+                    raise ValueError("Brevo backend does not support attachments or alternatives.")
+                payload = {
+                    "sender": _address(message.from_email),
+                    "subject": message.subject,
+                    "htmlContent" if message.content_subtype == "html" else "textContent": (
+                        message.body
+                    ),
+                }
+                for field in ("to", "cc", "bcc"):
+                    if addresses := getattr(message, field):
+                        payload[field] = [_address(address) for address in addresses]
+                if message.reply_to:
+                    payload["replyTo"] = _address(message.reply_to[0])
+                result = _post(
+                    host="api.brevo.com",
+                    path="/v3/smtp/email",
+                    body=json.dumps(payload).encode("utf-8"),
+                    headers={
+                        "api-key": settings.BREVO_API_KEY,
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                    },
+                    success_status=201,
+                )
+                if not result.get("messageId"):
+                    raise OSError("Brevo did not accept the message.")
                 sent += 1
             except Exception:
                 if not self.fail_silently:

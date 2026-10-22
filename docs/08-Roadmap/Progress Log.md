@@ -5,6 +5,35 @@ tags: [roadmap, log]
 
 Newest entry first. Use [[Phase Log Template]] for each completed step.
 
+## 2026-10-22 · Step 7.8: Brevo HTTPS email delivery
+
+**Request:** switch registration/reset email from Gmail OAuth to Brevo on Render Free
+and provide setup instructions. Live Gmail provider rejection remains unclassified;
+this is an explicitly requested alternative provider, not a claimed Gmail repair.
+
+**Changed:** added `BrevoEmailBackend`, `BREVO_API_KEY`, production configuration checks,
+and Brevo defaults/shared worker keys in the Render Blueprint. Reused fixed-host HTTPS
+transport with provider-specific expected status and safe diagnostics. Preserve exact
+OTP text, sender names, recipients/cc/bcc/reply-to; reject unsupported attachments and
+alternatives explicitly. Gmail and SMTP remain selectable. No new packages or migrations.
+
+**Documentation:** [[Brevo on Render Free]] covers free account onboarding, transactional
+activation, sender verification, API-key creation, exact Render settings, delivery logs,
+limits and free-domain sender rewriting. Updated [[Core]], [[Accounts]], [[Security Model]],
+[[Decisions Log]] (ADR-024), example environment and [[Roadmap]].
+
+**Verification:** focused Brevo/Gmail/settings/registration suites: **93 passed**.
+Full backend suite against MySQL: **1,184 passed in 107.12 s**. Ruff lint/format,
+changed-file pre-commit and diff checks pass. A mocked Brevo integration test registers,
+extracts the actual generated OTP, verifies email and creates the member profile while
+preserving admin approval. Additional cases cover HTTP failures, no-confirmation bodies,
+timeouts, missing key, empty messages and private diagnostic content. No live email sent.
+
+**Rollout:** deploy this commit, set `EMAIL_BACKEND` to the Brevo class, configure the
+private API key and verified `DEFAULT_FROM_EMAIL`, and test one registration. Live
+inbox delivery depends on Brevo account activation/sender verification and is unverified.
+
+
 ## 2026-10-22 · Step 7.7: Registration retries after email failure
 
 **Reproduced in regression coverage:** registration reserves a three-per-hour attempt
