@@ -50,6 +50,15 @@ it the same backend and credentials; the Blueprint shares these settings.
 The existing Blueprint includes paid worker/disk resources; changing its email
 settings does not make the entire Blueprint a Free deployment.
 
+## Registration retry limits
+
+Email delivery failures return 503 and release their hourly registration reservation.
+Retries still have a ten-per-minute limit. Successful registrations and validation
+failures count toward three per hour. The delivery-aware policy starts with fresh
+hourly counters instead of reusing lockouts caused by previous email failures.
+A deployment with this fix removes the old lockout, but Google authorization or
+email submission failures still require the diagnostic line described below.
+
 ## Verify delivery
 
 Submit your own registration, confirm receipt of the six-digit code (including Spam),

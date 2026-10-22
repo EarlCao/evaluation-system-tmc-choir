@@ -11,7 +11,7 @@ from apps.system.constants import RegistrationMode
 from apps.system.selectors import get_settings
 
 from .. import selectors, services
-from ..throttles import RegisterThrottle
+from ..throttles import RegisterAttemptThrottle, RegisterThrottle
 from .serializers import (
     DirectoryEntrySerializer,
     MemberDetailSerializer,
@@ -45,7 +45,20 @@ class VoiceSectionListView(ListAPIView):
 class RegisterView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
-    throttle_classes = [RegisterThrottle]
+    throttle_classes = [RegisterAttemptThrottle, RegisterThrottle]
+
+    def get_throttles(self):
+        if not hasattr(self, "_registration_throttles"):
+            self._registration_throttles = super().get_throttles()
+        return self._registration_throttles
+
+    def handle_exception(self, exc):
+        response = super().handle_exception(exc)
+        if response.status_code >= 500 or response.status_code == 429:
+            for throttle in self.get_throttles():
+                if isinstance(throttle, RegisterThrottle):
+                    throttle.refund_server_failure()
+        return response
 
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)

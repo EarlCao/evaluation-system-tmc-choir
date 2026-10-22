@@ -9,7 +9,11 @@ status: registration (1.4) + directory, detail, own profile (2.1) implemented; a
 Deployment review (2026-10-21): evaluations registers directory/self-review readers
 at startup; members no longer imports evaluation models or serializers. Progress
 fields describe only the viewer's own submissions. Registration retries preserve
-existing accounts. See [[Deployment Readiness 2026-10-20]].
+existing accounts. Registration email/server failures release only their own hourly
+throttle reservation; rapid attempts remain limited to ten per minute. Successful
+registrations and validation failures retain the three-per-hour limit. The corrected
+policy uses new hourly counters, so old delivery-failure lockouts do not carry over.
+See [[Deployment Readiness 2026-10-20]] and [[Security Model]].
 
 **Backend:** `apps/members` · **Frontend:** `features/members`
 **Requirements:** MEM-01..05, AUTH-04

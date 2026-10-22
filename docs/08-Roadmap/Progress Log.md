@@ -5,6 +5,32 @@ tags: [roadmap, log]
 
 Newest entry first. Use [[Phase Log Template]] for each completed step.
 
+## 2026-10-22 · Step 7.7: Registration retries after email failure
+
+**Reproduced in regression coverage:** registration reserves a three-per-hour attempt
+before sending email. Delivery 503 responses retained those reservations, so three
+failed deliveries caused an hour-long lockout. The user reported a 2,556-second wait.
+This retry-policy defect is separate from the unresolved Google provider rejection.
+
+**Changed:** registration server failures and throttle rejections release only their
+own hourly reservation. A separate ten-per-minute throttle bounds rapid attempts,
+including provider-outage retries. Successful requests and validation failures retain
+the three-per-hour allowance. The hourly cache key changes for this policy so old
+counters containing failed delivery attempts do not carry over. No shared cache flush,
+OTP-limit changes, migrations or dependencies. Updated [[Security Model]], [[Members]],
+[[Gmail on Render Free]] and [[Roadmap]].
+
+**Verification:** focused registration/security/Gmail suite: **61 passed**. Full backend
+suite on MySQL: **1,165 passed in 103.25 s**. Ruff lint/format, diff checks and changed-file
+pre-commit checks pass. New regressions cover repeated delivery failures followed by
+success, bounded outage retries, preservation of earlier successful requests, legacy
+lockout retirement, and short-limit rejections not spending hourly allowance.
+
+**Outstanding:** deploy this change to remove the old lockout. The actual Gmail
+configuration failure still requires the newest `Gmail API delivery failed` log line
+(endpoint/status/reason); live sending is not claimed as repaired or verified.
+
+
 ## 2026-10-22 · Step 7.6: Safe Gmail failure diagnostics
 
 **Observed:** the user still receives registration 503 after configuring Gmail OAuth.

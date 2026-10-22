@@ -118,3 +118,7 @@ tags: [roadmap]
 - [x] **7.6 Gmail delivery diagnostics** (continued user report 2026-10-22): retain
   safe endpoint/status/provider error categories in Render logs so deployment email
   failures can be diagnosed without exposing OAuth credentials or message content.
+
+- [x] **7.7 Registration delivery retry allowance** (user report 2026-10-22): prevent
+  failed email delivery from consuming hourly registration allowance, bound rapid
+  outage retries, and retire counters that charged users for server failures.

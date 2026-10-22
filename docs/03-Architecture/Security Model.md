@@ -49,7 +49,10 @@ tags: [architecture, security]
   `USE_X_FORWARDED_FOR` (prod behind Nginx). A client-supplied `X-Forwarded-For` header is never trusted.
 - DRF throttles (scoped):
   - `login`: 5/min per IP+identifier
-  - `register`: 3/hour per IP
+  - `register`: 3/hour per IP; server failures and throttle rejections release their
+    own hourly reservation. Validation failures still count.
+  - `register_attempt`: 10/min per IP, including delivery failures. Existing counters
+    from before delivery-failure refunds are not reused.
   - `password_reset`: 3/hour per IP
   - `evaluation_submit`: 30/hour per user
   - `audit_delete`: 5/minute per user, shared across single deletion and Clear All

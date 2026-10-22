@@ -218,6 +218,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "login": "5/min",
         "register": "3/hour",
+        "register_attempt": "10/min",
         "password_reset": "3/hour",
         "evaluation_submit": "30/hour",
         "report_export": "60/hour",

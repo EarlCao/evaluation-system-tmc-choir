@@ -1,6 +1,7 @@
 """AUTH-01 registration use-case (members.services.register_member) and its API."""
 
 import pytest
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework.test import APIClient
 
@@ -141,6 +142,81 @@ def test_register_api_is_throttled():
         for i in range(4)
     ]
     assert codes == [201, 201, 201, 429]
+
+
+def test_failed_email_delivery_does_not_use_hourly_registration_allowance(monkeypatch):
+    from apps.accounts import emails
+
+    client = csrf_client()
+    data = payload()
+
+    def unavailable(*args, **kwargs):
+        raise OSError("provider unavailable")
+
+    with monkeypatch.context() as context:
+        context.setattr(emails, "send_mail", unavailable)
+        responses = [
+            client.post(REGISTER_URL, data, HTTP_X_DEFER_ACCOUNT_CREATION="1") for _ in range(4)
+        ]
+    assert [r.status_code for r in responses] == [503] * 4
+    assert not User.objects.filter(email=data["email"]).exists()
+    assert client.post(REGISTER_URL, data, HTTP_X_DEFER_ACCOUNT_CREATION="1").status_code == 201
+
+
+def test_provider_outage_retries_still_have_a_short_rate_limit(monkeypatch):
+    from apps.accounts import emails
+
+    def unavailable(*args, **kwargs):
+        raise OSError("provider unavailable")
+
+    monkeypatch.setattr(emails, "send_mail", unavailable)
+    client = csrf_client()
+    data = payload()
+    codes = [
+        client.post(REGISTER_URL, data, HTTP_X_DEFER_ACCOUNT_CREATION="1").status_code
+        for _ in range(11)
+    ]
+    assert codes == [503] * 10 + [429]
+
+
+def test_failed_delivery_preserves_previous_successful_request_allowance(monkeypatch):
+    from apps.accounts import emails
+
+    client = csrf_client()
+    data = payload()
+    for _ in range(2):
+        assert client.post(REGISTER_URL, data, HTTP_X_DEFER_ACCOUNT_CREATION="1").status_code == 201
+
+    def unavailable(*args, **kwargs):
+        raise OSError("provider unavailable")
+
+    with monkeypatch.context() as context:
+        context.setattr(emails, "send_mail", unavailable)
+        assert client.post(REGISTER_URL, data, HTTP_X_DEFER_ACCOUNT_CREATION="1").status_code == 503
+    assert client.post(REGISTER_URL, data, HTTP_X_DEFER_ACCOUNT_CREATION="1").status_code == 201
+    assert client.post(REGISTER_URL, data, HTTP_X_DEFER_ACCOUNT_CREATION="1").status_code == 429
+
+
+def test_old_failed_delivery_lockout_is_not_reused():
+    import time
+
+    cache.set("throttle_register_127.0.0.1", [time.time()] * 3, 3600)
+    client = csrf_client()
+    response = client.post(REGISTER_URL, payload(), HTTP_X_DEFER_ACCOUNT_CREATION="1")
+    assert response.status_code == 201
+
+
+def test_burst_rejections_do_not_spend_hourly_allowance():
+    import time
+
+    burst_key = "throttle_register_attempt_127.0.0.1"
+    cache.set(burst_key, [time.time()] * 10, 60)
+    client = csrf_client()
+    data = payload()
+    for _ in range(4):
+        assert client.post(REGISTER_URL, data, HTTP_X_DEFER_ACCOUNT_CREATION="1").status_code == 429
+    cache.delete(burst_key)
+    assert client.post(REGISTER_URL, data, HTTP_X_DEFER_ACCOUNT_CREATION="1").status_code == 201
 
 
 def test_deferred_registration_only_creates_account_after_otp_verification(
